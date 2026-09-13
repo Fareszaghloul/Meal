@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -18,7 +19,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  UtensilsCrossed,
   ShieldCheck,
   LogOut,
 } from "lucide-react";
@@ -99,8 +99,8 @@ export function MobileNav() {
           </button>
 
           <Link href="/" className="flex items-center space-x-2 touch-manipulation">
-            <div className="w-7 h-7 rounded-lg bg-[var(--accent)] text-white flex items-center justify-center font-medium text-xs">
-              <UtensilsCrossed className="w-3.5 h-3.5" />
+            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 flex items-center justify-center bg-white">
+              <Image src="/logo.png" alt="MealPrep logo" width={28} height={28} className="object-contain" />
             </div>
             <span className="font-semibold text-[var(--text-primary)] text-sm tracking-tight">
               MealPrep
@@ -143,8 +143,8 @@ export function MobileNav() {
                 onClick={() => setIsDrawerOpen(false)}
                 className="flex items-center space-x-2.5 touch-manipulation"
               >
-                <div className="w-8 h-8 rounded-lg bg-[var(--accent)] text-white flex items-center justify-center">
-                  <UtensilsCrossed className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 flex items-center justify-center bg-white">
+                  <Image src="/logo.png" alt="MealPrep logo" width={32} height={32} className="object-contain" />
                 </div>
                 <div>
                   <div className="font-semibold text-[var(--text-primary)] text-sm leading-tight">

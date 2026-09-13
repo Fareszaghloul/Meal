@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { UtensilsCrossed, Lock, Mail, User, AlertCircle, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Lock, Mail, User, AlertCircle, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
@@ -126,8 +127,8 @@ export default function RegisterPage() {
     <div className="w-full max-w-md p-6 sm:p-8 bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-xl">
       {/* Brand Header */}
       <div className="flex flex-col items-center text-center mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center mb-3 shadow-md">
-          <UtensilsCrossed className="w-6 h-6" />
+        <div className="w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center mb-3 shadow-md bg-white">
+          <Image src="/logo.png" alt="MealPrep logo" width={56} height={56} className="object-contain" />
         </div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Create an account

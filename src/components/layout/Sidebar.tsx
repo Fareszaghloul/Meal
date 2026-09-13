@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -15,7 +16,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  UtensilsCrossed,
   Scale,
   ShieldCheck,
   LogOut,
@@ -56,8 +56,8 @@ export function Sidebar() {
         {/* Brand Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border)]">
           <Link href="/" className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent)] text-white flex items-center justify-center">
-              <UtensilsCrossed className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 flex items-center justify-center bg-white">
+              <Image src="/logo.png" alt="MealPrep logo" width={32} height={32} className="object-contain" />
             </div>
             <div>
               <span className="font-semibold tracking-tight text-[var(--text-primary)] text-base">
