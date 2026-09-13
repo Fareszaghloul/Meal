@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: var(--font-general-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* Light mode palette */
+    --background: #F6F7F4;       /* Slightly sage-tinted off-white, not stark white or cream */
+    --surface: #FFFFFF;          /* Cards, panels */
+    --border: #E2E5DE;           /* Hairline borders, subtle sage-gray */
+    --text-primary: #1C2620;     /* Deep charcoal with a green undertone, not pure black */
+    --text-secondary: #5B655C;   /* Muted body/label text */
+    --accent: #3F6B4A;           /* Moss/fern green — primary brand color */
+    --accent-hover: #34593D;     /* Darker moss for hover */
+    --accent-subtle: #EBF1EC;    /* Soft tinted accent container */
+
+    /* Data / nutrition colors (same in both modes) */
+    --macro-protein: #4C6E8C;        /* Muted steel blue */
+    --macro-protein-bg: rgba(76, 110, 140, 0.08);
+    --macro-protein-border: rgba(76, 110, 140, 0.2);
+
+    --macro-carbs: #C08A3E;          /* Muted ochre/amber */
+    --macro-carbs-bg: rgba(192, 138, 62, 0.08);
+    --macro-carbs-border: rgba(192, 138, 62, 0.2);
+
+    --macro-fat: #9C6B7A;            /* Dusty rose */
+    --macro-fat-bg: rgba(156, 107, 122, 0.08);
+    --macro-fat-border: rgba(156, 107, 122, 0.2);
+
+    --status-over-target: #B54A3C;   /* Muted rust red — over calorie/macro target */
+    --status-on-track: #3F6B4A;      /* Reuses the accent green — under/at target */
+
+    /* Form validation / UI alerts (distinct from nutrition status) */
+    --ui-error: #9B2C2C;
+    --ui-error-bg: #FFF5F5;
+    --ui-error-border: #FEB2B2;
+
+    --ui-success: #2C6E49;
+    --ui-success-bg: #F0FDF4;
+    --ui-success-border: #BBF7D0;
+
+    /* Type scale */
+    --text-xs: 12px;
+    --text-sm: 14px;
+    --text-base: 16px;
+    --text-lg: 18px;
+    --text-xl: 24px;
+    --text-2xl: 32px;
+
+    --leading-body: 1.5;
+    --leading-heading: 1.2;
+  }
+
+  .dark {
+    /* Dark mode palette */
+    --background: #141917;
+    --surface: #1C211D;
+    --border: #2B322C;
+    --text-primary: #EDEFEA;     /* Warm off-white, not pure white */
+    --text-secondary: #9AA398;
+    --accent: #5A9468;           /* Brightened version of light-mode accent for contrast */
+    --accent-hover: #6BA879;
+    --accent-subtle: #222B24;
+
+    /* Data / nutrition colors (same in both modes) */
+    --macro-protein: #4C6E8C;        /* Muted steel blue */
+    --macro-protein-bg: rgba(76, 110, 140, 0.15);
+    --macro-protein-border: rgba(76, 110, 140, 0.3);
+
+    --macro-carbs: #C08A3E;          /* Muted ochre/amber */
+    --macro-carbs-bg: rgba(192, 138, 62, 0.15);
+    --macro-carbs-border: rgba(192, 138, 62, 0.3);
+
+    --macro-fat: #9C6B7A;            /* Dusty rose */
+    --macro-fat-bg: rgba(156, 107, 122, 0.15);
+    --macro-fat-border: rgba(156, 107, 122, 0.3);
+
+    --status-over-target: #B54A3C;   /* Muted rust red — over calorie/macro target */
+    --status-on-track: #3F6B4A;      /* Reuses the accent green — under/at target */
+
+    /* Form validation / UI alerts */
+    --ui-error: #FEB2B2;
+    --ui-error-bg: #2D1515;
+    --ui-error-border: #742A2A;
+
+    --ui-success: #86EFAC;
+    --ui-success-bg: #13271A;
+    --ui-success-border: #166534;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--text-primary);
+  line-height: var(--leading-body);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings and hero numbers */
+h1, h2, h3, h4, h5, h6, .leading-tight-heading {
+  line-height: var(--leading-heading);
+}
+
+/* Tabular & lining numbers */
+.font-tabular,
+.tabular-nums {
+  font-feature-settings: "tnum" 1, "lnum" 1 !important;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: normal;
+}
+
+/* Base Card / Surface Utility (Hairline 1px border, flat fill) */
+.surface-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Mobile bottom nav safe-area padding */
+.mobile-bottom-nav {
+  padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0.35rem));
+}
+

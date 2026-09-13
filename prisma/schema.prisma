@@ -1,0 +1,294 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                    String                @id @default(cuid())
+  email                 String                @unique
+  passwordHash          String
+  displayName           String
+  role                  String                @default("user") // "user" | "admin"
+  status                String                @default("active") // "active" | "suspended"
+  emailVerified         DateTime?             // Timestamp when email was verified
+  lastLoginAt           DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  recipes               Recipe[]
+  mealPlans             MealPlan[]
+  shoppingListItems     ShoppingListItem[]
+  pantryItems           PantryItem[]
+  weightEntries         WeightEntry[]
+  workoutRoutineEntries WorkoutRoutineEntry[]
+  settings              UserSettings?
+  sessions              Session[]
+  passwordResetTokens   PasswordResetToken[]
+  verificationTokens    VerificationToken[]
+  customFoods           Food[]
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique // SHA-256 hash of single-use verification token
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String   @unique // SHA-256 hash of random session token
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique // SHA-256 hash of single-use reset token
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Food {
+  id                 String             @id @default(cuid())
+  userId             String?            // null = standard global food; non-null = user's private custom food
+  user               User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String             @unique
+  category           String             // "Meat", "Dairy", "Grains", "Produce", "Pantry", etc.
+  rawOrCooked        String             @default("unspecified") // "raw", "cooked", "dry", "unspecified"
+  caloriesPer100g    Float
+  proteinPer100g     Float
+  carbsPer100g       Float
+  fatPer100g         Float
+  fiberPer100g       Float              @default(0)
+  defaultUnit        String             @default("g") // "g", "ml", "piece", etc.
+  servingWeightGrams Float              @default(100)
+  recipeIngredients  RecipeIngredient[]
+  pantryItems        PantryItem[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([userId])
+}
+
+model Recipe {
+  id                    String             @id @default(cuid())
+  userId                String
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String
+  description           String?
+  servings              Int                @default(4)
+  prepTimeMinutes       Int?
+  cookTimeMinutes       Int?
+  imageUrl              String?
+  sourceUrl             String?
+  sourcePlatform        String?            // "Instagram", "TikTok", "Web", "Manual"
+  isFavorite            Boolean            @default(false)
+  
+  // Per-serving nutrition cache
+  caloriesPerServing    Float              @default(0)
+  proteinPerServing     Float              @default(0)
+  carbsPerServing       Float              @default(0)
+  fatPerServing         Float              @default(0)
+  fiberPerServing       Float              @default(0)
+  isNutritionCalculated Boolean            @default(true)
+
+  ingredients           RecipeIngredient[]
+  instructions          RecipeStep[]
+  tags                  RecipeTag[]
+  meals                 Meal[]
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([userId])
+}
+
+model RecipeIngredient {
+  id          String   @id @default(cuid())
+  recipeId    String
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  foodId      String?
+  food        Food?    @relation(fields: [foodId], references: [id], onDelete: SetNull)
+  rawName     String
+  quantity    Float
+  unit        String   // "g", "kg", "ml", "l", "tbsp", "tsp", "cup", "piece", "egg", "slice", "scoop", "oz"
+  notes       String?  // e.g. "diced", "extra virgin"
+  sortOrder   Int      @default(0)
+}
+
+model RecipeStep {
+  id          String   @id @default(cuid())
+  recipeId    String
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  stepNumber  Int
+  instruction String
+}
+
+model Tag {
+  id      String      @id @default(cuid())
+  name    String      @unique
+  recipes RecipeTag[]
+}
+
+model RecipeTag {
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  tagId    String
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([recipeId, tagId])
+}
+
+model MealPlan {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStartDate String   // ISO date string for Monday e.g. "2026-09-07"
+  notes         String?
+  meals         Meal[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, weekStartDate])
+  @@index([userId])
+}
+
+model Meal {
+  id           String    @id @default(cuid())
+  mealPlanId   String
+  mealPlan     MealPlan  @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  dayOfWeek    String    // "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
+  mealCategory String    // "breakfast", "lunch", "dinner", "snack"
+  recipeId     String?
+  recipe       Recipe?   @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  customName   String?
+  servings     Float     @default(1.0)
+  calories     Float     @default(0)
+  protein      Float     @default(0)
+  carbs        Float     @default(0)
+  fat          Float     @default(0)
+  isCompleted  Boolean   @default(false)
+  sortOrder    Int       @default(0)
+}
+
+model ShoppingListItem {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodId     String?
+  name       String
+  quantity   Float
+  unit       String
+  category   String   // "Meat", "Produce", "Dairy", "Grains", "Pantry", etc.
+  isChecked  Boolean  @default(false)
+  isCustom   Boolean  @default(false)
+  notes      String?
+  weekStart  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model PantryItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodId    String?
+  food      Food?    @relation(fields: [foodId], references: [id], onDelete: SetNull)
+  name      String
+  quantity  Float
+  unit      String
+  category  String   @default("Pantry")
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model WeightEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   // ISO date "YYYY-MM-DD"
+  weightKg  Float    // Weight in kg
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+model WorkoutRoutineEntry {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutType     String   // e.g. "weightlifting_moderate", "running_moderate"
+  customLabel     String?  // Optional display name
+  durationMinutes Int      @default(45)
+  sessionsPerWeek Float    @default(3)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model UserSettings {
+  id                         String   @id @default(cuid())
+  userId                     String   @unique
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Nutrition Targets (Macros)
+  dailyCalories              Float    @default(2300)
+  dailyProtein               Float    @default(180)
+  dailyCarbs                 Float    @default(220)
+  dailyFat                   Float    @default(70)
+  defaultServings            Int      @default(4)
+  measurementSystem          String   @default("metric") // "metric" | "imperial"
+  theme                      String   @default("system")
+  
+  // Body Profile & TDEE Inputs
+  sex                        String   @default("male")   // "male" | "female"
+  age                        Int      @default(28)
+  heightCm                   Float    @default(178)
+  currentWeightKg            Float    @default(78)
+  goalType                   String   @default("lose")   // "lose" | "maintain" | "gain"
+  goalWeeklyRateKg           Float    @default(0.5)      // e.g. 0.25, 0.5, 0.75, 1.0 kg/week
+  goalWeightKg               Float?   @default(72)
+  avgDailySteps              Int      @default(8000)
+  useSimpleActivityMode      Boolean  @default(false)
+  simpleActivityLevel        String?  @default("moderate") // "sedentary" | "light" | "moderate" | "very" | "extra"
+  useThermicEffectAdjustment Boolean  @default(true)
+  
+  // AI Settings
+  ollamaUrl                  String   @default("http://localhost:11434")
+  ollamaModel                String   @default("qwen2.5:7b")
+  screenshotMethod           String   @default("ocr_local") // "ocr_local" | "vision_local" | "cloud_vision"
+  cloudApiKey                String?
+  
+  // External Nutrition Database Settings
+  usdaApiKey                 String?
+  
+  updatedAt                  DateTime @updatedAt
+}
