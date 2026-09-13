@@ -4,7 +4,7 @@ const resendApiKey = process.env.RESEND_API_KEY;
 export const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 const DEFAULT_FROM = process.env.EMAIL_FROM || "MealPrep <onboarding@resend.dev>";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 interface SendEmailParams {
   to: string;
