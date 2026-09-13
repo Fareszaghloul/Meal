@@ -229,14 +229,15 @@ model PantryItem {
 }
 
 model WeightEntry {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      String   // ISO date "YYYY-MM-DD"
-  weightKg  Float    // Weight in kg
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        String   // ISO date "YYYY-MM-DD"
+  weightKg    Float    // Weight in kg
+  bodyFatPct  Float?   // Body Fat % (e.g. from monthly InBody scan)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([userId, date])
   @@index([userId])
@@ -272,9 +273,11 @@ model UserSettings {
   
   // Body Profile & TDEE Inputs
   sex                        String   @default("male")   // "male" | "female"
-  age                        Int      @default(28)
+  birthDate                  String?                     // "YYYY-MM-DD"
+  age                        Int      @default(28)       // Auto-calculated from birthDate if provided
   heightCm                   Float    @default(178)
   currentWeightKg            Float    @default(78)
+  currentBodyFatPct          Float?                      // Monthly InBody percentage
   goalType                   String   @default("lose")   // "lose" | "maintain" | "gain"
   goalWeeklyRateKg           Float    @default(0.5)      // e.g. 0.25, 0.5, 0.75, 1.0 kg/week
   goalWeightKg               Float?   @default(72)

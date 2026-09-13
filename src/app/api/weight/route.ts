@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { date, weightKg, notes } = body;
+    const { date, weightKg, bodyFatPct, notes } = body;
 
     if (!weightKg || Number(weightKg) <= 0) {
       return NextResponse.json(
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
     const todayStr = new Date().toISOString().split("T")[0];
     const targetDate = date || todayStr;
     const safeWeight = Number(weightKg);
+    const safeBodyFat = bodyFatPct !== undefined && bodyFatPct !== null && bodyFatPct !== "" ? Number(bodyFatPct) : null;
 
     // Upsert weight entry for the date for this user
     const entry = await prisma.weightEntry.upsert({
@@ -71,20 +72,26 @@ export async function POST(request: Request) {
       },
       update: {
         weightKg: safeWeight,
+        bodyFatPct: safeBodyFat !== null ? safeBodyFat : undefined,
         notes: notes !== undefined ? notes : undefined,
       },
       create: {
         userId: user.id,
         date: targetDate,
         weightKg: safeWeight,
+        bodyFatPct: safeBodyFat,
         notes: notes || null,
       },
     });
 
-    // Also update UserSettings.currentWeightKg to keep in sync
+    // Also update UserSettings to keep in sync
+    const settingsUpdate: Record<string, any> = { currentWeightKg: safeWeight };
+    if (safeBodyFat !== null) {
+      settingsUpdate.currentBodyFatPct = safeBodyFat;
+    }
     await prisma.userSettings.updateMany({
       where: { userId: user.id },
-      data: { currentWeightKg: safeWeight },
+      data: settingsUpdate,
     });
 
     return NextResponse.json(entry);
@@ -104,7 +111,7 @@ export async function PUT(request: Request) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { id, weightKg, date, notes } = body;
+    const { id, weightKg, bodyFatPct, date, notes } = body;
 
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
@@ -118,14 +125,24 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Weight entry not found" }, { status: 404 });
     }
 
+    const safeBodyFat = bodyFatPct !== undefined ? (bodyFatPct !== null && bodyFatPct !== "" ? Number(bodyFatPct) : null) : undefined;
+
     const updated = await prisma.weightEntry.update({
       where: { id },
       data: {
         weightKg: weightKg !== undefined ? Number(weightKg) : undefined,
+        bodyFatPct: safeBodyFat,
         date: date || undefined,
         notes: notes !== undefined ? notes : undefined,
       },
     });
+
+    if (safeBodyFat !== undefined && safeBodyFat !== null) {
+      await prisma.userSettings.updateMany({
+        where: { userId: user.id },
+        data: { currentBodyFatPct: safeBodyFat },
+      });
+    }
 
     return NextResponse.json(updated);
   } catch (error: any) {

@@ -27,6 +27,7 @@ export function LogWeightModal({
 
   const [date, setDate] = useState<string>(getTodayDateStr());
   const [weightInput, setWeightInput] = useState<string>("");
+  const [bodyFatInput, setBodyFatInput] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -41,10 +42,12 @@ export function LogWeightModal({
           ? Math.round(initialEntry.weightKg * 2.20462 * 10) / 10
           : Math.round(initialEntry.weightKg * 10) / 10;
         setWeightInput(String(displayWeight));
+        setBodyFatInput(initialEntry.bodyFatPct !== undefined && initialEntry.bodyFatPct !== null ? String(initialEntry.bodyFatPct) : "");
         setNotes(initialEntry.notes || "");
       } else {
         setDate(getTodayDateStr());
         setWeightInput("");
+        setBodyFatInput("");
         setNotes("");
       }
     }
@@ -67,6 +70,8 @@ export function LogWeightModal({
       ? Math.round((numericVal / 2.20462) * 100) / 100
       : numericVal;
 
+    const parsedBodyFat = bodyFatInput ? parseFloat(bodyFatInput) : null;
+
     setIsSubmitting(true);
     try {
       if (initialEntry?.id) {
@@ -78,6 +83,7 @@ export function LogWeightModal({
             id: initialEntry.id,
             date,
             weightKg,
+            bodyFatPct: parsedBodyFat,
             notes: notes.trim() || null,
           }),
         });
@@ -90,6 +96,7 @@ export function LogWeightModal({
           body: JSON.stringify({
             date,
             weightKg,
+            bodyFatPct: parsedBodyFat,
             notes: notes.trim() || null,
           }),
         });
@@ -201,6 +208,28 @@ export function LogWeightModal({
               />
               <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--text-secondary)]">
                 {unitLabel}
+              </span>
+            </div>
+          </div>
+
+          {/* Body Fat Input */}
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
+              Body Fat % <span className="font-normal text-[var(--text-secondary)]">(optional, e.g. InBody scan)</span>
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                step="0.1"
+                min="3"
+                max="60"
+                placeholder="e.g. 15.4"
+                value={bodyFatInput}
+                onChange={(e) => setBodyFatInput(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-sm font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--text-secondary)]">
+                %
               </span>
             </div>
           </div>

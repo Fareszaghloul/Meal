@@ -85,9 +85,11 @@ export async function PUT(request: Request) {
       measurementSystem,
       theme,
       sex,
+      birthDate,
       age,
       heightCm,
       currentWeightKg,
+      currentBodyFatPct,
       goalType,
       goalWeeklyRateKg,
       goalWeightKg,
@@ -112,9 +114,28 @@ export async function PUT(request: Request) {
     if (theme !== undefined) dataToUpdate.theme = theme;
 
     if (sex !== undefined) dataToUpdate.sex = sex;
-    if (age !== undefined) dataToUpdate.age = Number(age);
+    if (birthDate !== undefined) {
+      dataToUpdate.birthDate = birthDate ? String(birthDate).trim() : null;
+      if (birthDate) {
+        // Automatically calculate exact current age from birthday
+        const birth = new Date(birthDate);
+        const today = new Date();
+        let calculatedAge = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+          calculatedAge--;
+        }
+        if (calculatedAge > 0 && calculatedAge < 125) {
+          dataToUpdate.age = calculatedAge;
+        }
+      }
+    }
+    if (age !== undefined && dataToUpdate.age === undefined) dataToUpdate.age = Number(age);
     if (heightCm !== undefined) dataToUpdate.heightCm = Number(heightCm);
     if (currentWeightKg !== undefined) dataToUpdate.currentWeightKg = Number(currentWeightKg);
+    if (currentBodyFatPct !== undefined) {
+      dataToUpdate.currentBodyFatPct = currentBodyFatPct !== null && currentBodyFatPct !== "" ? Number(currentBodyFatPct) : null;
+    }
     if (goalType !== undefined) dataToUpdate.goalType = goalType;
     if (goalWeeklyRateKg !== undefined) dataToUpdate.goalWeeklyRateKg = Number(goalWeeklyRateKg);
     if (goalWeightKg !== undefined) dataToUpdate.goalWeightKg = goalWeightKg ? Number(goalWeightKg) : null;

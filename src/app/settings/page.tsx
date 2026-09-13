@@ -403,13 +403,22 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <Link
-            href="/weight"
-            className="text-xs font-medium text-[var(--accent)] hover:underline flex items-center"
-          >
-            <Scale className="w-3.5 h-3.5 mr-1" />
-            <span>Open Weight Log</span>
-          </Link>
+          <div className="flex items-center space-x-3">
+            <Link
+              href="/profile"
+              className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 bg-[var(--accent-subtle)] px-2.5 py-1.5 rounded-lg"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Edit in User Profile</span>
+            </Link>
+            <Link
+              href="/weight"
+              className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center"
+            >
+              <Scale className="w-3.5 h-3.5 mr-1" />
+              <span>Weight Log</span>
+            </Link>
+          </div>
         </div>
 
         {/* Profile Inputs: Sex, Age, Height, Weight */}

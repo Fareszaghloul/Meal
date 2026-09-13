@@ -6,6 +6,7 @@ export interface RawWeightEntry {
   id: string;
   date: string; // "YYYY-MM-DD"
   weightKg: number;
+  bodyFatPct?: number | null;
   notes?: string | null;
   createdAt?: Date | string;
 }
@@ -14,6 +15,7 @@ export interface ProcessedWeightPoint {
   id: string;
   date: string;
   weightKg: number;
+  bodyFatPct?: number | null;
   rollingAvg7d: number;
   notes?: string | null;
 }
@@ -66,6 +68,7 @@ export function processWeightEntries(entries: RawWeightEntry[]): ProcessedWeight
       id: entry.id,
       date: entry.date,
       weightKg: entry.weightKg,
+      bodyFatPct: entry.bodyFatPct ?? null,
       rollingAvg7d: avg,
       notes: entry.notes,
     };
