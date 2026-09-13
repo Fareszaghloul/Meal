@@ -159,6 +159,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
+
+    const handleMealLogged = () => {
+      fetchFoodAndWaterLog(selectedDate);
+      fetchDashboardData();
+    };
+
+    window.addEventListener("meal-logged", handleMealLogged);
+    return () => window.removeEventListener("meal-logged", handleMealLogged);
   }, []);
 
   useEffect(() => {

@@ -17,8 +17,12 @@ import {
   Droplet,
   Clock,
   Loader2,
+  Globe,
+  SlidersHorizontal,
+  Calculator,
 } from "lucide-react";
 import mcdonaldsData from "@/data/mcdonalds-jordan-menu.json";
+import { DynamicPortionAdjuster, ScaledNutrition } from "@/components/food-log/DynamicPortionAdjuster";
 import { cn } from "@/lib/utils";
 
 interface LogFoodModalProps {
@@ -36,7 +40,7 @@ export function LogFoodModal({
   selectedDate,
   onLogSuccess,
 }: LogFoodModalProps) {
-  const [activeTab, setActiveTab] = useState<"recipes" | "foods" | "quick">("recipes");
+  const [activeTab, setActiveTab] = useState<"recipes" | "foods" | "online" | "quick">("recipes");
   const [mealCategory, setMealCategory] = useState<"breakfast" | "lunch" | "dinner" | "snack">(
     defaultMealCategory
   );
@@ -47,13 +51,32 @@ export function LogFoodModal({
   // Recipes state
   const [recipes, setRecipes] = useState<any[]>([]);
   const [recipeSearch, setRecipeSearch] = useState("");
-  const [recipeServings, setRecipeServings] = useState<Record<string, number>>({});
 
   // Foods & McDonald's state
   const [userFoods, setUserFoods] = useState<any[]>([]);
   const [foodSearch, setFoodSearch] = useState("");
   const [foodFilterSource, setFoodFilterSource] = useState<"all" | "mcdonalds" | "custom">("all");
-  const [foodGrams, setFoodGrams] = useState<Record<string, number>>({});
+
+  // Online search state
+  const [onlineQuery, setOnlineQuery] = useState("");
+  const [onlineResults, setOnlineResults] = useState<any[]>([]);
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+  const [onlineError, setOnlineError] = useState<string | null>(null);
+
+  // Dynamic portion scaling state
+  const [selectedItem, setSelectedItem] = useState<{
+    type: "recipe" | "food" | "mcdonalds" | "online";
+    item: any;
+    baseWeightGrams: number;
+    baseCalories: number;
+    baseProtein: number;
+    baseCarbs: number;
+    baseFat: number;
+    baseFiber?: number;
+    defaultUnit?: string;
+  } | null>(null);
+
+  const [scaledPortion, setScaledPortion] = useState<ScaledNutrition | null>(null);
 
   // Quick Add Form State
   const [quickName, setQuickName] = useState("");
@@ -71,15 +94,17 @@ export function LogFoodModal({
 
   useEffect(() => {
     if (!isOpen) return;
+    setSelectedItem(null);
+    setScaledPortion(null);
 
     // Fetch user recipes & foods
     fetch("/api/recipes")
-      .then((r) => r.ok ? r.json() : [])
+      .then((r) => (r.ok ? r.json() : []))
       .then(setRecipes)
       .catch(console.error);
 
     fetch("/api/foods")
-      .then((r) => r.ok ? r.json() : [])
+      .then((r) => (r.ok ? r.json() : []))
       .then(setUserFoods)
       .catch(console.error);
   }, [isOpen]);
@@ -88,7 +113,6 @@ export function LogFoodModal({
   const combinedFoods = useMemo(() => {
     const list: any[] = [];
 
-    // User's custom and imported foods
     userFoods.forEach((f) => {
       list.push({
         id: `food-${f.id}`,
@@ -101,14 +125,13 @@ export function LogFoodModal({
         proteinPer100g: f.proteinPer100g || 0,
         carbsPer100g: f.carbsPer100g || 0,
         fatPer100g: f.fatPer100g || 0,
+        fiberPer100g: f.fiberPer100g || 0,
         servingWeightGrams: f.servingWeightGrams || 100,
         image: null,
       });
     });
 
-    // Jordanian McDonald's items directly from catalog
     (mcdonaldsData.items as any[]).forEach((m) => {
-      // Avoid duplicate display if already in userFoods
       const alreadyInUser = userFoods.some(
         (uf) => uf.name.toLowerCase() === m.name.toLowerCase()
       );
@@ -171,70 +194,129 @@ export function LogFoodModal({
     return list;
   }, [combinedFoods, foodFilterSource, foodSearch]);
 
-  // Log a Recipe serving
-  const handleLogRecipe = async (recipe: any) => {
-    const servings = recipeServings[recipe.id] || 1;
-    setIsSubmitting(true);
-    try {
-      const res = await fetch("/api/food-log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: logDate,
-          mealCategory,
-          name: recipe.name,
-          servings,
-          servingUnit: "serving",
-          calories: Math.round(recipe.caloriesPerServing * servings),
-          protein: Math.round(recipe.proteinPerServing * servings * 10) / 10,
-          carbs: Math.round(recipe.carbsPerServing * servings * 10) / 10,
-          fat: Math.round(recipe.fatPerServing * servings * 10) / 10,
-          fiber: Math.round((recipe.fiberPerServing || 0) * servings * 10) / 10,
-          recipeId: recipe.id,
-        }),
-      });
+  const handleSearchOnline = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const q = onlineQuery.trim();
+    if (!q) return;
 
+    setIsSearchingOnline(true);
+    setOnlineError(null);
+    try {
+      const res = await fetch(`/api/foods/external/search?q=${encodeURIComponent(q)}`);
       if (res.ok) {
-        onLogSuccess();
-        onClose();
+        const data = await res.json();
+        setOnlineResults(data);
+        if (data.length === 0) {
+          setOnlineError("No foods found matching query in USDA or Open Food Facts.");
+        }
+      } else {
+        setOnlineError("Failed to query external food databases.");
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
+      setOnlineError("Network error while searching external databases.");
     } finally {
-      setIsSubmitting(false);
+      setIsSearchingOnline(false);
     }
   };
 
-  // Log a Food / McDonald's Item
-  const handleLogFood = async (food: any) => {
-    const weightGrams = foodGrams[food.id] || food.servingWeightGrams || 100;
-    const factor = weightGrams / 100;
+  const selectRecipe = (r: any) => {
+    const baseWeight = r.servingWeightGrams || 100;
+    setSelectedItem({
+      type: "recipe",
+      item: r,
+      baseWeightGrams: baseWeight,
+      baseCalories: r.caloriesPerServing || 0,
+      baseProtein: r.proteinPerServing || 0,
+      baseCarbs: r.carbsPerServing || 0,
+      baseFat: r.fatPerServing || 0,
+      baseFiber: r.fiberPerServing || 0,
+      defaultUnit: "g",
+    });
+  };
 
-    const calories = Math.round(food.caloriesPer100g * factor);
-    const protein = Math.round(food.proteinPer100g * factor * 10) / 10;
-    const carbs = Math.round(food.carbsPer100g * factor * 10) / 10;
-    const fat = Math.round(food.fatPer100g * factor * 10) / 10;
+  const selectFood = (f: any) => {
+    const baseWeight = f.servingWeightGrams || 100;
+    const factor = baseWeight / 100;
+    setSelectedItem({
+      type: f.isMcDonalds ? "mcdonalds" : "food",
+      item: f,
+      baseWeightGrams: baseWeight,
+      baseCalories: f.calories ?? Math.round((f.caloriesPer100g || 0) * factor),
+      baseProtein: f.protein ?? Math.round((f.proteinPer100g || 0) * factor * 10) / 10,
+      baseCarbs: f.carbs ?? Math.round((f.carbsPer100g || 0) * factor * 10) / 10,
+      baseFat: f.fat ?? Math.round((f.fatPer100g || 0) * factor * 10) / 10,
+      baseFiber: Math.round((f.fiberPer100g || 0) * factor * 10) / 10,
+      defaultUnit: "g",
+    });
+  };
 
+  const selectOnline = (c: any) => {
+    const baseWeight = c.servingWeightGrams || 100;
+    const factor = baseWeight / 100;
+    setSelectedItem({
+      type: "online",
+      item: c,
+      baseWeightGrams: baseWeight,
+      baseCalories: Math.round((c.caloriesPer100g || 0) * factor),
+      baseProtein: Math.round((c.proteinPer100g || 0) * factor * 10) / 10,
+      baseCarbs: Math.round((c.carbsPer100g || 0) * factor * 10) / 10,
+      baseFat: Math.round((c.fatPer100g || 0) * factor * 10) / 10,
+      baseFiber: Math.round((c.fiberPer100g || 0) * factor * 10) / 10,
+      defaultUnit: c.defaultUnit || "g",
+    });
+  };
+
+  const handleConfirmLog = async () => {
+    if (!selectedItem || !scaledPortion) return;
     setIsSubmitting(true);
+
     try {
+      let loggedName = selectedItem.item.name || selectedItem.item.cleanName;
+      let foodId = selectedItem.type === "food" ? selectedItem.item.dbId || selectedItem.item.id : null;
+      let recipeId = selectedItem.type === "recipe" ? selectedItem.item.id : null;
+
+      // Auto-import online candidate if selected
+      if (selectedItem.type === "online") {
+        try {
+          const impRes = await fetch("/api/foods/external/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(selectedItem.item),
+          });
+          if (impRes.ok) {
+            const imported = await impRes.json();
+            foodId = imported.id;
+            loggedName = imported.name;
+          }
+        } catch (e) {
+          console.error("Auto import error:", e);
+        }
+      }
+
       const res = await fetch("/api/food-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           date: logDate,
           mealCategory,
-          name: food.name,
-          servings: weightGrams,
+          name: loggedName,
+          servings: scaledPortion.grams,
           servingUnit: "g",
-          calories,
-          protein,
-          carbs,
-          fat,
-          foodId: food.dbId || null,
+          calories: scaledPortion.calories,
+          protein: scaledPortion.protein,
+          carbs: scaledPortion.carbs,
+          fat: scaledPortion.fat,
+          fiber: scaledPortion.fiber,
+          recipeId,
+          foodId,
         }),
       });
 
       if (res.ok) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("meal-logged"));
+        }
         onLogSuccess();
         onClose();
       }
@@ -245,7 +327,6 @@ export function LogFoodModal({
     }
   };
 
-  // Quick Add Log
   const handleQuickAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickName.trim()) return;
@@ -298,12 +379,12 @@ export function LogFoodModal({
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
           <div>
-            <h3 className="font-semibold text-lg text-[var(--text-primary)] flex items-center gap-2">
+            <h3 className="font-bold text-lg text-[var(--text-primary)] flex items-center gap-2">
               <Plus className="w-5 h-5 text-[var(--accent)]" />
               <span>Log Food Intake</span>
             </h3>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Log foods from your recipes, personal food library, or McDonald&apos;s Jordan catalog.
+              Select an item, scale portion &amp; grams dynamically, or search outsourced food libraries.
             </p>
           </div>
 
@@ -317,7 +398,6 @@ export function LogFoodModal({
 
         {/* Meal Category & Date Selector */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Meal Category Pills */}
           <div>
             <label className="block text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
               Meal Time
@@ -349,7 +429,6 @@ export function LogFoodModal({
             </div>
           </div>
 
-          {/* Date Picker */}
           <div>
             <label className="block text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
               Date Logged
@@ -358,375 +437,498 @@ export function LogFoodModal({
               type="date"
               value={logDate}
               onChange={(e) => setLogDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] font-tabular focus:outline-none focus:border-[var(--accent)] transition-colors"
             />
           </div>
         </div>
 
-        {/* Source Navigation Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs">
-          <button
-            onClick={() => setActiveTab("recipes")}
-            className={cn(
-              "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-              activeTab === "recipes"
-                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            <BookOpen className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span>My Recipes ({recipes.length})</span>
-          </button>
+        {/* Selected Item Portion Scaler Screen */}
+        {selectedItem ? (
+          <div className="space-y-4 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedItem(null);
+                    setScaledPortion(null);
+                  }}
+                  className="text-xs text-[var(--accent)] hover:underline font-medium flex items-center gap-1 cursor-pointer mb-1"
+                >
+                  ← Choose a different item
+                </button>
+                <h4 className="font-bold text-base text-[var(--text-primary)]">
+                  {selectedItem.item.name || selectedItem.item.cleanName}
+                </h4>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  Base serving: {selectedItem.baseWeightGrams}g ({Math.round(selectedItem.baseCalories)} kcal)
+                </p>
+              </div>
 
-          <button
-            onClick={() => setActiveTab("foods")}
-            className={cn(
-              "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-              activeTab === "foods"
-                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            <Apple className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span>Foods &amp; McDonald&apos;s</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("quick")}
-            className={cn(
-              "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-              activeTab === "quick"
-                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            <Zap className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span>Quick Add</span>
-          </button>
-        </div>
-
-        {/* Tab 1: Recipes */}
-        {activeTab === "recipes" && (
-          <div className="flex-1 flex flex-col min-h-0 space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
-              <input
-                type="text"
-                placeholder="Search recipe by name..."
-                value={recipeSearch}
-                onChange={(e) => setRecipeSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-              />
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-[var(--border)] scrollbar-thin scrollbar-thumb-[var(--border)]">
-              {filteredRecipes.length === 0 ? (
-                <div className="py-12 text-center text-xs text-[var(--text-secondary)]">
-                  No recipes found. Create recipes in the Recipes tab or use Quick Add!
+              {selectedItem.item.image && (
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-[var(--background)] relative shrink-0 border border-[var(--border)]">
+                  <Image
+                    src={selectedItem.item.image}
+                    alt={selectedItem.item.name}
+                    fill
+                    className="object-contain p-1"
+                  />
                 </div>
-              ) : (
-                filteredRecipes.map((r) => {
-                  const servings = recipeServings[r.id] || 1;
-                  const totalCal = Math.round(r.caloriesPerServing * servings);
-                  const totalPro = Math.round(r.proteinPerServing * servings * 10) / 10;
-                  const totalCarbs = Math.round(r.carbsPerServing * servings * 10) / 10;
-                  const totalFat = Math.round(r.fatPerServing * servings * 10) / 10;
-
-                  return (
-                    <div
-                      key={r.id}
-                      className="pt-2.5 pb-2.5 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {r.imageUrl ? (
-                          <img
-                            src={r.imageUrl}
-                            alt={r.name}
-                            className="w-12 h-12 rounded-xl object-cover shrink-0 border border-[var(--border)]"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] shrink-0 text-lg">
-                            🍲
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <h4 className="font-semibold text-xs text-[var(--text-primary)] truncate">
-                            {r.name}
-                          </h4>
-                          <div className="flex items-center gap-1.5 text-[11px] font-mono mt-0.5">
-                            <span className="text-[var(--text-primary)] font-bold">{totalCal} kcal</span>
-                            <span className="text-[var(--border)]">•</span>
-                            <span className="text-[var(--macro-protein)] font-medium">{totalPro}g P</span>
-                            <span className="text-[var(--border)]">•</span>
-                            <span className="text-[var(--macro-carbs)] font-medium">{totalCarbs}g C</span>
-                            <span className="text-[var(--border)]">•</span>
-                            <span className="text-[var(--macro-fat)] font-medium">{totalFat}g F</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Servings Stepper & Log Button */}
-                      <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <div className="flex items-center gap-1 bg-[var(--background)] rounded-lg p-1 border border-[var(--border)]">
-                          <span className="text-[10px] text-[var(--text-secondary)] px-1">Servings:</span>
-                          <input
-                            type="number"
-                            step="0.25"
-                            min="0.25"
-                            max="10"
-                            value={servings}
-                            onChange={(e) =>
-                              setRecipeServings((prev) => ({
-                                ...prev,
-                                [r.id]: Math.max(0.1, Number(e.target.value) || 1),
-                              }))
-                            }
-                            className="w-12 text-center bg-[var(--surface)] border border-[var(--border)] rounded py-0.5 text-xs text-[var(--text-primary)] font-mono focus:outline-none"
-                          />
-                        </div>
-
-                        <button
-                          type="button"
-                          disabled={isSubmitting}
-                          onClick={() => handleLogRecipe(r)}
-                          className="px-3 py-1.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center gap-1 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Log</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
               )}
             </div>
-          </div>
-        )}
 
-        {/* Tab 2: Foods & McDonald's */}
-        {activeTab === "foods" && (
-          <div className="flex-1 flex flex-col min-h-0 space-y-3">
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
-                <input
-                  type="text"
-                  placeholder="Search Big Mac, chicken, rice, banana, latte..."
-                  value={foodSearch}
-                  onChange={(e) => setFoodSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
-              </div>
+            {/* Dynamic Portion Adjuster */}
+            <DynamicPortionAdjuster
+              baseWeightGrams={selectedItem.baseWeightGrams}
+              baseCalories={selectedItem.baseCalories}
+              baseProtein={selectedItem.baseProtein}
+              baseCarbs={selectedItem.baseCarbs}
+              baseFat={selectedItem.baseFat}
+              baseFiber={selectedItem.baseFiber}
+              initialGrams={selectedItem.baseWeightGrams}
+              onChange={setScaledPortion}
+            />
 
-              <div className="flex items-center gap-1 text-xs shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setFoodFilterSource("all")}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
-                    foodFilterSource === "all"
-                      ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
-                      : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
-                  )}
-                >
-                  All
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFoodFilterSource("mcdonalds")}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-lg font-medium flex items-center gap-1 transition cursor-pointer",
-                    foodFilterSource === "mcdonalds"
-                      ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
-                      : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
-                  )}
-                >
-                  <span>🍔 McDonald&apos;s</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFoodFilterSource("custom")}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
-                    foodFilterSource === "custom"
-                      ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
-                      : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
-                  )}
-                >
-                  My Foods
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-[var(--border)] scrollbar-thin scrollbar-thumb-[var(--border)]">
-              {filteredFoods.length === 0 ? (
-                <div className="py-12 text-center text-xs text-[var(--text-secondary)]">
-                  No foods matching your query.
-                </div>
-              ) : (
-                filteredFoods.slice(0, 50).map((f) => {
-                  const weight = foodGrams[f.id] || f.servingWeightGrams || 100;
-                  const factor = weight / 100;
-                  const totalCal = Math.round(f.caloriesPer100g * factor);
-                  const totalPro = Math.round(f.proteinPer100g * factor * 10) / 10;
-                  const totalCarbs = Math.round(f.carbsPer100g * factor * 10) / 10;
-                  const totalFat = Math.round(f.fatPer100g * factor * 10) / 10;
-
-                  return (
-                    <div
-                      key={f.id}
-                      className="pt-2.5 pb-2.5 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {f.image ? (
-                          <img
-                            src={f.image}
-                            alt={f.name}
-                            className="w-10 h-10 object-contain shrink-0"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] shrink-0 text-sm">
-                            {f.isMcDonalds ? "🍔" : "🥗"}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-semibold text-xs text-[var(--text-primary)] truncate">
-                              {f.name}
-                            </span>
-                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-[var(--accent-subtle)] text-[var(--accent)] font-medium">
-                              {f.category}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[11px] font-mono mt-0.5">
-                            <span className="text-[var(--text-primary)] font-bold">{totalCal} kcal</span>
-                            <span className="text-[var(--border)]">•</span>
-                            <span className="text-[var(--macro-protein)] font-medium">{totalPro}g P</span>
-                            <span className="text-[var(--border)]">•</span>
-                            <span className="text-[var(--macro-carbs)] font-medium">{totalCarbs}g C</span>
-                            <span className="text-[var(--border)]">•</span>
-                            <span className="text-[var(--macro-fat)] font-medium">{totalFat}g F</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Weight Grams Input & Log Button */}
-                      <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <div className="flex items-center gap-1 bg-[var(--background)] rounded-lg p-1 border border-[var(--border)]">
-                          <span className="text-[10px] text-[var(--text-secondary)] px-1">Weight:</span>
-                          <input
-                            type="number"
-                            step="5"
-                            min="1"
-                            value={weight}
-                            onChange={(e) =>
-                              setFoodGrams((prev) => ({
-                                ...prev,
-                                [f.id]: Math.max(1, Number(e.target.value) || 100),
-                              }))
-                            }
-                            className="w-14 text-center bg-[var(--surface)] border border-[var(--border)] rounded py-0.5 text-xs text-[var(--text-primary)] font-mono focus:outline-none"
-                          />
-                          <span className="text-[10px] text-[var(--text-secondary)] pr-1">g</span>
-                        </div>
-
-                        <button
-                          type="button"
-                          disabled={isSubmitting}
-                          onClick={() => handleLogFood(f)}
-                          className="px-3 py-1.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center gap-1 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Log</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Quick Add Form */}
-        {activeTab === "quick" && (
-          <form onSubmit={handleQuickAdd} className="space-y-4 pt-1">
-            <div>
-              <label className="block text-xs text-[var(--text-secondary)] mb-1 font-medium">
-                Food / Meal Name *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Protein shake with berries, Shawarma wrap..."
-                value={quickName}
-                onChange={(e) => setQuickName(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div>
-                <label className="block text-[11px] text-[var(--text-secondary)] mb-1 font-medium">Calories (kcal) *</label>
-                <input
-                  type="number"
-                  step="any"
-                  required
-                  placeholder="0"
-                  value={quickCalories}
-                  onChange={(e) => setQuickCalories(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] text-[var(--text-secondary)] mb-1 font-medium">Protein (g)</label>
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="0"
-                  value={quickProtein}
-                  onChange={(e) => setQuickProtein(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] text-[var(--text-secondary)] mb-1 font-medium">Carbs (g)</label>
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="0"
-                  value={quickCarbs}
-                  onChange={(e) => setQuickCarbs(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] text-[var(--text-secondary)] mb-1 font-medium">Fat (g)</label>
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="0"
-                  value={quickFat}
-                  onChange={(e) => setQuickFat(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
-              </div>
-            </div>
-
-            <div className="pt-3 flex justify-end">
+            <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between gap-3">
               <button
-                type="submit"
-                disabled={isSubmitting || !quickName.trim()}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                type="button"
+                onClick={() => setSelectedItem(null)}
+                className="px-4 py-2 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
               >
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                <span>Log to {mealCategory.toUpperCase()}</span>
+                Back
+              </button>
+
+              <button
+                type="button"
+                disabled={isSubmitting || !scaledPortion}
+                onClick={handleConfirmLog}
+                className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+                <span>
+                  Log {scaledPortion ? `${scaledPortion.grams}g (${scaledPortion.calories} kcal)` : "Item"}
+                </span>
               </button>
             </div>
-          </form>
+          </div>
+        ) : (
+          <>
+            {/* Source Navigation Tabs */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs">
+              <button
+                onClick={() => setActiveTab("recipes")}
+                className={cn(
+                  "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  activeTab === "recipes"
+                    ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>Recipes ({recipes.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("foods")}
+                className={cn(
+                  "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  activeTab === "foods"
+                    ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <Apple className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>Foods &amp; McDonald&apos;s</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("online")}
+                className={cn(
+                  "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  activeTab === "online"
+                    ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <Globe className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>Online DBs</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("quick")}
+                className={cn(
+                  "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  activeTab === "quick"
+                    ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <Zap className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>Quick Add</span>
+              </button>
+            </div>
+
+            {/* Tab 1: Recipes */}
+            {activeTab === "recipes" && (
+              <div className="flex-1 flex flex-col min-h-0 space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                  <input
+                    type="text"
+                    placeholder="Search recipe by name..."
+                    value={recipeSearch}
+                    onChange={(e) => setRecipeSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  />
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-[var(--border)] scrollbar-thin scrollbar-thumb-[var(--border)] max-h-[340px]">
+                  {filteredRecipes.length === 0 ? (
+                    <div className="py-12 text-center text-xs text-[var(--text-secondary)]">
+                      No recipes found matching query.
+                    </div>
+                  ) : (
+                    filteredRecipes.map((r) => (
+                      <div
+                        key={r.id}
+                        onClick={() => selectRecipe(r)}
+                        className="pt-2.5 pb-2.5 first:pt-0 flex items-center justify-between gap-3 hover:bg-[var(--background)]/60 px-2 rounded-xl transition cursor-pointer group"
+                      >
+                        <div className="space-y-0.5">
+                          <h4 className="font-semibold text-xs text-[var(--text-primary)] group-hover:text-[var(--accent)] transition">
+                            {r.name}
+                          </h4>
+                          <div className="flex items-center space-x-2 text-[11px] text-[var(--text-secondary)] font-mono">
+                            <span>{r.caloriesPerServing} kcal</span>
+                            <span>•</span>
+                            <span className="text-[var(--macro-protein)]">{r.proteinPerServing}g P</span>
+                            <span>•</span>
+                            <span className="text-[var(--macro-carbs)]">{r.carbsPerServing}g C</span>
+                            <span>•</span>
+                            <span className="text-[var(--macro-fat)]">{r.fatPerServing}g F</span>
+                            <span>({r.servingWeightGrams || 100}g)</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition shrink-0"
+                        >
+                          Scale &amp; Log →
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Foods & McDonald's */}
+            {activeTab === "foods" && (
+              <div className="flex-1 flex flex-col min-h-0 space-y-3">
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <div className="relative flex-1 w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                    <input
+                      type="text"
+                      placeholder="Search foods, ingredients, McDonald's..."
+                      value={foodSearch}
+                      onChange={(e) => setFoodSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1 text-xs w-full sm:w-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setFoodFilterSource("all")}
+                      className={cn(
+                        "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
+                        foodFilterSource === "all"
+                          ? "bg-[var(--accent)] text-white"
+                          : "bg-[var(--background)] text-[var(--text-secondary)] border border-[var(--border)]"
+                      )}
+                    >
+                      All ({combinedFoods.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFoodFilterSource("mcdonalds")}
+                      className={cn(
+                        "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
+                        foodFilterSource === "mcdonalds"
+                          ? "bg-[var(--accent)] text-white"
+                          : "bg-[var(--background)] text-[var(--text-secondary)] border border-[var(--border)]"
+                      )}
+                    >
+                      🍔 McDonald&apos;s
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFoodFilterSource("custom")}
+                      className={cn(
+                        "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
+                        foodFilterSource === "custom"
+                          ? "bg-[var(--accent)] text-white"
+                          : "bg-[var(--background)] text-[var(--text-secondary)] border border-[var(--border)]"
+                      )}
+                    >
+                      Custom ({userFoods.length})
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-[var(--border)] scrollbar-thin scrollbar-thumb-[var(--border)] max-h-[340px]">
+                  {filteredFoods.length === 0 ? (
+                    <div className="py-12 text-center text-xs text-[var(--text-secondary)] space-y-2">
+                      <p>No foods found matching query.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOnlineQuery(foodSearch);
+                          setActiveTab("online");
+                          handleSearchOnline();
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-[var(--accent)] text-white font-medium text-xs shadow-xs"
+                      >
+                        Search Online DBs for &quot;{foodSearch || "food"}&quot; →
+                      </button>
+                    </div>
+                  ) : (
+                    filteredFoods.map((f) => (
+                      <div
+                        key={f.id}
+                        onClick={() => selectFood(f)}
+                        className="pt-2.5 pb-2.5 first:pt-0 flex items-center justify-between gap-3 hover:bg-[var(--background)]/60 px-2 rounded-xl transition cursor-pointer group"
+                      >
+                        <div className="flex items-center space-x-3 min-w-0">
+                          {f.image && (
+                            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[var(--background)] relative shrink-0 border border-[var(--border)]">
+                              <Image
+                                src={f.image}
+                                alt={f.name}
+                                fill
+                                className="object-contain p-0.5"
+                              />
+                            </div>
+                          )}
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="font-semibold text-xs text-[var(--text-primary)] group-hover:text-[var(--accent)] transition truncate">
+                                {f.name}
+                              </h4>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[var(--background)] border border-[var(--border)] text-[var(--accent)] uppercase font-semibold">
+                                {f.category}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-[11px] text-[var(--text-secondary)] font-mono">
+                              <span>{f.calories || f.caloriesPer100g} kcal</span>
+                              <span>•</span>
+                              <span className="text-[var(--macro-protein)]">{f.protein || f.proteinPer100g}g P</span>
+                              <span>•</span>
+                              <span className="text-[var(--macro-carbs)]">{f.carbs || f.carbsPer100g}g C</span>
+                              <span>•</span>
+                              <span className="text-[var(--macro-fat)]">{f.fat || f.fatPer100g}g F</span>
+                              <span>({f.servingWeightGrams || 100}g)</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition shrink-0"
+                        >
+                          Scale &amp; Log →
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3: Online Search (USDA & Open Food Facts) */}
+            {activeTab === "online" && (
+              <div className="flex-1 flex flex-col min-h-0 space-y-3">
+                <form onSubmit={handleSearchOnline} className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Search whole foods via USDA & branded goods via Open Food Facts..."
+                      value={onlineQuery}
+                      onChange={(e) => setOnlineQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSearchingOnline || !onlineQuery.trim()}
+                    className="px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                  >
+                    {isSearchingOnline ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Search className="w-3.5 h-3.5" />
+                    )}
+                    <span>Search</span>
+                  </button>
+                </form>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-[var(--border)] max-h-[340px]">
+                  {isSearchingOnline ? (
+                    <div className="py-16 text-center text-xs text-[var(--text-secondary)] space-y-2">
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto text-[var(--accent)]" />
+                      <p>Querying USDA FoodData Central &amp; Open Food Facts...</p>
+                    </div>
+                  ) : onlineError ? (
+                    <div className="p-8 text-center rounded-2xl border border-dashed border-[var(--border)] text-xs text-[var(--text-secondary)]">
+                      {onlineError}
+                    </div>
+                  ) : onlineResults.length === 0 ? (
+                    <div className="p-10 text-center rounded-2xl border border-dashed border-[var(--border)] text-xs text-[var(--text-secondary)] space-y-1">
+                      <Globe className="w-6 h-6 mx-auto opacity-40 text-[var(--accent)]" />
+                      <p className="font-semibold text-[var(--text-primary)]">Outsourced Food Database Fallback</p>
+                      <p>Search any ingredient or branded item to calculate grams and log it directly.</p>
+                    </div>
+                  ) : (
+                    onlineResults.map((candidate) => (
+                      <div
+                        key={candidate.id}
+                        onClick={() => selectOnline(candidate)}
+                        className="pt-2.5 pb-2.5 first:pt-0 flex items-center justify-between gap-3 hover:bg-[var(--background)]/60 px-2 rounded-xl transition cursor-pointer group"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-xs text-[var(--text-primary)] group-hover:text-[var(--accent)] transition">
+                              {candidate.name}
+                            </h4>
+                            <span
+                              className={cn(
+                                "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded",
+                                candidate.source === "usda"
+                                  ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                                  : "bg-sky-500/10 text-sky-500"
+                              )}
+                            >
+                              {candidate.source === "usda" ? "USDA" : "Open Food Facts"}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-[11px] text-[var(--text-secondary)] font-mono">
+                            <span>{candidate.caloriesPer100g} kcal/100g</span>
+                            <span>•</span>
+                            <span className="text-[var(--macro-protein)]">{candidate.proteinPer100g}g P</span>
+                            <span>•</span>
+                            <span className="text-[var(--macro-carbs)]">{candidate.carbsPer100g}g C</span>
+                            <span>•</span>
+                            <span className="text-[var(--macro-fat)]">{candidate.fatPer100g}g F</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition shrink-0"
+                        >
+                          Scale &amp; Log →
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tab 4: Quick Manual */}
+            {activeTab === "quick" && (
+              <form onSubmit={handleQuickAdd} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
+                    Meal / Food Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Scrambled Eggs & Toast"
+                    value={quickName}
+                    onChange={(e) => setQuickName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div>
+                    <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">
+                      Calories
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={quickCalories}
+                      onChange={(e) => setQuickCalories(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-[var(--macro-protein)] mb-1">
+                      Protein (g)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="0"
+                      value={quickProtein}
+                      onChange={(e) => setQuickProtein(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-[var(--macro-carbs)] mb-1">
+                      Carbs (g)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="0"
+                      value={quickCarbs}
+                      onChange={(e) => setQuickCarbs(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-[var(--macro-fat)] mb-1">
+                      Fat (g)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="0"
+                      value={quickFat}
+                      onChange={(e) => setQuickFat(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] font-mono font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                    <span>Add Quick Log</span>
+                  </button>
+                </div>
+              </form>
+            )}
+          </>
         )}
       </div>
     </div>
