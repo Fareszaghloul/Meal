@@ -421,7 +421,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
       )}
 
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 shadow-xs">
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-subtle)] border border-[var(--border)] text-[var(--accent)] text-xs font-semibold tracking-wide uppercase">
@@ -651,7 +651,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
           </div>
 
           {filteredItems.length === 0 && (
-            <div className="text-center py-16 bg-[var(--surface)] rounded-3xl border border-[var(--border)]">
+            <div className="text-center py-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
               <p className="text-[var(--text-secondary)] text-sm">No items found matching your filters.</p>
               <button
                 onClick={() => {
@@ -668,7 +668,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
 
         {/* Right Column: Live Nutrition Tray Calculator with Ingredient Subtraction */}
         <div className="lg:col-span-5 sticky top-6 space-y-5">
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-xl p-5 sm:p-6 space-y-6">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xl p-5 sm:p-6 space-y-6">
             {/* Tray Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
               <div className="flex items-center gap-2.5">
@@ -956,7 +956,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
       {/* Item Nutrition Details & Pre-Customization Modal */}
       {inspectingItem && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto text-[var(--text-primary)]">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto text-[var(--text-primary)]">
             <button
               onClick={() => setInspectingItem(null)}
               className="absolute top-5 right-5 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full bg-[var(--background)] border border-[var(--border)] cursor-pointer"

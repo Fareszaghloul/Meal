@@ -186,7 +186,7 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
       )}
 
       {/* Recipe Header Card */}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden shadow-xs">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden shadow-xs">
         {recipe.imageUrl && (
           <div className="relative h-64 sm:h-80 w-full overflow-hidden bg-[var(--background)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}

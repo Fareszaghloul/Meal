@@ -243,7 +243,7 @@ export default function ShoppingListPage() {
           Loading grocery list...
         </div>
       ) : items.length === 0 ? (
-        <div className="p-12 text-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
+        <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
           <ShoppingCart className="w-10 h-10 text-[var(--text-secondary)] opacity-40 mx-auto" />
           <h3 className="font-semibold text-base text-[var(--text-primary)]">
             Your shopping list is empty

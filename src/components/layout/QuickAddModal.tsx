@@ -119,6 +119,20 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
     }
   }, [isOpen]);
 
+  // Escape key handler & body scroll lock
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleClose = () => {
@@ -433,7 +447,7 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
         onClick={handleClose}
       >
         <div
-          className="relative w-full max-w-2xl rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          className="relative w-full max-w-2xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Bar: Title, Destination Switcher, Close */}

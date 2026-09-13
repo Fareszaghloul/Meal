@@ -10,6 +10,7 @@
     --border: #E2E5DE;           /* Hairline borders, subtle sage-gray */
     --text-primary: #1C2620;     /* Deep charcoal with a green undertone, not pure black */
     --text-secondary: #5B655C;   /* Muted body/label text */
+    --text-muted: #7A837A;       /* Tertiary: hints, timestamps, placeholders, subtle metadata */
     --accent: #3F6B4A;           /* Moss/fern green — primary brand color */
     --accent-hover: #34593D;     /* Darker moss for hover */
     --accent-subtle: #EBF1EC;    /* Soft tinted accent container */
@@ -58,6 +59,7 @@
     --border: #2B322C;
     --text-primary: #EDEFEA;     /* Warm off-white, not pure white */
     --text-secondary: #9AA398;
+    --text-muted: #707970;       /* Tertiary: hints, timestamps, placeholders, subtle metadata */
     --accent: #5A9468;           /* Brightened version of light-mode accent for contrast */
     --accent-hover: #6BA879;
     --accent-subtle: #222B24;
@@ -110,6 +112,80 @@ h1, h2, h3, h4, h5, h6, .leading-tight-heading {
   font-feature-settings: "tnum" 1, "lnum" 1 !important;
   font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: normal;
+}
+
+/* ─── Accessible Focus-Visible Ring ─── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Remove default outline from mouse-focused inputs (keep the ring for keyboard) */
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Standardized Input Field ─── */
+.input-field {
+  width: 100%;
+  padding: 0.625rem 0.75rem;       /* py-2.5 px-3 */
+  font-size: 0.875rem;              /* text-sm */
+  line-height: 1.25rem;
+  color: var(--text-primary);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;           /* rounded-xl */
+  transition: border-color 200ms ease;
+}
+.input-field::placeholder {
+  color: var(--text-muted);
+}
+.input-field:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.input-field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Button Cursor & Touch Default ─── */
+button,
+[role="button"] {
+  cursor: pointer;
+}
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+button,
+[role="button"],
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* ─── Skeleton Pulse Animation ─── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.skeleton {
+  background-color: var(--border);
+  border-radius: 0.5rem;
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 /* Base Card / Surface Utility (Hairline 1px border, flat fill) */

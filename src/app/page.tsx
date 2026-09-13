@@ -296,6 +296,47 @@ export default function DashboardPage() {
   const caloriesRemaining = Math.max(0, settings.dailyCalories - foodLogTotals.calories);
   const waterPct = Math.min(100, Math.round((waterTotalMl / (waterGoalMl || 2500)) * 100));
 
+  if (isLoading) {
+    return (
+      <div className="space-y-8 max-w-6xl mx-auto pb-16">
+        {/* Skeleton: Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="skeleton h-7 w-56 mb-2" />
+            <div className="skeleton h-4 w-80" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="skeleton h-9 w-32 rounded-xl" />
+            <div className="skeleton h-9 w-24 rounded-xl" />
+          </div>
+        </div>
+        {/* Skeleton: Nutrition Card */}
+        <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
+          <div className="skeleton h-4 w-48" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[1, 2, 3, 4].map((i) => <div key={i} className="space-y-2"><div className="skeleton h-3 w-16" /><div className="skeleton h-1.5 w-full rounded-full" /></div>)}
+          </div>
+        </div>
+        {/* Skeleton: Water */}
+        <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+          <div className="flex items-center gap-3">
+            <div className="skeleton w-10 h-10 rounded-2xl" />
+            <div><div className="skeleton h-4 w-36 mb-1" /><div className="skeleton h-3 w-24" /></div>
+          </div>
+        </div>
+        {/* Skeleton: Meal Categories */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <div className="skeleton h-4 w-24" />
+              <div className="skeleton h-12 w-full rounded-xl" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16">
       {/* Top Header & Day Switcher */}
@@ -352,7 +393,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 1. Daily Nutrition Targets & Progress (Based on Actual Food Eaten) */}
-      <div className="p-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
+      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
@@ -413,7 +454,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 2. Hydration / Water Tracker Widget */}
-      <div className="p-5 sm:p-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 sm:p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] flex items-center justify-center text-[var(--accent)] shrink-0">
             <Droplets className="w-5 h-5" />
@@ -429,7 +470,7 @@ export default function DashboardPage() {
               <strong className="text-[var(--text-primary)]">{waterTotalMl}</strong> / {waterGoalMl} ml logged
             </div>
             {/* Water progress bar */}
-            <div className="w-48 sm:w-64 h-1.5 rounded-full bg-[var(--background)] overflow-hidden mt-2">
+            <div className="w-48 sm:w-64 h-1.5 rounded-full bg-[var(--border)] overflow-hidden mt-2">
               <div
                 style={{ width: `${waterPct}%` }}
                 className="h-full bg-[var(--accent)] rounded-full transition-all duration-300"
@@ -517,7 +558,7 @@ export default function DashboardPage() {
             return (
               <div
                 key={slot.id}
-                className="p-5 rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-xs flex flex-col justify-between space-y-3"
+                className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col justify-between space-y-3"
               >
                 <div>
                   {/* Slot Header */}
@@ -540,14 +581,21 @@ export default function DashboardPage() {
                   {/* Slot Items List */}
                   <div className="space-y-2 mt-3 min-h-[60px]">
                     {items.length === 0 ? (
-                      <div className="py-4 text-center text-xs text-[var(--text-secondary)] italic">
-                        Nothing logged for {slot.title.toLowerCase()} yet.
+                      <div className="py-5 flex flex-col items-center text-center gap-1.5">
+                        <Utensils className="w-4 h-4 text-[var(--text-muted)]" />
+                        <p className="text-xs text-[var(--text-muted)]">Nothing logged yet</p>
+                        <button
+                          onClick={() => openLogModal(slot.id)}
+                          className="text-[11px] font-medium text-[var(--accent)] hover:underline transition"
+                        >
+                          Add a meal
+                        </button>
                       </div>
                     ) : (
                       items.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between p-2.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] text-xs hover:border-[var(--accent)]/40 transition group"
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs hover:border-[var(--accent)]/40 transition group"
                         >
                           <div className="min-w-0 pr-2">
                             <div className="font-medium text-xs text-[var(--text-primary)] truncate">

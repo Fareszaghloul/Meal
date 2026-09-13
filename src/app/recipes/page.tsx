@@ -147,7 +147,7 @@ export default function RecipeLibraryPage() {
         </div>
       ) : recipes.length === 0 ? (
         /* Empty State (Section 34) */
-        <div className="rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center space-y-4 max-w-md mx-auto my-12">
+        <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center space-y-4 max-w-md mx-auto my-12">
           <div className="w-14 h-14 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center mx-auto">
             <BookOpen className="w-7 h-7" />
           </div>

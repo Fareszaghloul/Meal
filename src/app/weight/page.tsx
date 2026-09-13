@@ -487,7 +487,7 @@ export default function WeightTrackingPage() {
             </div>
 
             {everydayEntries.length === 0 ? (
-              <div className="p-12 text-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
                 <Scale className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
                 <h3 className="font-semibold text-sm text-[var(--text-primary)]">
                   No everyday weigh-ins logged yet
@@ -736,7 +736,7 @@ export default function WeightTrackingPage() {
             </div>
 
             {inbodyEntries.length === 0 ? (
-              <div className="p-12 text-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
                 <Sparkles className="w-8 h-8 text-[var(--accent)] opacity-50 mx-auto" />
                 <h3 className="font-semibold text-sm text-[var(--text-primary)]">
                   No InBody scans logged yet

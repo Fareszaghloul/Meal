@@ -46,9 +46,30 @@ export function RecipeCard({ recipe, onDelete, onDuplicate }: RecipeCardProps) {
   const [isFavorite, setIsFavorite] = useState(recipe.isFavorite);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFavoriting, setIsFavoriting] = useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
 
   const totalTime =
     (recipe.prepTimeMinutes || 0) + (recipe.cookTimeMinutes || 0);
+
+  // Close menu on click outside or Escape
+  React.useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -167,46 +188,53 @@ export function RecipeCard({ recipe, onDelete, onDuplicate }: RecipeCardProps) {
             </Link>
 
             {/* Context Menu Trigger */}
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   setIsMenuOpen(!isMenuOpen);
                 }}
-                className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)]"
+                aria-label="Recipe actions"
+                aria-expanded={isMenuOpen}
+                aria-haspopup="true"
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
 
               {isMenuOpen && (
-                <div className="absolute right-0 top-6 z-20 w-36 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-xl py-1 text-xs animate-in fade-in">
+                <div role="menu" className="absolute right-0 top-8 z-20 w-36 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-xl py-1 text-xs animate-in fade-in">
                   <button
+                    role="menuitem"
                     onClick={() => {
                       setIsMenuOpen(false);
                       router.push(`/recipes/${recipe.id}/edit`);
                     }}
-                    className="w-full flex items-center px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--background)]"
+                    className="w-full flex items-center px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5 mr-2" />
                     <span>Edit</span>
                   </button>
                   <button
+                    role="menuitem"
                     onClick={handleDuplicate}
-                    className="w-full flex items-center px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--background)]"
+                    className="w-full flex items-center px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors"
                   >
                     <Copy className="w-3.5 h-3.5 mr-2" />
                     <span>Duplicate</span>
                   </button>
                   <button
+                    role="menuitem"
                     onClick={handleDelete}
-                    className="w-full flex items-center px-3 py-2 text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)]"
+                    className="w-full flex items-center px-3 py-2 text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5 mr-2" />
                     <span>Delete</span>
                   </button>
                 </div>
               )}
+
             </div>
           </div>
 

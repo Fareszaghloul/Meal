@@ -417,8 +417,20 @@ export default function MealPlannerPage() {
               </div>
 
               {meals.length === 0 ? (
-                <div className="py-4 text-center text-xs text-[var(--text-secondary)]">
-                  No {cat.label.toLowerCase()} planned yet.
+                <div className="py-5 flex flex-col items-center text-center gap-1.5">
+                  <Utensils className="w-4 h-4 text-[var(--text-muted)]" />
+                  <p className="text-xs text-[var(--text-muted)]">No {cat.label.toLowerCase()} planned yet</p>
+                  <button
+                    onClick={() =>
+                      setActiveModalSlot({
+                        day: selectedDayTab,
+                        category: cat.key,
+                      })
+                    }
+                    className="text-[11px] font-medium text-[var(--accent)] hover:underline transition"
+                  >
+                    Add a meal
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-2">

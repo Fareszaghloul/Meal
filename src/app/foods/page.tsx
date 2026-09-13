@@ -610,7 +610,7 @@ export default function FoodsAndPantryPage() {
             </div>
 
             {filteredFoods.length === 0 ? (
-              <div className="p-12 text-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
                 <Apple className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
                 <h3 className="font-semibold text-sm text-[var(--text-primary)]">No foods found</h3>
                 <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
@@ -887,7 +887,7 @@ export default function FoodsAndPantryPage() {
             </div>
 
             {filteredPantryItems.length === 0 ? (
-              <div className="p-12 text-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
                 <Package className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
                 <h3 className="font-semibold text-sm text-[var(--text-primary)]">Pantry is empty</h3>
                 <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
@@ -986,7 +986,7 @@ export default function FoodsAndPantryPage() {
               <p>Matching pantry against recipes...</p>
             </div>
           ) : recipeMatches.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-2">
+            <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-2">
               <Package className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
               <h3 className="font-semibold text-sm text-[var(--text-primary)]">No recipe matches found</h3>
               <p className="text-xs text-[var(--text-secondary)]">
@@ -1094,7 +1094,7 @@ export default function FoodsAndPantryPage() {
           onClick={() => setSelectedFoodDetails(null)}
         >
           <div
-            className="w-full max-w-md rounded-3xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4"
+            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">

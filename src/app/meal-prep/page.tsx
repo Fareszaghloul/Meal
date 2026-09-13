@@ -120,7 +120,7 @@ export default function MealPrepPage() {
       </div>
 
       {successCount !== null ? (
-        <div className="p-8 rounded-3xl border border-[var(--accent)] bg-[var(--surface)] text-center space-y-4 shadow-xs animate-in fade-in">
+        <div className="p-8 rounded-2xl border border-[var(--accent)] bg-[var(--surface)] text-center space-y-4 shadow-xs animate-in fade-in">
           <div className="w-14 h-14 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center mx-auto">
             <Check className="w-8 h-8" />
           </div>

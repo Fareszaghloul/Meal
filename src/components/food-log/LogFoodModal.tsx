@@ -109,6 +109,20 @@ export function LogFoodModal({
       .catch(console.error);
   }, [isOpen]);
 
+  // Escape key handler & body scroll lock
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   // Combined Foods list: User DB + Jordanian McDonald's menu items
   const combinedFoods = useMemo(() => {
     const list: any[] = [];
@@ -373,7 +387,7 @@ export function LogFoodModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl p-5 sm:p-6 space-y-5 flex flex-col max-h-[90vh] text-[var(--text-primary)]"
+        className="w-full max-w-2xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl p-5 sm:p-6 space-y-5 flex flex-col max-h-[90vh] text-[var(--text-primary)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
