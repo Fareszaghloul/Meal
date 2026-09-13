@@ -237,6 +237,8 @@ model WeightEntry {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date        String   // ISO date "YYYY-MM-DD"
+  time        String?  // Time of day e.g. "08:30"
+  entryType   String   @default("daily") // "daily" or "inbody"
   weightKg    Float    // Weight in kg
   bodyFatPct  Float?   // Body Fat % (e.g. from monthly InBody scan)
   smmKg       Float?   // Skeletal Muscle Mass in kg (from InBody)
@@ -245,8 +247,8 @@ model WeightEntry {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([userId, date])
   @@index([userId])
+  @@index([userId, date])
 }
 
 model WorkoutRoutineEntry {

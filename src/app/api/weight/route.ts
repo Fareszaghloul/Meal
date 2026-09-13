@@ -31,6 +31,7 @@ export async function GET(request: Request) {
       entries: processed,
       analytics,
       measurementSystem: settings?.measurementSystem || "metric",
+      userHeightCm: settings?.heightCm || null,
     });
   } catch (error: any) {
     if (error.name === "AuthError") {
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { date, weightKg, bodyFatPct, smmKg, bmi, notes } = body;
+    const { date, time, entryType, weightKg, bodyFatPct, smmKg, bmi, notes } = body;
 
     if (!weightKg || Number(weightKg) <= 0) {
       return NextResponse.json(
@@ -59,36 +60,51 @@ export async function POST(request: Request) {
 
     const todayStr = new Date().toISOString().split("T")[0];
     const targetDate = date || todayStr;
+    const nowTimeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+    const targetTime = time || nowTimeStr;
     const safeWeight = Number(weightKg);
     const safeBodyFat = bodyFatPct !== undefined && bodyFatPct !== null && bodyFatPct !== "" ? Number(bodyFatPct) : null;
     const safeSmm = smmKg !== undefined && smmKg !== null && smmKg !== "" ? Number(smmKg) : null;
     const safeBmi = bmi !== undefined && bmi !== null && bmi !== "" ? Number(bmi) : null;
+    const computedEntryType = entryType || (safeBodyFat !== null || safeSmm !== null ? "inbody" : "daily");
 
-    // Upsert weight entry for the date for this user
-    const entry = await prisma.weightEntry.upsert({
+    // Check if an entry with exact same date & time exists for this user to update or create
+    const existingEntry = await prisma.weightEntry.findFirst({
       where: {
-        userId_date: {
-          userId: user.id,
-          date: targetDate,
-        },
-      },
-      update: {
-        weightKg: safeWeight,
-        bodyFatPct: safeBodyFat !== null ? safeBodyFat : undefined,
-        smmKg: safeSmm !== null ? safeSmm : undefined,
-        bmi: safeBmi !== null ? safeBmi : undefined,
-        notes: notes !== undefined ? notes : undefined,
-      },
-      create: {
         userId: user.id,
         date: targetDate,
-        weightKg: safeWeight,
-        bodyFatPct: safeBodyFat,
-        smmKg: safeSmm,
-        bmi: safeBmi,
-        notes: notes || null,
+        time: targetTime,
       },
     });
+
+    let entry;
+    if (existingEntry) {
+      entry = await prisma.weightEntry.update({
+        where: { id: existingEntry.id },
+        data: {
+          weightKg: safeWeight,
+          bodyFatPct: safeBodyFat !== null ? safeBodyFat : undefined,
+          smmKg: safeSmm !== null ? safeSmm : undefined,
+          bmi: safeBmi !== null ? safeBmi : undefined,
+          entryType: computedEntryType,
+          notes: notes !== undefined ? notes : undefined,
+        },
+      });
+    } else {
+      entry = await prisma.weightEntry.create({
+        data: {
+          userId: user.id,
+          date: targetDate,
+          time: targetTime,
+          entryType: computedEntryType,
+          weightKg: safeWeight,
+          bodyFatPct: safeBodyFat,
+          smmKg: safeSmm,
+          bmi: safeBmi,
+          notes: notes || null,
+        },
+      });
+    }
 
     // Also update UserSettings to keep in sync
     const settingsUpdate: Record<string, any> = { currentWeightKg: safeWeight };
@@ -123,7 +139,7 @@ export async function PUT(request: Request) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { id, weightKg, bodyFatPct, smmKg, bmi, date, notes } = body;
+    const { id, weightKg, bodyFatPct, smmKg, bmi, date, time, entryType, notes } = body;
 
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
@@ -149,6 +165,8 @@ export async function PUT(request: Request) {
         smmKg: safeSmm,
         bmi: safeBmi,
         date: date || undefined,
+        time: time !== undefined ? time : undefined,
+        entryType: entryType || undefined,
         notes: notes !== undefined ? notes : undefined,
       },
     });

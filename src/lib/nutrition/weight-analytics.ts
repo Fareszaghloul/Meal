@@ -5,6 +5,8 @@
 export interface RawWeightEntry {
   id: string;
   date: string; // "YYYY-MM-DD"
+  time?: string | null; // "HH:mm" e.g. "08:30"
+  entryType?: string | null; // "daily" | "inbody"
   weightKg: number;
   bodyFatPct?: number | null;
   smmKg?: number | null;
@@ -16,6 +18,8 @@ export interface RawWeightEntry {
 export interface ProcessedWeightPoint {
   id: string;
   date: string;
+  time?: string | null;
+  entryType?: string | null;
   weightKg: number;
   bodyFatPct?: number | null;
   smmKg?: number | null;
@@ -53,9 +57,13 @@ export function processWeightEntries(entries: RawWeightEntry[]): ProcessedWeight
   if (!entries || entries.length === 0) return [];
 
   // Sort chronologically ascending
-  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+  const sorted = [...entries].sort((a, b) => {
+    const dateComp = a.date.localeCompare(b.date);
+    if (dateComp !== 0) return dateComp;
+    return (a.time || "").localeCompare(b.time || "");
+  });
 
-  return sorted.map((entry, index) => {
+  return sorted.map((entry) => {
     const entryDate = new Date(entry.date).getTime();
     const sevenDaysAgo = entryDate - 6 * 24 * 60 * 60 * 1000;
 
@@ -71,6 +79,8 @@ export function processWeightEntries(entries: RawWeightEntry[]): ProcessedWeight
     return {
       id: entry.id,
       date: entry.date,
+      time: entry.time || null,
+      entryType: entry.entryType || (entry.bodyFatPct || entry.smmKg ? "inbody" : "daily"),
       weightKg: entry.weightKg,
       bodyFatPct: entry.bodyFatPct ?? null,
       smmKg: entry.smmKg ?? null,

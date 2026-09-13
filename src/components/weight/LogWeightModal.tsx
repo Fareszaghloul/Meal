@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Scale, Calendar, Trash2, Loader2, Check } from "lucide-react";
+import { X, Scale, Calendar, Clock, Trash2, Loader2, Check, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { RawWeightEntry } from "@/lib/nutrition/weight-analytics";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ interface LogWeightModalProps {
   initialEntry?: RawWeightEntry | null;
   measurementSystem?: string;
   userHeightCm?: number | null;
+  defaultType?: "daily" | "inbody";
 }
 
 export function LogWeightModal({
@@ -21,18 +22,35 @@ export function LogWeightModal({
   initialEntry,
   measurementSystem = "metric",
   userHeightCm,
+  defaultType = "daily",
 }: LogWeightModalProps) {
   const isImperial = measurementSystem === "imperial";
   const unitLabel = isImperial ? "lbs" : "kg";
 
-  const getTodayDateStr = () => new Date().toISOString().split("T")[0];
+  const getTodayDateStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
+  const getNowTimeStr = () => {
+    const d = new Date();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  const [entryType, setEntryType] = useState<"daily" | "inbody">("daily");
   const [date, setDate] = useState<string>(getTodayDateStr());
+  const [time, setTime] = useState<string>(getNowTimeStr());
   const [weightInput, setWeightInput] = useState<string>("");
   const [bodyFatInput, setBodyFatInput] = useState<string>("");
   const [smmInput, setSmmInput] = useState<string>("");
   const [bmiInput, setBmiInput] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [showInBodyInDaily, setShowInBodyInDaily] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -42,6 +60,12 @@ export function LogWeightModal({
       setErrorMessage(null);
       if (initialEntry) {
         setDate(initialEntry.date);
+        setTime(initialEntry.time || getNowTimeStr());
+        setEntryType(
+          initialEntry.entryType === "inbody" || (!initialEntry.entryType && (initialEntry.bodyFatPct || initialEntry.smmKg))
+            ? "inbody"
+            : "daily"
+        );
         const displayWeight = isImperial
           ? Math.round(initialEntry.weightKg * 2.20462 * 10) / 10
           : Math.round(initialEntry.weightKg * 10) / 10;
@@ -59,16 +83,22 @@ export function LogWeightModal({
 
         setBmiInput(initialEntry.bmi !== undefined && initialEntry.bmi !== null ? String(initialEntry.bmi) : "");
         setNotes(initialEntry.notes || "");
+        if (initialEntry.bodyFatPct || initialEntry.smmKg) {
+          setShowInBodyInDaily(true);
+        }
       } else {
         setDate(getTodayDateStr());
+        setTime(getNowTimeStr());
+        setEntryType(defaultType || "daily");
         setWeightInput("");
         setBodyFatInput("");
         setSmmInput("");
         setBmiInput("");
         setNotes("");
+        setShowInBodyInDaily(false);
       }
     }
-  }, [isOpen, initialEntry, isImperial]);
+  }, [isOpen, initialEntry, isImperial, defaultType]);
 
   // Derived auto-calculated BMI if height and weight are present
   const calculatedBmi = React.useMemo(() => {
@@ -117,6 +147,8 @@ export function LogWeightModal({
           body: JSON.stringify({
             id: initialEntry.id,
             date,
+            time: time || getNowTimeStr(),
+            entryType,
             weightKg,
             bodyFatPct: parsedBodyFat,
             smmKg,
@@ -132,6 +164,8 @@ export function LogWeightModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             date,
+            time: time || getNowTimeStr(),
+            entryType,
             weightKg,
             bodyFatPct: parsedBodyFat,
             smmKg,
@@ -182,14 +216,24 @@ export function LogWeightModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-              <Scale className="w-4 h-4" />
+              {entryType === "inbody" ? (
+                <Sparkles className="w-4 h-4" />
+              ) : (
+                <Scale className="w-4 h-4" />
+              )}
             </div>
             <div>
               <h3 className="font-semibold text-sm text-[var(--text-primary)]">
-                {initialEntry ? "Edit weight entry" : "Log weight & InBody"}
+                {initialEntry
+                  ? "Edit weight entry"
+                  : entryType === "inbody"
+                  ? "Log InBody Scan"
+                  : "Log Everyday Weigh-in"}
               </h3>
               <p className="text-[11px] text-[var(--text-secondary)]">
-                Record your body weight, SMM, and BMI from scale or InBody
+                {entryType === "inbody"
+                  ? "Record body composition, fat %, SMM, and BMI"
+                  : "Track daily scale weight and 7-day rolling average"}
               </p>
             </div>
           </div>
@@ -210,19 +254,63 @@ export function LogWeightModal({
             </div>
           )}
 
-          {/* Date Picker */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Date
-            </label>
-            <div className="relative">
+          {/* Segmented Mode Switcher: Everyday vs InBody */}
+          <div className="flex rounded-xl bg-[var(--background)] p-1 border border-[var(--border)]">
+            <button
+              type="button"
+              onClick={() => setEntryType("daily")}
+              className={cn(
+                "flex-1 py-1.5 px-3 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5 cursor-pointer",
+                entryType === "daily"
+                  ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              <Scale className="w-3.5 h-3.5 text-[var(--accent)]" />
+              <span>Everyday Weigh-in</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setEntryType("inbody")}
+              className={cn(
+                "flex-1 py-1.5 px-3 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5 cursor-pointer",
+                entryType === "inbody"
+                  ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
+              <span>InBody Scan</span>
+            </button>
+          </div>
+
+          {/* Date & Time Row (Auto-filled, editable) */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                <span>Date</span>
+              </label>
               <input
                 type="date"
                 required
                 value={date}
                 max={getTodayDateStr()}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-sm focus:outline-hidden focus:border-[var(--accent)] font-tabular transition"
+                className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                <span>Time</span>
+              </label>
+              <input
+                type="time"
+                required
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
               />
             </div>
           </div>
@@ -230,7 +318,7 @@ export function LogWeightModal({
           {/* Weight Input */}
           <div>
             <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Weight ({unitLabel})
+              Weight ({unitLabel}) *
             </label>
             <div className="relative">
               <input
@@ -251,80 +339,80 @@ export function LogWeightModal({
             </div>
           </div>
 
-          {/* Monthly InBody Metrics Section */}
-          <div className="pt-2 pb-1 border-t border-[var(--border)] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-                Monthly InBody Report (Optional)
-              </span>
-              {calculatedBmi && (
-                <button
-                  type="button"
-                  onClick={() => setBmiInput(String(calculatedBmi))}
-                  className="text-[11px] text-[var(--accent)] hover:underline font-medium cursor-pointer"
-                >
-                  Auto-fill BMI ({calculatedBmi})
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {/* Body Fat % */}
-              <div>
-                <label className="block text-[11px] font-medium text-[var(--text-primary)] mb-1">
-                  Body Fat %
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="3"
-                    max="60"
-                    placeholder="e.g. 15.4"
-                    value={bodyFatInput}
-                    onChange={(e) => setBodyFatInput(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
-                  />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[var(--text-secondary)]">
-                    %
-                  </span>
-                </div>
+          {/* InBody Scan Fields (Always visible for InBody, or collapsible in Daily) */}
+          {entryType === "inbody" ? (
+            <div className="pt-2 pb-1 border-t border-[var(--border)] space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                  InBody Composition Scan
+                </span>
+                {calculatedBmi && (
+                  <button
+                    type="button"
+                    onClick={() => setBmiInput(String(calculatedBmi))}
+                    className="text-[11px] text-[var(--accent)] hover:underline font-medium cursor-pointer"
+                  >
+                    Auto-fill BMI ({calculatedBmi})
+                  </button>
+                )}
               </div>
 
-              {/* SMM (Skeletal Muscle Mass) */}
-              <div>
-                <label className="block text-[11px] font-medium text-[var(--text-primary)] mb-1">
-                  SMM ({unitLabel})
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="5"
-                    max="200"
-                    placeholder={isImperial ? "e.g. 76.5" : "e.g. 34.8"}
-                    value={smmInput}
-                    onChange={(e) => setSmmInput(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
-                  />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[var(--text-secondary)]">
-                    {unitLabel}
-                  </span>
+              <div className="grid grid-cols-3 gap-2.5">
+                {/* Body Fat % */}
+                <div>
+                  <label className="block text-[11px] font-medium text-[var(--text-primary)] mb-1">
+                    Body Fat %
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="3"
+                      max="60"
+                      placeholder="e.g. 15.4"
+                      value={bodyFatInput}
+                      onChange={(e) => setBodyFatInput(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[var(--text-secondary)]">
+                      %
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* BMI */}
-              <div>
-                <label className="block text-[11px] font-medium text-[var(--text-primary)] mb-1">
-                  BMI
-                </label>
-                <div className="relative">
+                {/* SMM */}
+                <div>
+                  <label className="block text-[11px] font-medium text-[var(--text-primary)] mb-1">
+                    SMM ({unitLabel})
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="5"
+                      max="200"
+                      placeholder={isImperial ? "76.5" : "34.8"}
+                      value={smmInput}
+                      onChange={(e) => setSmmInput(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[var(--text-secondary)]">
+                      {unitLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* BMI */}
+                <div>
+                  <label className="block text-[11px] font-medium text-[var(--text-primary)] mb-1">
+                    BMI
+                  </label>
                   <input
                     type="number"
                     step="0.1"
                     min="10"
                     max="60"
-                    placeholder={calculatedBmi ? String(calculatedBmi) : "e.g. 23.5"}
+                    placeholder={calculatedBmi ? String(calculatedBmi) : "23.5"}
                     value={bmiInput}
                     onChange={(e) => setBmiInput(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
@@ -332,7 +420,71 @@ export function LogWeightModal({
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setShowInBodyInDaily(!showInBodyInDaily)}
+                className="w-full flex items-center justify-between text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] py-1 font-medium transition cursor-pointer"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <span>Attach InBody report metrics to this weigh-in (optional)</span>
+                </span>
+                {showInBodyInDaily ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+
+              {showInBodyInDaily && (
+                <div className="mt-2 p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2.5 animate-in fade-in">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">
+                        Body Fat %
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="15.4"
+                        value={bodyFatInput}
+                        onChange={(e) => setBodyFatInput(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">
+                        SMM ({unitLabel})
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder={isImperial ? "76.5" : "34.8"}
+                        value={smmInput}
+                        onChange={(e) => setSmmInput(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">
+                        BMI
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder={calculatedBmi ? String(calculatedBmi) : "23.5"}
+                        value={bmiInput}
+                        onChange={(e) => setBmiInput(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Optional Notes */}
           <div>

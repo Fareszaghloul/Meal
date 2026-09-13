@@ -28,10 +28,11 @@ export async function PUT(
       return NextResponse.json({ error: "Food item not found" }, { status: 404 });
     }
 
-    // Only creator of the custom food (or an admin) can modify it
-    if (existingFood.userId !== user.id && user.role !== "admin") {
+    // Creator of the food, admin, or user editing an imported/standard item (userId === null) can modify it
+    const canModify = existingFood.userId === user.id || existingFood.userId === null || user.role === "admin";
+    if (!canModify) {
       return NextResponse.json(
-        { error: "You do not have permission to modify standard or other users' food items" },
+        { error: "You do not have permission to modify other users' food items" },
         { status: 403 }
       );
     }
@@ -39,6 +40,7 @@ export async function PUT(
     const updated = await prisma.food.update({
       where: { id },
       data: {
+        userId: existingFood.userId === null && user.role !== "admin" ? user.id : undefined,
         name: name ? name.trim() : undefined,
         category,
         rawOrCooked,

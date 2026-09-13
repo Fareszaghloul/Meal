@@ -10,6 +10,7 @@ import {
   Minus,
   Search,
   Trash2,
+  Edit2,
   ChefHat,
   ArrowRight,
   Globe,
@@ -27,16 +28,18 @@ import {
   Dna,
   Wheat,
   Droplet,
+  SlidersHorizontal,
 } from "lucide-react";
 import { MacroBadge } from "@/components/ui/MacroBadge";
 import { cn } from "@/lib/utils";
 import { BarcodeScannerModal } from "@/components/scanner/BarcodeScannerModal";
 import { McDonaldsCalculator } from "@/components/foods/McDonaldsCalculator";
+import { EditFoodModal } from "@/components/foods/EditFoodModal";
 
-type ActiveTab = "mcdonalds" | "foods" | "pantry" | "what-can-i-make";
+type ActiveTab = "foods" | "pantry" | "what-can-i-make";
 
 export default function FoodsAndPantryPage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("mcdonalds");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("foods");
 
   // Foods DB state
   const [foods, setFoods] = useState<any[]>([]);
@@ -46,6 +49,9 @@ export default function FoodsAndPantryPage() {
     "category" | "name-asc" | "name-desc" | "cal-desc" | "cal-asc" | "protein-desc" | "carbs-desc" | "fat-desc"
   >("category");
   const [isAddFoodModalOpen, setIsAddFoodModalOpen] = useState(false);
+  const [foodToEdit, setFoodToEdit] = useState<any | null>(null);
+  const [isEditFoodModalOpen, setIsEditFoodModalOpen] = useState(false);
+  const [showMcdCalculator, setShowMcdCalculator] = useState(false);
   const [selectedFoodDetails, setSelectedFoodDetails] = useState<any | null>(null);
 
   // External Search State (USDA & Open Food Facts)
@@ -281,13 +287,15 @@ export default function FoodsAndPantryPage() {
     fetchWhatCanIMake();
   };
 
-  // Distinct categories in user foods
+  // Distinct categories in user foods (McDonald's included as first-class category)
   const foodCategories = useMemo(() => {
     const cats = new Set<string>();
+    cats.add("McDonald's");
     foods.forEach((f) => {
       if (f.category) cats.add(f.category);
     });
-    return ["All", ...Array.from(cats).sort()];
+    const others = Array.from(cats).filter((c) => c !== "McDonald's").sort();
+    return ["All", "McDonald's", ...others];
   }, [foods]);
 
   // Distinct categories in pantry items
@@ -304,9 +312,19 @@ export default function FoodsAndPantryPage() {
     let result = foods.filter((f) => {
       const matchesSearch =
         f.name.toLowerCase().includes(foodSearch.toLowerCase()) ||
-        f.category.toLowerCase().includes(foodSearch.toLowerCase());
-      const matchesCategory =
-        foodCategoryFilter === "All" || f.category === foodCategoryFilter;
+        (f.category || "").toLowerCase().includes(foodSearch.toLowerCase());
+      
+      let matchesCategory = foodCategoryFilter === "All";
+      if (!matchesCategory) {
+        if (foodCategoryFilter === "McDonald's") {
+          matchesCategory =
+            f.category === "McDonald's" ||
+            f.name.toLowerCase().includes("mcdonald") ||
+            (f.category === "Fast Food" && f.name.toLowerCase().includes("mc"));
+        } else {
+          matchesCategory = f.category === foodCategoryFilter;
+        }
+      }
       return matchesSearch && matchesCategory;
     });
 
@@ -374,25 +392,6 @@ export default function FoodsAndPantryPage() {
         {/* Tab Buttons */}
         <div className="flex items-center p-1 rounded-2xl bg-[var(--background)] border border-[var(--border)] text-xs overflow-x-auto max-w-full scrollbar-none shrink-0 shadow-inner">
           <button
-            onClick={() => setActiveTab("mcdonalds")}
-            className={cn(
-              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-2 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
-              activeTab === "mcdonalds"
-                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            <span className="text-sm">🍔</span>
-            <span>McDonald&apos;s Jordan</span>
-            <span className={cn(
-              "text-[10px] px-1.5 py-0.2 rounded-full",
-              activeTab === "mcdonalds" ? "bg-[var(--accent-subtle)] text-[var(--accent)]" : "bg-[var(--surface)] text-[var(--text-secondary)] border border-[var(--border)]"
-            )}>
-              79
-            </span>
-          </button>
-
-          <button
             onClick={() => setActiveTab("foods")}
             className={cn(
               "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
@@ -433,21 +432,54 @@ export default function FoodsAndPantryPage() {
         </div>
       </div>
 
-      {/* TAB 1: McDonald's Jordan Nutrition Calculator */}
-      {activeTab === "mcdonalds" && (
-        <div className="animate-in fade-in duration-300">
-          <McDonaldsCalculator
-            onImportSuccess={() => {
-              fetchFoods();
-              fetchPantry();
-            }}
-          />
-        </div>
-      )}
-
-      {/* TAB 2: Foods Database (Detailed with Category Sorting) */}
+      {/* TAB 1: Foods Database (Detailed with Category Sorting & McDonald's) */}
       {activeTab === "foods" && (
         <div className="space-y-5 animate-in fade-in duration-300">
+          {/* McDonald's Category Banner & Customizer Toggle */}
+          {foodCategoryFilter === "McDonald's" && (
+            <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
+              <div className="flex items-center space-x-3.5">
+                <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center text-xl shrink-0">
+                  🍔
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
+                      McDonald&apos;s Jordan Menu &amp; Customizer
+                    </h3>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-bold border border-[var(--border)]">
+                      Official Jordan Catalog
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    Browse menu items or open the interactive nutrition calculator to customize ingredients and subtract/add patties, cheese, and sauces.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowMcdCalculator(!showMcdCalculator)}
+                className="inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition shrink-0 cursor-pointer"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                <span>{showMcdCalculator ? "View Food Cards" : "Open Nutrition Calculator & Tray"}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Interactive McDonald's Calculator when toggled */}
+          {foodCategoryFilter === "McDonald's" && showMcdCalculator ? (
+            <div className="animate-in fade-in duration-300">
+              <McDonaldsCalculator
+                onImportSuccess={() => {
+                  fetchFoods();
+                  fetchPantry();
+                }}
+              />
+            </div>
+          ) : (
+            <>
           {/* Controls Bar: Search, Category Pills, Sort Selector, Action Buttons */}
           <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -638,16 +670,26 @@ export default function FoodsAndPantryPage() {
 
                           <div className="flex items-center gap-1">
                             <button
+                              onClick={() => {
+                                setFoodToEdit(f);
+                                setIsEditFoodModalOpen(true);
+                              }}
+                              title="Edit food"
+                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--background)] transition cursor-pointer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
                               onClick={() => setSelectedFoodDetails(f)}
                               title="View detailed nutrition"
-                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition"
+                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
                             >
                               <Info className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteFood(f.id)}
                               title="Delete food"
-                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
+                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -722,6 +764,8 @@ export default function FoodsAndPantryPage() {
               </div>
             )}
           </div>
+          </>
+          )}
         </div>
       )}
 
@@ -1111,10 +1155,24 @@ export default function FoodsAndPantryPage() {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-[var(--border)] flex justify-end">
+            <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between">
               <button
+                type="button"
+                onClick={() => {
+                  const target = selectedFoodDetails;
+                  setSelectedFoodDetails(null);
+                  setFoodToEdit(target);
+                  setIsEditFoodModalOpen(true);
+                }}
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--surface)] text-xs font-semibold text-[var(--text-primary)] transition cursor-pointer"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>Edit Food</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setSelectedFoodDetails(null)}
-                className="px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold text-xs"
+                className="px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs cursor-pointer transition"
               >
                 Close
               </button>
@@ -1599,6 +1657,20 @@ export default function FoodsAndPantryPage() {
             setIsAddPantryModalOpen(true);
           }
         }}
+      />
+
+      {/* Edit Food Modal */}
+      <EditFoodModal
+        isOpen={isEditFoodModalOpen}
+        onClose={() => {
+          setIsEditFoodModalOpen(false);
+          setFoodToEdit(null);
+        }}
+        onSuccess={() => {
+          fetchFoods();
+          fetchPantry();
+        }}
+        food={foodToEdit}
       />
     </div>
   );
