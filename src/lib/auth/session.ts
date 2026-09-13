@@ -204,10 +204,12 @@ export async function invalidateAllUserSessions(userId: string, keepTokenHash?: 
  * Sets the session cookie on a NextResponse
  */
 export function setSessionCookie(response: NextResponse, rawToken: string, expiresAt: Date) {
-  const isProduction = process.env.NODE_ENV === "production";
+  // Mark cookie as Secure whenever the app is served over HTTPS (incl. Cloudflare tunnel in dev)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const isSecure = appUrl.startsWith("https://") || process.env.NODE_ENV === "production";
   response.cookies.set(SESSION_COOKIE_NAME, rawToken, {
     httpOnly: true,
-    secure: isProduction,
+    secure: isSecure,
     sameSite: "lax",
     path: "/",
     expires: expiresAt,
@@ -218,9 +220,11 @@ export function setSessionCookie(response: NextResponse, rawToken: string, expir
  * Clears the session cookie on a NextResponse
  */
 export function clearSessionCookie(response: NextResponse) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const isSecure = appUrl.startsWith("https://") || process.env.NODE_ENV === "production";
   response.cookies.set(SESSION_COOKIE_NAME, "", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
     sameSite: "lax",
     path: "/",
     expires: new Date(0),

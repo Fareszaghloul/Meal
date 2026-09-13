@@ -27,13 +27,14 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
     });
 
     if (error) {
-      console.error("[Email Service] Error sending email via Resend:", error);
+      console.error("[Email Service] Resend error:", JSON.stringify(error, null, 2));
+      console.error("[Email Service] FROM used:", DEFAULT_FROM);
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (err: any) {
-    console.error("[Email Service] Unexpected error:", err);
+    console.error("[Email Service] Unexpected error:", JSON.stringify(err, null, 2));
     return { success: false, error: err?.message || "Failed to send email" };
   }
 }
