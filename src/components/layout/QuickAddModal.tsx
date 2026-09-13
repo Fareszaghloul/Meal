@@ -133,8 +133,6 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   const handleClose = () => {
     setSelectedItem(null);
     setScaledPortion(null);
@@ -438,6 +436,8 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
       setQuickCalories(String(Math.round(p * 4 + c * 4 + f * 9)));
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <>
