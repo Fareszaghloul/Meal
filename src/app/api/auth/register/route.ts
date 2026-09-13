@@ -9,7 +9,13 @@ const registerSchema = z.object({
   email: z.string().trim().email("Invalid email format").max(255).toLowerCase(),
   displayName: z.string().trim().min(2, "Name must be at least 2 characters").max(60),
   password: z.string().min(8, "Password must be at least 8 characters").max(128, "Password too long"),
+  inviteCode: z.string().optional(),
 });
+
+export async function GET() {
+  const isInviteRequired = Boolean(process.env.REGISTRATION_INVITE_CODE?.trim());
+  return NextResponse.json({ inviteRequired: isInviteRequired });
+}
 
 export async function POST(request: Request) {
   try {
@@ -17,6 +23,19 @@ export async function POST(request: Request) {
     if (rateLimitRes) return rateLimitRes;
 
     const body = await request.json().catch(() => ({}));
+
+    // Verify invite code if configured in environment
+    const requiredInviteCode = process.env.REGISTRATION_INVITE_CODE?.trim();
+    if (requiredInviteCode) {
+      const providedCode = body.inviteCode ? String(body.inviteCode).trim() : "";
+      if (providedCode !== requiredInviteCode) {
+        return NextResponse.json(
+          { error: "Invalid or missing invite code. Registration is restricted." },
+          { status: 403 }
+        );
+      }
+    }
+
     const parseResult = registerSchema.safeParse(body);
 
     if (!parseResult.success) {

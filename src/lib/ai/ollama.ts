@@ -6,16 +6,37 @@ export interface OllamaHealthResult {
   error?: string;
 }
 
+function getOllamaHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+  };
+
+  // Cloudflare Zero Trust Service Token
+  if (process.env.CF_ACCESS_CLIENT_ID && process.env.CF_ACCESS_CLIENT_SECRET) {
+    headers["CF-Access-Client-Id"] = process.env.CF_ACCESS_CLIENT_ID.trim();
+    headers["CF-Access-Client-Secret"] = process.env.CF_ACCESS_CLIENT_SECRET.trim();
+  }
+
+  // Generic custom API key / Bearer token if configured
+  if (process.env.OLLAMA_API_KEY) {
+    const key = process.env.OLLAMA_API_KEY.trim();
+    headers["Authorization"] = `Bearer ${key}`;
+    headers["x-api-key"] = key;
+  }
+
+  return headers;
+}
+
 export async function checkOllamaHealth(
   baseUrl: string = "http://localhost:11434"
 ): Promise<OllamaHealthResult> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
     const res = await fetch(`${baseUrl}/api/tags`, {
       signal: controller.signal,
-      headers: { Accept: "application/json" },
+      headers: getOllamaHeaders(),
     });
     clearTimeout(timeoutId);
 
@@ -110,7 +131,10 @@ export async function parseRecipeWithOllama(
 
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...getOllamaHeaders(),
+    },
     body: JSON.stringify({
       model: activeModel,
       messages: [
