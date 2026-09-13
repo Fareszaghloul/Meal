@@ -75,6 +75,40 @@
         "Round Egg",
         "Chedder Cheese",
         "Chicken Roll Slice"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "English Muffin",
+          "calories": 140,
+          "protein": 5,
+          "carbs": 27,
+          "fat": 1.5,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Round Egg",
+          "calories": 70,
+          "protein": 6,
+          "carbs": 0.5,
+          "fat": 5,
+          "sodiumMg": 65
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        },
+        {
+          "name": "Chicken Roll Slice",
+          "calories": 40,
+          "protein": 5,
+          "carbs": 0.5,
+          "fat": 2,
+          "sodiumMg": 180
+        }
       ]
     },
     {
@@ -98,9 +132,43 @@
       "brief": "An excellent source of protein and oh-so-delicious. We place a freshly cracked Grade A egg on a toasted English Muffin topped with real butter and add chicken roll and melty American cheese.",
       "ingredients": [
         "English Muffin",
+        "Chicken Sausage Patty",
         "Round Egg",
-        "Chedder Cheese",
-        "Chicken Roll Slice"
+        "Chedder Cheese"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "English Muffin",
+          "calories": 140,
+          "protein": 5,
+          "carbs": 27,
+          "fat": 1.5,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Chicken Sausage Patty",
+          "calories": 170,
+          "protein": 9,
+          "carbs": 1,
+          "fat": 15,
+          "sodiumMg": 320
+        },
+        {
+          "name": "Round Egg",
+          "calories": 70,
+          "protein": 6,
+          "carbs": 0.5,
+          "fat": 5,
+          "sodiumMg": 65
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        }
       ]
     },
     {
@@ -123,10 +191,44 @@
       "sugar": 2,
       "brief": "An excellent source of protein and oh-so-delicious. We place a freshly cracked Grade A egg on a toasted English Muffin topped with real butter and add chicken roll and melty American cheese.",
       "ingredients": [
-        "English Muffin",
+        "Tortilla Wrap",
         "Round Egg",
-        "Chedder Cheese",
-        "Chicken Roll Slice"
+        "Chicken Sausage Patty",
+        "Chedder Cheese"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Tortilla Wrap",
+          "calories": 150,
+          "protein": 4,
+          "carbs": 26,
+          "fat": 3.5,
+          "sodiumMg": 280
+        },
+        {
+          "name": "Round Egg",
+          "calories": 70,
+          "protein": 6,
+          "carbs": 0.5,
+          "fat": 5,
+          "sodiumMg": 65
+        },
+        {
+          "name": "Chicken Sausage Patty",
+          "calories": 170,
+          "protein": 9,
+          "carbs": 1,
+          "fat": 15,
+          "sodiumMg": 320
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        }
       ]
     },
     {
@@ -150,9 +252,43 @@
       "brief": "An excellent source of protein and oh-so-delicious. We place a freshly cracked Grade A egg on a toasted English Muffin topped with real butter and add chicken roll and melty American cheese.",
       "ingredients": [
         "English Muffin",
-        "Round Egg",
-        "Chedder Cheese",
-        "Chicken Roll Slice"
+        "Grilled Halloumi Cheese",
+        "Tomato",
+        "Olive Paste"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "English Muffin",
+          "calories": 140,
+          "protein": 5,
+          "carbs": 27,
+          "fat": 1.5,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Grilled Halloumi Cheese",
+          "calories": 110,
+          "protein": 7,
+          "carbs": 1,
+          "fat": 9,
+          "sodiumMg": 300
+        },
+        {
+          "name": "Tomato",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 4
+        },
+        {
+          "name": "Olive Paste",
+          "calories": 45,
+          "protein": 0.5,
+          "carbs": 1,
+          "fat": 4.5,
+          "sodiumMg": 150
+        }
       ]
     },
     {
@@ -175,10 +311,44 @@
       "sugar": 2,
       "brief": "An excellent source of protein and oh-so-delicious. We place a freshly cracked Grade A egg on a toasted English Muffin topped with real butter and add chicken roll and melty American cheese.",
       "ingredients": [
-        "English Muffin",
+        "Tortilla Wrap",
         "Round Egg",
-        "Chedder Cheese",
-        "Chicken Roll Slice"
+        "Hash Brown",
+        "Chedder Cheese"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Tortilla Wrap",
+          "calories": 150,
+          "protein": 4,
+          "carbs": 26,
+          "fat": 3.5,
+          "sodiumMg": 280
+        },
+        {
+          "name": "Round Egg",
+          "calories": 70,
+          "protein": 6,
+          "carbs": 0.5,
+          "fat": 5,
+          "sodiumMg": 65
+        },
+        {
+          "name": "Hash Brown",
+          "calories": 140,
+          "protein": 1,
+          "carbs": 14,
+          "fat": 9,
+          "sodiumMg": 280
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        }
       ]
     },
     {
@@ -202,9 +372,34 @@
       "brief": "An excellent source of protein and oh-so-delicious. We place a freshly cracked Grade A egg on a toasted English Muffin topped with real butter and add chicken roll and melty American cheese.",
       "ingredients": [
         "English Muffin",
-        "Round Egg",
-        "Chedder Cheese",
-        "Chicken Roll Slice"
+        "Chicken Sausage Patty",
+        "Chedder Cheese"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "English Muffin",
+          "calories": 140,
+          "protein": 5,
+          "carbs": 27,
+          "fat": 1.5,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Chicken Sausage Patty",
+          "calories": 170,
+          "protein": 9,
+          "carbs": 1,
+          "fat": 15,
+          "sodiumMg": 320
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        }
       ]
     },
     {
@@ -229,8 +424,42 @@
       "ingredients": [
         "English Muffin",
         "Round Egg",
-        "Chedder Cheese",
-        "Chicken Roll Slice"
+        "Chicken Sausage Patty",
+        "Hash Brown"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "English Muffin",
+          "calories": 140,
+          "protein": 5,
+          "carbs": 27,
+          "fat": 1.5,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Round Egg",
+          "calories": 70,
+          "protein": 6,
+          "carbs": 0.5,
+          "fat": 5,
+          "sodiumMg": 65
+        },
+        {
+          "name": "Chicken Sausage Patty",
+          "calories": 170,
+          "protein": 9,
+          "carbs": 1,
+          "fat": 15,
+          "sodiumMg": 320
+        },
+        {
+          "name": "Hash Brown",
+          "calories": 140,
+          "protein": 1,
+          "carbs": 14,
+          "fat": 9,
+          "sodiumMg": 280
+        }
       ]
     },
     {
@@ -253,10 +482,35 @@
       "sugar": 4,
       "brief": "An excellent source of protein and oh-so-delicious. We place a freshly cracked Grade A egg on a toasted English Muffin topped with real butter and add chicken roll and melty American cheese.",
       "ingredients": [
-        "English Muffin",
-        "Round Egg",
-        "Chedder Cheese",
-        "Chicken Roll Slice"
+        "Hotcakes",
+        "Maple Syrup",
+        "Butter"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Hotcakes",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Maple Syrup",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Butter",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        }
       ]
     },
     {
@@ -279,10 +533,26 @@
       "sugar": 4,
       "brief": "An excellent source of protein and oh-so-delicious. We place a freshly cracked Grade A egg on a toasted English Muffin topped with real butter and add chicken roll and melty American cheese.",
       "ingredients": [
-        "English Muffin",
-        "Round Egg",
-        "Chedder Cheese",
-        "Chicken Roll Slice"
+        "Hash Brown",
+        "Salt"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Hash Brown",
+          "calories": 140,
+          "protein": 1,
+          "carbs": 14,
+          "fat": 9,
+          "sodiumMg": 280
+        },
+        {
+          "name": "Salt",
+          "calories": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "sodiumMg": 220
+        }
       ]
     },
     {
@@ -305,12 +575,71 @@
       "sugar": 6,
       "brief": "Mouthwatering perfection starts with two sear-sizzled 100% pure Halal beef patties and Big Mac&reg; sauce, sandwiched between a sesame seed bun. American cheese, shredded lettuce, onions, and pickles top it off.",
       "ingredients": [
+        "Sesame Seed Bun (3-piece)",
+        "100% Halal beef patty (2x)",
+        "Big Mac Sauce",
         "Chedder Cheese",
-        "Onion",
         "Pickles",
-        "100% Halal beef patty",
-        "Lettuce",
-        "Sesame Seed Bun"
+        "Onion",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun (3-piece)",
+          "calories": 190,
+          "protein": 6,
+          "carbs": 35,
+          "fat": 3,
+          "sodiumMg": 260
+        },
+        {
+          "name": "100% Halal beef patty (2x)",
+          "calories": 250,
+          "protein": 20,
+          "carbs": 0,
+          "fat": 19,
+          "sodiumMg": 140
+        },
+        {
+          "name": "Big Mac Sauce",
+          "calories": 90,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 9,
+          "sodiumMg": 100
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        },
+        {
+          "name": "Pickles",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 120
+        },
+        {
+          "name": "Onion",
+          "calories": 8,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -333,12 +662,71 @@
       "sugar": 12,
       "brief": "Mouthwatering perfection starts with two sear-sizzled 100% pure Halal beef patties and Big Mac&reg; sauce, sandwiched between a sesame seed bun. American cheese, shredded lettuce, onions, and pickles top it off.",
       "ingredients": [
-        "Chedder Cheese",
-        "Onion",
-        "Pickles",
-        "100% Halal beef patty",
-        "Lettuce",
-        "Sesame Seed Bun"
+        "Sesame Seed Bun",
+        "100% Halal beef patty (Quarter Pounder)",
+        "Big Tasty Sauce",
+        "Emmental Cheese (3x)",
+        "Tomato",
+        "Slivered Onions",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun",
+          "calories": 150,
+          "protein": 4.5,
+          "carbs": 28,
+          "fat": 2.5,
+          "sodiumMg": 220
+        },
+        {
+          "name": "100% Halal beef patty (Quarter Pounder)",
+          "calories": 220,
+          "protein": 20,
+          "carbs": 0,
+          "fat": 16,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Big Tasty Sauce",
+          "calories": 120,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 12,
+          "sodiumMg": 150
+        },
+        {
+          "name": "Emmental Cheese (3x)",
+          "calories": 140,
+          "protein": 8,
+          "carbs": 2,
+          "fat": 11,
+          "sodiumMg": 350
+        },
+        {
+          "name": "Tomato",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 4
+        },
+        {
+          "name": "Slivered Onions",
+          "calories": 10,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -361,12 +749,80 @@
       "sugar": 12,
       "brief": "Mouthwatering perfection starts with two sear-sizzled 100% pure Halal beef patties and Big Mac&reg; sauce, sandwiched between a sesame seed bun. American cheese, shredded lettuce, onions, and pickles top it off.",
       "ingredients": [
-        "Chedder Cheese",
-        "Onion",
-        "Pickles",
-        "100% Halal beef patty",
-        "Lettuce",
-        "Sesame Seed Bun"
+        "Sesame Seed Bun",
+        "100% Halal beef patty (Quarter Pounder)",
+        "Big Tasty Sauce",
+        "Grilled Mushrooms",
+        "Emmental Cheese (3x)",
+        "Tomato",
+        "Slivered Onions",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun",
+          "calories": 150,
+          "protein": 4.5,
+          "carbs": 28,
+          "fat": 2.5,
+          "sodiumMg": 220
+        },
+        {
+          "name": "100% Halal beef patty (Quarter Pounder)",
+          "calories": 220,
+          "protein": 20,
+          "carbs": 0,
+          "fat": 16,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Big Tasty Sauce",
+          "calories": 120,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 12,
+          "sodiumMg": 150
+        },
+        {
+          "name": "Grilled Mushrooms",
+          "calories": 30,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 2,
+          "sodiumMg": 70
+        },
+        {
+          "name": "Emmental Cheese (3x)",
+          "calories": 140,
+          "protein": 8,
+          "carbs": 2,
+          "fat": 11,
+          "sodiumMg": 350
+        },
+        {
+          "name": "Tomato",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 4
+        },
+        {
+          "name": "Slivered Onions",
+          "calories": 10,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -389,7 +845,80 @@
       "sugar": 0,
       "brief": "Spicy Big Tasty® from McDonald's Jordan menu.",
       "ingredients": [
-        "Spicy Big Tasty®"
+        "Sesame Seed Bun",
+        "100% Halal beef patty (Quarter Pounder)",
+        "Spicy Big Tasty Sauce",
+        "Emmental Cheese (3x)",
+        "Tomato",
+        "Jalapenos",
+        "Slivered Onions",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun",
+          "calories": 150,
+          "protein": 4.5,
+          "carbs": 28,
+          "fat": 2.5,
+          "sodiumMg": 220
+        },
+        {
+          "name": "100% Halal beef patty (Quarter Pounder)",
+          "calories": 220,
+          "protein": 20,
+          "carbs": 0,
+          "fat": 16,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Spicy Big Tasty Sauce",
+          "calories": 120,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 12,
+          "sodiumMg": 160
+        },
+        {
+          "name": "Emmental Cheese (3x)",
+          "calories": 140,
+          "protein": 8,
+          "carbs": 2,
+          "fat": 11,
+          "sodiumMg": 350
+        },
+        {
+          "name": "Tomato",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 4
+        },
+        {
+          "name": "Jalapenos",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 140
+        },
+        {
+          "name": "Slivered Onions",
+          "calories": 10,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -412,12 +941,71 @@
       "sugar": 21,
       "brief": "Mouthwatering perfection starts with two sear-sizzled 100% pure Halal beef patties and Big Mac&reg; sauce, sandwiched between a sesame seed bun. American cheese, shredded lettuce, onions, and pickles top it off.",
       "ingredients": [
-        "Chedder Cheese",
-        "Onion",
+        "Sesame Seed Bun",
+        "100% Halal beef patty (4oz)",
+        "Chedder Cheese (2x)",
         "Pickles",
-        "100% Halal beef patty",
-        "Lettuce",
-        "Sesame Seed Bun"
+        "Slivered Onions",
+        "Ketchup",
+        "Mustard"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun",
+          "calories": 150,
+          "protein": 4.5,
+          "carbs": 28,
+          "fat": 2.5,
+          "sodiumMg": 220
+        },
+        {
+          "name": "100% Halal beef patty (4oz)",
+          "calories": 220,
+          "protein": 20,
+          "carbs": 0,
+          "fat": 16,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Chedder Cheese (2x)",
+          "calories": 100,
+          "protein": 6,
+          "carbs": 2,
+          "fat": 8,
+          "sodiumMg": 320
+        },
+        {
+          "name": "Pickles",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 120
+        },
+        {
+          "name": "Slivered Onions",
+          "calories": 10,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Ketchup",
+          "calories": 20,
+          "protein": 0,
+          "carbs": 5,
+          "fat": 0,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Mustard",
+          "calories": 5,
+          "protein": 0.5,
+          "carbs": 0.5,
+          "fat": 0,
+          "sodiumMg": 60
+        }
       ]
     },
     {
@@ -440,12 +1028,80 @@
       "sugar": 29,
       "brief": "Mouthwatering perfection starts with two sear-sizzled 100% pure Halal beef patties and Big Mac&reg; sauce, sandwiched between a sesame seed bun. American cheese, shredded lettuce, onions, and pickles top it off.",
       "ingredients": [
+        "Sesame Seed Bun",
+        "100% Halal beef patty (4oz)",
         "Chedder Cheese",
-        "Onion",
+        "Tomato",
         "Pickles",
-        "100% Halal beef patty",
-        "Lettuce",
-        "Sesame Seed Bun"
+        "Slivered Onions",
+        "Mayo",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun",
+          "calories": 150,
+          "protein": 4.5,
+          "carbs": 28,
+          "fat": 2.5,
+          "sodiumMg": 220
+        },
+        {
+          "name": "100% Halal beef patty (4oz)",
+          "calories": 220,
+          "protein": 20,
+          "carbs": 0,
+          "fat": 16,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        },
+        {
+          "name": "Tomato",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 4
+        },
+        {
+          "name": "Pickles",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 120
+        },
+        {
+          "name": "Slivered Onions",
+          "calories": 10,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Mayo",
+          "calories": 90,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 10,
+          "sodiumMg": 85
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -468,12 +1124,71 @@
       "sugar": 36,
       "brief": "Mouthwatering perfection starts with two sear-sizzled 100% pure Halal beef patties and Big Mac&reg; sauce, sandwiched between a sesame seed bun. American cheese, shredded lettuce, onions, and pickles top it off.",
       "ingredients": [
-        "Chedder Cheese",
-        "Onion",
+        "Regular Bun",
+        "100% Halal beef patty (2x)",
+        "Chedder Cheese (2x)",
         "Pickles",
-        "100% Halal beef patty",
-        "Lettuce",
-        "Sesame Seed Bun"
+        "Onion",
+        "Ketchup",
+        "Mustard"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Regular Bun",
+          "calories": 130,
+          "protein": 4,
+          "carbs": 24,
+          "fat": 2,
+          "sodiumMg": 190
+        },
+        {
+          "name": "100% Halal beef patty (2x)",
+          "calories": 250,
+          "protein": 20,
+          "carbs": 0,
+          "fat": 19,
+          "sodiumMg": 140
+        },
+        {
+          "name": "Chedder Cheese (2x)",
+          "calories": 100,
+          "protein": 6,
+          "carbs": 2,
+          "fat": 8,
+          "sodiumMg": 320
+        },
+        {
+          "name": "Pickles",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 120
+        },
+        {
+          "name": "Onion",
+          "calories": 8,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Ketchup",
+          "calories": 20,
+          "protein": 0,
+          "carbs": 5,
+          "fat": 0,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Mustard",
+          "calories": 5,
+          "protein": 0.5,
+          "carbs": 0.5,
+          "fat": 0,
+          "sodiumMg": 60
+        }
       ]
     },
     {
@@ -496,12 +1211,71 @@
       "sugar": 42,
       "brief": "Mouthwatering perfection starts with two sear-sizzled 100% pure Halal beef patties and Big Mac&reg; sauce, sandwiched between a sesame seed bun. American cheese, shredded lettuce, onions, and pickles top it off.",
       "ingredients": [
-        "Chedder Cheese",
-        "Onion",
-        "Pickles",
+        "Regular Bun",
         "100% Halal beef patty",
-        "Lettuce",
-        "Sesame Seed Bun"
+        "Chedder Cheese",
+        "Pickles",
+        "Onion",
+        "Ketchup",
+        "Mustard"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Regular Bun",
+          "calories": 130,
+          "protein": 4,
+          "carbs": 24,
+          "fat": 2,
+          "sodiumMg": 190
+        },
+        {
+          "name": "100% Halal beef patty",
+          "calories": 168,
+          "protein": 12,
+          "carbs": 0,
+          "fat": 13,
+          "sodiumMg": 90
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        },
+        {
+          "name": "Pickles",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 120
+        },
+        {
+          "name": "Onion",
+          "calories": 8,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Ketchup",
+          "calories": 20,
+          "protein": 0,
+          "carbs": 5,
+          "fat": 0,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Mustard",
+          "calories": 5,
+          "protein": 0.5,
+          "carbs": 0.5,
+          "fat": 0,
+          "sodiumMg": 60
+        }
       ]
     },
     {
@@ -524,12 +1298,62 @@
       "sugar": 48,
       "brief": "Mouthwatering perfection starts with two sear-sizzled 100% pure Halal beef patties and Big Mac&reg; sauce, sandwiched between a sesame seed bun. American cheese, shredded lettuce, onions, and pickles top it off.",
       "ingredients": [
-        "Chedder Cheese",
-        "Onion",
-        "Pickles",
+        "Regular Bun",
         "100% Halal beef patty",
-        "Lettuce",
-        "Sesame Seed Bun"
+        "Pickles",
+        "Onion",
+        "Ketchup",
+        "Mustard"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Regular Bun",
+          "calories": 130,
+          "protein": 4,
+          "carbs": 24,
+          "fat": 2,
+          "sodiumMg": 190
+        },
+        {
+          "name": "100% Halal beef patty",
+          "calories": 168,
+          "protein": 12,
+          "carbs": 0,
+          "fat": 13,
+          "sodiumMg": 90
+        },
+        {
+          "name": "Pickles",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 120
+        },
+        {
+          "name": "Onion",
+          "calories": 8,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Ketchup",
+          "calories": 20,
+          "protein": 0,
+          "carbs": 5,
+          "fat": 0,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Mustard",
+          "calories": 5,
+          "protein": 0.5,
+          "carbs": 0.5,
+          "fat": 0,
+          "sodiumMg": 60
+        }
       ]
     },
     {
@@ -552,9 +1376,62 @@
       "sugar": 1,
       "brief": "A thick, crispy Halal chicken patty topped with a handful of crispy lettuce, Rocca, juicy tomato slices, two slices of Emmental cheese, and a slice of chicken roll, accompanied by a grainy, gourmet dressing sauce - all held together by a soft, water split bun.",
       "ingredients": [
-        "Chicken Roll Slice",
-        "Lettuce",
-        "Breaded Chicken Patty"
+        "Brioche Bun",
+        "Grand Chicken Patty",
+        "Grand Chicken Special Sauce",
+        "Chedder Cheese",
+        "Tomato",
+        "Arugula & Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Brioche Bun",
+          "calories": 180,
+          "protein": 5,
+          "carbs": 32,
+          "fat": 4,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Grand Chicken Patty",
+          "calories": 230,
+          "protein": 18,
+          "carbs": 15,
+          "fat": 11,
+          "sodiumMg": 350
+        },
+        {
+          "name": "Grand Chicken Special Sauce",
+          "calories": 110,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 11,
+          "sodiumMg": 130
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        },
+        {
+          "name": "Tomato",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 4
+        },
+        {
+          "name": "Arugula & Lettuce",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 8
+        }
       ]
     },
     {
@@ -577,9 +1454,71 @@
       "sugar": 1,
       "brief": "A thick, crispy Halal chicken patty topped with a handful of crispy lettuce, Rocca, juicy tomato slices, two slices of Emmental cheese, and a slice of chicken roll, accompanied by a grainy, gourmet dressing sauce - all held together by a soft, water split bun.",
       "ingredients": [
-        "Chicken Roll Slice",
-        "Lettuce",
-        "Breaded Chicken Patty"
+        "Brioche Bun",
+        "Spicy Grand Chicken Patty",
+        "Spicy Sauce",
+        "Chedder Cheese",
+        "Tomato",
+        "Jalapenos",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Brioche Bun",
+          "calories": 180,
+          "protein": 5,
+          "carbs": 32,
+          "fat": 4,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Spicy Grand Chicken Patty",
+          "calories": 240,
+          "protein": 18,
+          "carbs": 16,
+          "fat": 12,
+          "sodiumMg": 380
+        },
+        {
+          "name": "Spicy Sauce",
+          "calories": 90,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 9,
+          "sodiumMg": 140
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        },
+        {
+          "name": "Tomato",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 4
+        },
+        {
+          "name": "Jalapenos",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 140
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -602,9 +1541,62 @@
       "sugar": 1,
       "brief": "A thick, crispy Halal chicken patty topped with a handful of crispy lettuce, Rocca, juicy tomato slices, two slices of Emmental cheese, and a slice of chicken roll, accompanied by a grainy, gourmet dressing sauce - all held together by a soft, water split bun.",
       "ingredients": [
-        "Chicken Roll Slice",
-        "Lettuce",
-        "Breaded Chicken Patty"
+        "Brioche Bun",
+        "Grand Chicken Patty",
+        "Deluxe Mayo Sauce",
+        "Chedder Cheese",
+        "Tomato",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Brioche Bun",
+          "calories": 180,
+          "protein": 5,
+          "carbs": 32,
+          "fat": 4,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Grand Chicken Patty",
+          "calories": 230,
+          "protein": 18,
+          "carbs": 15,
+          "fat": 11,
+          "sodiumMg": 350
+        },
+        {
+          "name": "Deluxe Mayo Sauce",
+          "calories": 100,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 11,
+          "sodiumMg": 90
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        },
+        {
+          "name": "Tomato",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 4
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -627,9 +1619,71 @@
       "sugar": 1,
       "brief": "A thick, crispy Halal chicken patty topped with a handful of crispy lettuce, Rocca, juicy tomato slices, two slices of Emmental cheese, and a slice of chicken roll, accompanied by a grainy, gourmet dressing sauce - all held together by a soft, water split bun.",
       "ingredients": [
-        "Chicken Roll Slice",
-        "Lettuce",
-        "Breaded Chicken Patty"
+        "Sesame Seed Bun",
+        "Crispy Chicken Patty (Large)",
+        "Big Tasty Sauce",
+        "Emmental Cheese (3x)",
+        "Tomato",
+        "Slivered Onions",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun",
+          "calories": 150,
+          "protein": 4.5,
+          "carbs": 28,
+          "fat": 2.5,
+          "sodiumMg": 220
+        },
+        {
+          "name": "Crispy Chicken Patty (Large)",
+          "calories": 280,
+          "protein": 21,
+          "carbs": 20,
+          "fat": 14,
+          "sodiumMg": 420
+        },
+        {
+          "name": "Big Tasty Sauce",
+          "calories": 120,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 12,
+          "sodiumMg": 150
+        },
+        {
+          "name": "Emmental Cheese (3x)",
+          "calories": 140,
+          "protein": 8,
+          "carbs": 2,
+          "fat": 11,
+          "sodiumMg": 350
+        },
+        {
+          "name": "Tomato",
+          "calories": 8,
+          "protein": 0.5,
+          "carbs": 1.5,
+          "fat": 0,
+          "sodiumMg": 4
+        },
+        {
+          "name": "Slivered Onions",
+          "calories": 10,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -652,9 +1706,62 @@
       "sugar": 7,
       "brief": "A thick, crispy Halal chicken patty topped with a handful of crispy lettuce, Rocca, juicy tomato slices, two slices of Emmental cheese, and a slice of chicken roll, accompanied by a grainy, gourmet dressing sauce - all held together by a soft, water split bun.",
       "ingredients": [
-        "Chicken Roll Slice",
-        "Lettuce",
-        "Breaded Chicken Patty"
+        "Sesame Seed Bun (3-piece)",
+        "Crispy Chicken Patty (2x)",
+        "Big Mac Sauce",
+        "Chedder Cheese",
+        "Pickles",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun (3-piece)",
+          "calories": 190,
+          "protein": 6,
+          "carbs": 35,
+          "fat": 3,
+          "sodiumMg": 260
+        },
+        {
+          "name": "Crispy Chicken Patty (2x)",
+          "calories": 260,
+          "protein": 18,
+          "carbs": 18,
+          "fat": 14,
+          "sodiumMg": 380
+        },
+        {
+          "name": "Big Mac Sauce",
+          "calories": 90,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 9,
+          "sodiumMg": 100
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        },
+        {
+          "name": "Pickles",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 120
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -677,9 +1784,44 @@
       "sugar": 13,
       "brief": "A thick, crispy Halal chicken patty topped with a handful of crispy lettuce, Rocca, juicy tomato slices, two slices of Emmental cheese, and a slice of chicken roll, accompanied by a grainy, gourmet dressing sauce - all held together by a soft, water split bun.",
       "ingredients": [
-        "Chicken Roll Slice",
-        "Lettuce",
-        "Breaded Chicken Patty"
+        "Sesame Seed Bun",
+        "McChicken Patty",
+        "McChicken Mayo Sauce",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun",
+          "calories": 150,
+          "protein": 4.5,
+          "carbs": 28,
+          "fat": 2.5,
+          "sodiumMg": 220
+        },
+        {
+          "name": "McChicken Patty",
+          "calories": 160,
+          "protein": 10,
+          "carbs": 11,
+          "fat": 9,
+          "sodiumMg": 280
+        },
+        {
+          "name": "McChicken Mayo Sauce",
+          "calories": 100,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 11,
+          "sodiumMg": 95
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -702,9 +1844,44 @@
       "sugar": 19,
       "brief": "A thick, crispy Halal chicken patty topped with a handful of crispy lettuce, Rocca, juicy tomato slices, two slices of Emmental cheese, and a slice of chicken roll, accompanied by a grainy, gourmet dressing sauce - all held together by a soft, water split bun.",
       "ingredients": [
-        "Chicken Roll Slice",
-        "Lettuce",
-        "Breaded Chicken Patty"
+        "Sesame Seed Bun",
+        "Spicy McChicken Patty",
+        "Spicy Sauce",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Sesame Seed Bun",
+          "calories": 150,
+          "protein": 4.5,
+          "carbs": 28,
+          "fat": 2.5,
+          "sodiumMg": 220
+        },
+        {
+          "name": "Spicy McChicken Patty",
+          "calories": 170,
+          "protein": 10,
+          "carbs": 12,
+          "fat": 10,
+          "sodiumMg": 300
+        },
+        {
+          "name": "Spicy Sauce",
+          "calories": 90,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 9,
+          "sodiumMg": 140
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -727,9 +1904,26 @@
       "sugar": 19,
       "brief": "A thick, crispy Halal chicken patty topped with a handful of crispy lettuce, Rocca, juicy tomato slices, two slices of Emmental cheese, and a slice of chicken roll, accompanied by a grainy, gourmet dressing sauce - all held together by a soft, water split bun.",
       "ingredients": [
-        "Chicken Roll Slice",
-        "Lettuce",
-        "Breaded Chicken Patty"
+        "Crispy Chicken McNuggets (6x)",
+        "Barbeque Sauce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Crispy Chicken McNuggets (6x)",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Barbeque Sauce",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        }
       ]
     },
     {
@@ -752,9 +1946,44 @@
       "sugar": 24,
       "brief": "A thick, crispy Halal chicken patty topped with a handful of crispy lettuce, Rocca, juicy tomato slices, two slices of Emmental cheese, and a slice of chicken roll, accompanied by a grainy, gourmet dressing sauce - all held together by a soft, water split bun.",
       "ingredients": [
-        "Chicken Roll Slice",
-        "Lettuce",
-        "Breaded Chicken Patty"
+        "Regular Bun",
+        "Chicken Patty",
+        "Mayo",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Regular Bun",
+          "calories": 130,
+          "protein": 4,
+          "carbs": 24,
+          "fat": 2,
+          "sodiumMg": 190
+        },
+        {
+          "name": "Chicken Patty",
+          "calories": 130,
+          "protein": 8,
+          "carbs": 10,
+          "fat": 7,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Mayo",
+          "calories": 90,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 10,
+          "sodiumMg": 85
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -778,6 +2007,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Americano"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Americano",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -800,7 +2039,26 @@
       "sugar": 14,
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
-        "Latte"
+        "Espresso Shot",
+        "Steamed Whole Milk"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Espresso Shot",
+          "calories": 5,
+          "protein": 0.2,
+          "carbs": 0.5,
+          "fat": 0,
+          "sodiumMg": 5
+        },
+        {
+          "name": "Steamed Whole Milk",
+          "calories": 120,
+          "protein": 7,
+          "carbs": 10,
+          "fat": 5,
+          "sodiumMg": 100
+        }
       ]
     },
     {
@@ -823,7 +2081,35 @@
       "sugar": 10,
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
-        "Cappuccino"
+        "Espresso Shot",
+        "Steamed Whole Milk",
+        "Cocoa Dusting"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Espresso Shot",
+          "calories": 5,
+          "protein": 0.2,
+          "carbs": 0.5,
+          "fat": 0,
+          "sodiumMg": 5
+        },
+        {
+          "name": "Steamed Whole Milk",
+          "calories": 120,
+          "protein": 7,
+          "carbs": 10,
+          "fat": 5,
+          "sodiumMg": 100
+        },
+        {
+          "name": "Cocoa Dusting",
+          "calories": 10,
+          "protein": 0.5,
+          "carbs": 1,
+          "fat": 0.5,
+          "sodiumMg": 0
+        }
       ]
     },
     {
@@ -846,7 +2132,35 @@
       "sugar": 44,
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
-        "Hot Chocolate"
+        "Steamed Whole Milk",
+        "Chocolate Syrup",
+        "Whipped Cream"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Steamed Whole Milk",
+          "calories": 120,
+          "protein": 7,
+          "carbs": 10,
+          "fat": 5,
+          "sodiumMg": 100
+        },
+        {
+          "name": "Chocolate Syrup",
+          "calories": 100,
+          "protein": 1,
+          "carbs": 22,
+          "fat": 1.5,
+          "sodiumMg": 45
+        },
+        {
+          "name": "Whipped Cream",
+          "calories": 60,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 5,
+          "sodiumMg": 15
+        }
       ]
     },
     {
@@ -869,7 +2183,44 @@
       "sugar": 36,
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
-        "Mocha"
+        "Espresso Shot",
+        "Steamed Whole Milk",
+        "Chocolate Syrup",
+        "Whipped Cream"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Espresso Shot",
+          "calories": 5,
+          "protein": 0.2,
+          "carbs": 0.5,
+          "fat": 0,
+          "sodiumMg": 5
+        },
+        {
+          "name": "Steamed Whole Milk",
+          "calories": 120,
+          "protein": 7,
+          "carbs": 10,
+          "fat": 5,
+          "sodiumMg": 100
+        },
+        {
+          "name": "Chocolate Syrup",
+          "calories": 100,
+          "protein": 1,
+          "carbs": 22,
+          "fat": 1.5,
+          "sodiumMg": 45
+        },
+        {
+          "name": "Whipped Cream",
+          "calories": 60,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 5,
+          "sodiumMg": 15
+        }
       ]
     },
     {
@@ -893,6 +2244,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Spanish Latte"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Spanish Latte",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -916,6 +2277,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Caramellato"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Caramellato",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -939,6 +2310,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Espresso"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Espresso",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -962,6 +2343,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Tea"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Tea",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -985,6 +2376,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Macchiato"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Macchiato",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1007,7 +2408,53 @@
       "sugar": 60,
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
-        "Caramel Frappe"
+        "Coffee Base",
+        "Whole Milk",
+        "Caramel Syrup",
+        "Whipped Cream",
+        "Caramel Drizzle"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coffee Base",
+          "calories": 40,
+          "protein": 1,
+          "carbs": 9,
+          "fat": 0,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Whole Milk",
+          "calories": 110,
+          "protein": 6,
+          "carbs": 9,
+          "fat": 5,
+          "sodiumMg": 85
+        },
+        {
+          "name": "Caramel Syrup",
+          "calories": 90,
+          "protein": 0,
+          "carbs": 23,
+          "fat": 0,
+          "sodiumMg": 50
+        },
+        {
+          "name": "Whipped Cream",
+          "calories": 60,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 5,
+          "sodiumMg": 15
+        },
+        {
+          "name": "Caramel Drizzle",
+          "calories": 40,
+          "protein": 0,
+          "carbs": 10,
+          "fat": 0.5,
+          "sodiumMg": 25
+        }
       ]
     },
     {
@@ -1030,7 +2477,44 @@
       "sugar": 59,
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
-        "Mocha Frappe"
+        "Coffee Base",
+        "Whole Milk",
+        "Chocolate Syrup",
+        "Whipped Cream"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coffee Base",
+          "calories": 40,
+          "protein": 1,
+          "carbs": 9,
+          "fat": 0,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Whole Milk",
+          "calories": 110,
+          "protein": 6,
+          "carbs": 9,
+          "fat": 5,
+          "sodiumMg": 85
+        },
+        {
+          "name": "Chocolate Syrup",
+          "calories": 100,
+          "protein": 1,
+          "carbs": 22,
+          "fat": 1.5,
+          "sodiumMg": 45
+        },
+        {
+          "name": "Whipped Cream",
+          "calories": 60,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 5,
+          "sodiumMg": 15
+        }
       ]
     },
     {
@@ -1053,7 +2537,53 @@
       "sugar": 65,
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
-        "Vanilla Oreo Frappe"
+        "Coffee Base",
+        "Whole Milk",
+        "Vanilla Syrup",
+        "Crushed Oreo Cookies",
+        "Whipped Cream"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coffee Base",
+          "calories": 40,
+          "protein": 1,
+          "carbs": 9,
+          "fat": 0,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Whole Milk",
+          "calories": 110,
+          "protein": 6,
+          "carbs": 9,
+          "fat": 5,
+          "sodiumMg": 85
+        },
+        {
+          "name": "Vanilla Syrup",
+          "calories": 80,
+          "protein": 0,
+          "carbs": 20,
+          "fat": 0,
+          "sodiumMg": 0
+        },
+        {
+          "name": "Crushed Oreo Cookies",
+          "calories": 140,
+          "protein": 1.5,
+          "carbs": 22,
+          "fat": 6,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Whipped Cream",
+          "calories": 60,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 5,
+          "sodiumMg": 15
+        }
       ]
     },
     {
@@ -1076,7 +2606,53 @@
       "sugar": 66,
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
-        "Chocolate Oreo Frappe"
+        "Coffee Base",
+        "Whole Milk",
+        "Chocolate Syrup",
+        "Crushed Oreo Cookies",
+        "Whipped Cream"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coffee Base",
+          "calories": 40,
+          "protein": 1,
+          "carbs": 9,
+          "fat": 0,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Whole Milk",
+          "calories": 110,
+          "protein": 6,
+          "carbs": 9,
+          "fat": 5,
+          "sodiumMg": 85
+        },
+        {
+          "name": "Chocolate Syrup",
+          "calories": 100,
+          "protein": 1,
+          "carbs": 22,
+          "fat": 1.5,
+          "sodiumMg": 45
+        },
+        {
+          "name": "Crushed Oreo Cookies",
+          "calories": 140,
+          "protein": 1.5,
+          "carbs": 22,
+          "fat": 6,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Whipped Cream",
+          "calories": 60,
+          "protein": 0.5,
+          "carbs": 3,
+          "fat": 5,
+          "sodiumMg": 15
+        }
       ]
     },
     {
@@ -1100,6 +2676,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Vanilla Frappe"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Vanilla Frappe",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1123,6 +2709,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Chocolate Frappe"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Chocolate Frappe",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1146,6 +2742,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Peach Smoothie"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Peach Smoothie",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1169,6 +2775,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Strawberry Smoothie"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Strawberry Smoothie",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1192,6 +2808,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Mango Smoothie"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Mango Smoothie",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1215,6 +2841,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Blueberry Smoothie"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Blueberry Smoothie",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1238,6 +2874,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Iced Spanish Latte"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Iced Spanish Latte",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1261,6 +2907,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Iced Latte"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Iced Latte",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1284,6 +2940,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Caramel Iced Latte"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Caramel Iced Latte",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1307,6 +2973,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Hazelnut Iced Latte"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Hazelnut Iced Latte",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1330,6 +3006,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Vanilla Iced Latte"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Vanilla Iced Latte",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1353,6 +3039,16 @@
       "brief": "A shot of our Arabica specialty espresso topped with piping hot water. Pure enjoyment.",
       "ingredients": [
         "Iced Coffee"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Iced Coffee",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1376,6 +3072,16 @@
       "brief": "A box contains 2 McChicken Sandwiches, 2 Chicken Mac Sandwiches, 9 pieces of McNuggets, 2 Large Fries, and 4 Regular Soft Drinks of choice.",
       "ingredients": [
         "Share Box - Chicken"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Share Box - Chicken",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1399,6 +3105,16 @@
       "brief": "A box contains 2 McChicken Sandwiches, 2 Chicken Mac Sandwiches, 9 pieces of McNuggets, 2 Large Fries, and 4 Regular Soft Drinks of choice.",
       "ingredients": [
         "Share Box - Spicy Chicken"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Share Box - Spicy Chicken",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1422,6 +3138,16 @@
       "brief": "A box contains 2 McChicken Sandwiches, 2 Chicken Mac Sandwiches, 9 pieces of McNuggets, 2 Large Fries, and 4 Regular Soft Drinks of choice.",
       "ingredients": [
         "Share Box - Mix"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Share Box - Mix",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1445,6 +3171,16 @@
       "brief": "A box contains 2 McChicken Sandwiches, 2 Chicken Mac Sandwiches, 9 pieces of McNuggets, 2 Large Fries, and 4 Regular Soft Drinks of choice.",
       "ingredients": [
         "Share Box - Beef"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Share Box - Beef",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1467,7 +3203,26 @@
       "sugar": 24,
       "brief": "Sweet, creamy vanilla soft serve in a crispy cone.",
       "ingredients": [
-        "Ice Cream Cone"
+        "Vanilla Soft Serve",
+        "Crispy Wafer Cone"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Vanilla Soft Serve",
+          "calories": 200,
+          "protein": 5,
+          "carbs": 32,
+          "fat": 5,
+          "sodiumMg": 80
+        },
+        {
+          "name": "Crispy Wafer Cone",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        }
       ]
     },
     {
@@ -1490,7 +3245,26 @@
       "sugar": 44,
       "brief": "Sweet, creamy vanilla soft serve in a crispy cone.",
       "ingredients": [
-        "Hot Fudge Sundae"
+        "Vanilla Soft Serve",
+        "Hot Fudge Chocolate Topping"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Vanilla Soft Serve",
+          "calories": 200,
+          "protein": 5,
+          "carbs": 32,
+          "fat": 5,
+          "sodiumMg": 80
+        },
+        {
+          "name": "Hot Fudge Chocolate Topping",
+          "calories": 130,
+          "protein": 2,
+          "carbs": 24,
+          "fat": 3,
+          "sodiumMg": 70
+        }
       ]
     },
     {
@@ -1513,7 +3287,26 @@
       "sugar": 43,
       "brief": "Sweet, creamy vanilla soft serve in a crispy cone.",
       "ingredients": [
-        "Caramel Sundae"
+        "Vanilla Soft Serve",
+        "Caramel Topping"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Vanilla Soft Serve",
+          "calories": 200,
+          "protein": 5,
+          "carbs": 32,
+          "fat": 5,
+          "sodiumMg": 80
+        },
+        {
+          "name": "Caramel Topping",
+          "calories": 130,
+          "protein": 1,
+          "carbs": 26,
+          "fat": 2.5,
+          "sodiumMg": 85
+        }
       ]
     },
     {
@@ -1536,7 +3329,26 @@
       "sugar": 44,
       "brief": "Sweet, creamy vanilla soft serve in a crispy cone.",
       "ingredients": [
-        "Strawberry Sundae"
+        "Vanilla Soft Serve",
+        "Strawberry Topping"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Vanilla Soft Serve",
+          "calories": 200,
+          "protein": 5,
+          "carbs": 32,
+          "fat": 5,
+          "sodiumMg": 80
+        },
+        {
+          "name": "Strawberry Topping",
+          "calories": 80,
+          "protein": 0,
+          "carbs": 20,
+          "fat": 0,
+          "sodiumMg": 10
+        }
       ]
     },
     {
@@ -1559,7 +3371,26 @@
       "sugar": 64,
       "brief": "Sweet, creamy vanilla soft serve in a crispy cone.",
       "ingredients": [
-        "McFlurry® Oreo®"
+        "Vanilla Soft Serve",
+        "Crushed Oreo Cookies"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Vanilla Soft Serve",
+          "calories": 200,
+          "protein": 5,
+          "carbs": 32,
+          "fat": 5,
+          "sodiumMg": 80
+        },
+        {
+          "name": "Crushed Oreo Cookies",
+          "calories": 140,
+          "protein": 1.5,
+          "carbs": 22,
+          "fat": 6,
+          "sodiumMg": 110
+        }
       ]
     },
     {
@@ -1582,7 +3413,26 @@
       "sugar": 62,
       "brief": "Sweet, creamy vanilla soft serve in a crispy cone.",
       "ingredients": [
-        "McFlurry® Kit Kat®"
+        "Vanilla Soft Serve",
+        "Crushed Kit Kat Pieces"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Vanilla Soft Serve",
+          "calories": 200,
+          "protein": 5,
+          "carbs": 32,
+          "fat": 5,
+          "sodiumMg": 80
+        },
+        {
+          "name": "Crushed Kit Kat Pieces",
+          "calories": 150,
+          "protein": 2,
+          "carbs": 20,
+          "fat": 7.5,
+          "sodiumMg": 40
+        }
       ]
     },
     {
@@ -1605,7 +3455,26 @@
       "sugar": 13,
       "brief": "Sweet, creamy vanilla soft serve in a crispy cone.",
       "ingredients": [
-        "Apple Pie"
+        "Crispy Baked Crust",
+        "Spiced Apple Filling"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Crispy Baked Crust",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Spiced Apple Filling",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        }
       ]
     },
     {
@@ -1628,7 +3497,26 @@
       "sugar": 15,
       "brief": "Sweet, creamy vanilla soft serve in a crispy cone.",
       "ingredients": [
-        "Strawberry Custard Pie"
+        "Crispy Baked Crust",
+        "Strawberry & Custard Filling"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Crispy Baked Crust",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Strawberry & Custard Filling",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        }
       ]
     },
     {
@@ -1651,7 +3539,44 @@
       "sugar": 5,
       "brief": "A tasty chicken burger with kid-sized World Famous Fries, Toy, and a drink of choice.",
       "ingredients": [
-        "Happy Meal® Chicken Burger"
+        "Regular Bun",
+        "Chicken Patty",
+        "Mayo",
+        "Shredded Lettuce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Regular Bun",
+          "calories": 130,
+          "protein": 4,
+          "carbs": 24,
+          "fat": 2,
+          "sodiumMg": 190
+        },
+        {
+          "name": "Chicken Patty",
+          "calories": 130,
+          "protein": 8,
+          "carbs": 10,
+          "fat": 7,
+          "sodiumMg": 240
+        },
+        {
+          "name": "Mayo",
+          "calories": 90,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 10,
+          "sodiumMg": 85
+        },
+        {
+          "name": "Shredded Lettuce",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 5
+        }
       ]
     },
     {
@@ -1674,7 +3599,71 @@
       "sugar": 7,
       "brief": "A tasty chicken burger with kid-sized World Famous Fries, Toy, and a drink of choice.",
       "ingredients": [
-        "Happy Meal® Cheeseburger"
+        "Regular Bun",
+        "100% Halal beef patty",
+        "Chedder Cheese",
+        "Pickles",
+        "Onion",
+        "Ketchup",
+        "Mustard"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Regular Bun",
+          "calories": 130,
+          "protein": 4,
+          "carbs": 24,
+          "fat": 2,
+          "sodiumMg": 190
+        },
+        {
+          "name": "100% Halal beef patty",
+          "calories": 168,
+          "protein": 12,
+          "carbs": 0,
+          "fat": 13,
+          "sodiumMg": 90
+        },
+        {
+          "name": "Chedder Cheese",
+          "calories": 57,
+          "protein": 3,
+          "carbs": 1,
+          "fat": 5,
+          "sodiumMg": 180
+        },
+        {
+          "name": "Pickles",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 120
+        },
+        {
+          "name": "Onion",
+          "calories": 8,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Ketchup",
+          "calories": 20,
+          "protein": 0,
+          "carbs": 5,
+          "fat": 0,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Mustard",
+          "calories": 5,
+          "protein": 0.5,
+          "carbs": 0.5,
+          "fat": 0,
+          "sodiumMg": 60
+        }
       ]
     },
     {
@@ -1697,7 +3686,26 @@
       "sugar": 0,
       "brief": "A tasty chicken burger with kid-sized World Famous Fries, Toy, and a drink of choice.",
       "ingredients": [
-        "Happy Meal® 4 Piece Chicken McNuggets®"
+        "Crispy Chicken McNuggets (4x)",
+        "Sweet & Sour Sauce"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Crispy Chicken McNuggets (4x)",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Sweet & Sour Sauce",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        }
       ]
     },
     {
@@ -1720,7 +3728,62 @@
       "sugar": 6,
       "brief": "A tasty chicken burger with kid-sized World Famous Fries, Toy, and a drink of choice.",
       "ingredients": [
-        "Happy Meal® Beef Burger"
+        "Regular Bun",
+        "100% Halal beef patty",
+        "Pickles",
+        "Onion",
+        "Ketchup",
+        "Mustard"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Regular Bun",
+          "calories": 130,
+          "protein": 4,
+          "carbs": 24,
+          "fat": 2,
+          "sodiumMg": 190
+        },
+        {
+          "name": "100% Halal beef patty",
+          "calories": 168,
+          "protein": 12,
+          "carbs": 0,
+          "fat": 13,
+          "sodiumMg": 90
+        },
+        {
+          "name": "Pickles",
+          "calories": 5,
+          "protein": 0,
+          "carbs": 1,
+          "fat": 0,
+          "sodiumMg": 120
+        },
+        {
+          "name": "Onion",
+          "calories": 8,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "sodiumMg": 2
+        },
+        {
+          "name": "Ketchup",
+          "calories": 20,
+          "protein": 0,
+          "carbs": 5,
+          "fat": 0,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Mustard",
+          "calories": 5,
+          "protein": 0.5,
+          "carbs": 0.5,
+          "fat": 0,
+          "sodiumMg": 60
+        }
       ]
     },
     {
@@ -1746,6 +3809,32 @@
         "Coca-Cola - 12 Oz",
         "Coca-Cola - 16 Oz",
         "Coca-Cola - 21 Oz"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coca-Cola - 12 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 16 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 21 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1771,6 +3860,32 @@
         "Coca-Cola - 12 Oz",
         "Coca-Cola - 16 Oz",
         "Coca-Cola - 21 Oz"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coca-Cola - 12 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 16 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 21 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1796,6 +3911,32 @@
         "Coca-Cola - 12 Oz",
         "Coca-Cola - 16 Oz",
         "Coca-Cola - 21 Oz"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coca-Cola - 12 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 16 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 21 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1821,6 +3962,32 @@
         "Coca-Cola - 12 Oz",
         "Coca-Cola - 16 Oz",
         "Coca-Cola - 21 Oz"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coca-Cola - 12 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 16 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 21 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1846,6 +4013,32 @@
         "Coca-Cola - 12 Oz",
         "Coca-Cola - 16 Oz",
         "Coca-Cola - 21 Oz"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coca-Cola - 12 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 16 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 21 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1871,6 +4064,32 @@
         "Coca-Cola - 12 Oz",
         "Coca-Cola - 16 Oz",
         "Coca-Cola - 21 Oz"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Coca-Cola - 12 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 16 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        },
+        {
+          "name": "Coca-Cola - 21 Oz",
+          "calories": 15,
+          "protein": 0.5,
+          "carbs": 2,
+          "fat": 0.5,
+          "sodiumMg": 20
+        }
       ]
     },
     {
@@ -1893,7 +4112,26 @@
       "sugar": 0.5,
       "brief": "Our French fries are born from premium potatoes such as the Russet Burbank and the Shepody. With zero grams of trans fat per labeled serving, these epic fries are crispy and golden on the outside and fluffy on the inside. Available in sizes small, regular, medium, and large.",
       "ingredients": [
-        "World's Famous Fries"
+        "Fries",
+        "Salt"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Fries",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Salt",
+          "calories": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "sodiumMg": 220
+        }
       ]
     },
     {
@@ -1916,7 +4154,53 @@
       "sugar": 4,
       "brief": "Our French fries are born from premium potatoes such as the Russet Burbank and the Shepody. With zero grams of trans fat per labeled serving, these epic fries are crispy and golden on the outside and fluffy on the inside. Available in sizes small, regular, medium, and large.",
       "ingredients": [
-        "Chicken Caesar Salad"
+        "Grilled Chicken Breast",
+        "Romaine Lettuce",
+        "Croutons",
+        "Parmesan Cheese",
+        "Caesar Dressing"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Grilled Chicken Breast",
+          "calories": 130,
+          "protein": 24,
+          "carbs": 0,
+          "fat": 3,
+          "sodiumMg": 260
+        },
+        {
+          "name": "Romaine Lettuce",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Croutons",
+          "calories": 50,
+          "protein": 1.5,
+          "carbs": 8,
+          "fat": 1.5,
+          "sodiumMg": 90
+        },
+        {
+          "name": "Parmesan Cheese",
+          "calories": 45,
+          "protein": 4,
+          "carbs": 0.5,
+          "fat": 3,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Caesar Dressing",
+          "calories": 120,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 12,
+          "sodiumMg": 280
+        }
       ]
     },
     {
@@ -1939,7 +4223,44 @@
       "sugar": 2.8,
       "brief": "Our French fries are born from premium potatoes such as the Russet Burbank and the Shepody. With zero grams of trans fat per labeled serving, these epic fries are crispy and golden on the outside and fluffy on the inside. Available in sizes small, regular, medium, and large.",
       "ingredients": [
-        "Caesar Salad"
+        "Romaine Lettuce",
+        "Croutons",
+        "Parmesan Cheese",
+        "Caesar Dressing"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Romaine Lettuce",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Croutons",
+          "calories": 50,
+          "protein": 1.5,
+          "carbs": 8,
+          "fat": 1.5,
+          "sodiumMg": 90
+        },
+        {
+          "name": "Parmesan Cheese",
+          "calories": 45,
+          "protein": 4,
+          "carbs": 0.5,
+          "fat": 3,
+          "sodiumMg": 110
+        },
+        {
+          "name": "Caesar Dressing",
+          "calories": 120,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 12,
+          "sodiumMg": 280
+        }
       ]
     },
     {
@@ -1962,7 +4283,44 @@
       "sugar": 6.8,
       "brief": "Our French fries are born from premium potatoes such as the Russet Burbank and the Shepody. With zero grams of trans fat per labeled serving, these epic fries are crispy and golden on the outside and fluffy on the inside. Available in sizes small, regular, medium, and large.",
       "ingredients": [
-        "Garden Salad"
+        "Romaine Lettuce",
+        "Cherry Tomatoes",
+        "Cucumbers",
+        "Italian Dressing"
+      ],
+      "customizableIngredients": [
+        {
+          "name": "Romaine Lettuce",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Cherry Tomatoes",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Cucumbers",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        },
+        {
+          "name": "Italian Dressing",
+          "calories": 20,
+          "protein": 1,
+          "carbs": 2,
+          "fat": 1,
+          "sodiumMg": 30
+        }
       ]
     }
   ]
