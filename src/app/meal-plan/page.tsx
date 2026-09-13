@@ -251,7 +251,7 @@ export default function MealPlannerPage() {
             href="/meal-prep"
             className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-medium shadow-xs transition"
           >
-            <Flame className="w-3.5 h-3.5 text-amber-200" />
+            <Flame className="w-3.5 h-3.5 text-white" />
             <span>Weekly Meal Prep Mode</span>
           </Link>
           <Link

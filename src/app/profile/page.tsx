@@ -213,10 +213,10 @@ export default function ProfilePage() {
 
   const bmiCategory = useMemo(() => {
     if (!displayBmi) return null;
-    if (displayBmi < 18.5) return { text: "Underweight (<18.5)", color: "text-amber-500" };
-    if (displayBmi < 25.0) return { text: "Normal (18.5–24.9)", color: "text-emerald-500" };
-    if (displayBmi < 30.0) return { text: "Overweight (25–29.9)", color: "text-amber-500" };
-    return { text: "Obese (≥30.0)", color: "text-red-500" };
+    if (displayBmi < 18.5) return { text: "Underweight (<18.5)", color: "text-[var(--macro-carbs)]" };
+    if (displayBmi < 25.0) return { text: "Normal (18.5–24.9)", color: "text-[var(--accent)]" };
+    if (displayBmi < 30.0) return { text: "Overweight (25–29.9)", color: "text-[var(--macro-carbs)]" };
+    return { text: "Obese (≥30.0)", color: "text-[var(--ui-error)]" };
   }, [displayBmi]);
 
   // Transform weight entries into InBody entries list for chart
@@ -415,7 +415,7 @@ export default function ProfilePage() {
                 className={cn(
                   "text-[10px] uppercase font-bold px-2 py-0.5 rounded-md shrink-0",
                   user?.role === "admin"
-                    ? "bg-amber-500/15 text-amber-500"
+                    ? "bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]"
                     : "bg-[var(--accent-subtle)] text-[var(--accent)]"
                 )}
               >
@@ -425,12 +425,12 @@ export default function ProfilePage() {
             <div className="flex items-center space-x-2 mt-0.5">
               <span className="text-xs text-[var(--text-secondary)]">{user?.email}</span>
               {user?.emailVerified ? (
-                <span className="inline-flex items-center space-x-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                <span className="inline-flex items-center space-x-1 text-[10px] font-semibold text-[var(--ui-success)] bg-[var(--ui-success-bg)] px-2 py-0.5 rounded-full border border-[var(--ui-success-border)]">
                   <CheckCircle2 className="w-3 h-3" />
                   <span>Verified</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center space-x-1 text-[10px] font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                <span className="inline-flex items-center space-x-1 text-[10px] font-semibold text-[var(--macro-carbs)] bg-[var(--macro-carbs-bg)] px-2 py-0.5 rounded-full border border-[var(--macro-carbs-border)]">
                   <AlertCircle className="w-3 h-3" />
                   <span>Unverified</span>
                 </span>
@@ -441,10 +441,10 @@ export default function ProfilePage() {
               <div className="mt-2.5">
                 <Link
                   href="/admin"
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-semibold transition shadow-2xs"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] hover:bg-[var(--surface)] text-[var(--accent)] border border-[var(--border)] text-xs font-semibold transition shadow-2xs"
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span>User Management & Add Accounts</span>
+                  <span>User Management &amp; Add Accounts</span>
                   <ArrowRight className="w-3 h-3 ml-0.5" />
                 </Link>
               </div>
@@ -459,8 +459,8 @@ export default function ProfilePage() {
               className={cn(
                 "p-3 rounded-xl text-xs flex items-center space-x-2",
                 infoMsg.type === "success"
-                  ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500"
-                  : "bg-red-500/10 border border-red-500/20 text-red-500"
+                  ? "bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)]"
+                  : "bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)]"
               )}
             >
               {infoMsg.type === "success" ? (
@@ -519,7 +519,7 @@ export default function ProfilePage() {
           <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
             Body Fat (InBody)
           </span>
-          <div className="text-xl font-bold text-sky-500 font-tabular">
+          <div className="text-xl font-bold text-[var(--macro-protein)] font-tabular">
             {bodyFatPct ? `${bodyFatPct}%` : "—"}
           </div>
           <span className="text-[10px] text-[var(--text-muted)] block">
@@ -532,7 +532,7 @@ export default function ProfilePage() {
           <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
             SMM (Muscle)
           </span>
-          <div className="text-xl font-bold text-emerald-500 font-tabular">
+          <div className="text-xl font-bold text-[var(--accent)] font-tabular">
             {smmInput !== "" ? (
               <>
                 {smmInput} <span className="text-xs font-normal text-[var(--text-secondary)]">{weightUnit}</span>
@@ -551,7 +551,7 @@ export default function ProfilePage() {
           <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
             BMI
           </span>
-          <div className="text-xl font-bold text-purple-500 font-tabular">
+          <div className="text-xl font-bold text-[var(--macro-carbs)] font-tabular">
             {displayBmi || "—"}
           </div>
           <span className={cn("text-[10px] font-medium block truncate", bmiCategory?.color || "text-[var(--text-muted)]")}>
@@ -564,7 +564,7 @@ export default function ProfilePage() {
           <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
             Lean Mass
           </span>
-          <div className="text-xl font-bold text-teal-500 font-tabular">
+          <div className="text-xl font-bold text-[var(--macro-protein)] font-tabular">
             {leanMassKg !== null ? (
               <>
                 {isImperial ? Math.round(leanMassKg * 2.20462 * 10) / 10 : leanMassKg}{" "}
@@ -584,7 +584,7 @@ export default function ProfilePage() {
           <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
             Total Fat Mass
           </span>
-          <div className="text-xl font-bold text-amber-500 font-tabular">
+          <div className="text-xl font-bold text-[var(--macro-fat)] font-tabular">
             {fatMassKg !== null ? (
               <>
                 {isImperial ? Math.round(fatMassKg * 2.20462 * 10) / 10 : fatMassKg}{" "}
@@ -618,8 +618,8 @@ export default function ProfilePage() {
               className={cn(
                 "p-3 rounded-xl text-xs flex items-center space-x-2",
                 bodyMsg.type === "success"
-                  ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500"
-                  : "bg-red-500/10 border border-red-500/20 text-red-500"
+                  ? "bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)]"
+                  : "bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)]"
               )}
             >
               {bodyMsg.type === "success" ? (
@@ -896,8 +896,8 @@ export default function ProfilePage() {
               className={cn(
                 "p-3 rounded-xl text-xs flex items-center space-x-2",
                 pwdMsg.type === "success"
-                  ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500"
-                  : "bg-red-500/10 border border-red-500/20 text-red-500"
+                  ? "bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)]"
+                  : "bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)]"
               )}
             >
               {pwdMsg.type === "success" ? (

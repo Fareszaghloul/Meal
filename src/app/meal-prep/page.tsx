@@ -310,7 +310,7 @@ export default function MealPrepPage() {
             disabled={isSubmitting || !selectedRecipeId || selectedDays.length === 0}
             className="w-full flex items-center justify-center space-x-2 py-3 rounded-2xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:opacity-90 disabled:opacity-50 text-white font-medium text-sm shadow-xs transition"
           >
-            <Flame className="w-4 h-4 text-amber-200" />
+            <Flame className="w-4 h-4 text-white" />
             <span>
               {isSubmitting
                 ? "Populating Calendar..."

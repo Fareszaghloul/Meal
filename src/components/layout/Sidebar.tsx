@@ -134,7 +134,7 @@ export function Sidebar() {
                   </div>
                   <div className="flex items-center space-x-1">
                     {user.role === "admin" ? (
-                      <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500">
+                      <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]">
                         Admin
                       </span>
                     ) : (
@@ -154,7 +154,7 @@ export function Sidebar() {
                   title={isDark ? "Switch to light mode" : "Switch to dark mode"}
                 >
                   {isDark ? (
-                    <Sun className="w-4 h-4 text-amber-400" />
+                    <Sun className="w-4 h-4 text-[var(--macro-carbs)]" />
                   ) : (
                     <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
                   )}
@@ -185,7 +185,7 @@ export function Sidebar() {
                 title={isDark ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {isDark ? (
-                  <Sun className="w-4 h-4 text-amber-400" />
+                  <Sun className="w-4 h-4 text-[var(--macro-carbs)]" />
                 ) : (
                   <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
                 )}

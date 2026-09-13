@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Sparkles,
   Plus,
-  Minus,
   Calendar,
   ShoppingCart,
   BookOpen,
@@ -20,9 +19,6 @@ import {
   Utensils,
   Trash2,
   Droplets,
-  Droplet,
-  Coffee,
-  Apple,
   RotateCcw,
   Check,
 } from "lucide-react";
@@ -293,24 +289,24 @@ export default function DashboardPage() {
   const waterPct = Math.min(100, Math.round((waterTotalMl / (waterGoalMl || 2500)) * 100));
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-16 px-4 sm:px-6">
+    <div className="space-y-8 max-w-6xl mx-auto pb-16">
       {/* Top Header & Day Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
             Good day{user?.displayName || username ? `, ${user?.displayName || username}` : ""}.
           </h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-1">
-            Track what you eat and drink today, monitor nutrition targets, and manage your meals.
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+            Track daily food intake, hydration, and nutrition targets for {formattedDateTitle}.
           </p>
         </div>
 
         {/* Date Selector & Primary Log Action */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-1 shadow-xs">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1 shadow-xs">
             <button
               onClick={() => changeDateByDays(-1)}
-              className="p-1.5 rounded-xl hover:bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+              className="p-1 rounded-lg hover:bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
               title="Previous Day"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -319,9 +315,9 @@ export default function DashboardPage() {
             <button
               onClick={() => setSelectedDate(new Date().toISOString().split("T")[0])}
               className={cn(
-                "px-3 py-1 text-xs font-semibold rounded-xl transition",
+                "px-3 py-1 text-xs font-medium rounded-lg transition",
                 isToday
-                  ? "bg-amber-500 text-zinc-950 font-bold"
+                  ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
                   : "text-[var(--text-primary)] hover:bg-[var(--background)]"
               )}
             >
@@ -330,7 +326,7 @@ export default function DashboardPage() {
 
             <button
               onClick={() => changeDateByDays(1)}
-              className="p-1.5 rounded-xl hover:bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+              className="p-1 rounded-lg hover:bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
               title="Next Day"
             >
               <ChevronRight className="w-4 h-4" />
@@ -339,7 +335,7 @@ export default function DashboardPage() {
 
           <button
             onClick={() => openLogModal("lunch")}
-            className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition active:scale-95"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs shadow-xs transition touch-manipulation"
           >
             <Plus className="w-4 h-4" />
             <span>Log Food</span>
@@ -348,11 +344,11 @@ export default function DashboardPage() {
       </div>
 
       {/* 1. Daily Nutrition Targets & Progress (Based on Actual Food Eaten) */}
-      <div className="p-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-5">
+      <div className="p-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-            <h2 className="text-sm font-bold text-[var(--text-primary)]">
+            <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
               Daily Nutrition Intake ({formattedDateTitle})
             </h2>
           </div>
@@ -361,17 +357,17 @@ export default function DashboardPage() {
             <span className="text-[var(--text-secondary)]">
               {caloriesRemaining > 0 ? (
                 <>
-                  <strong className="text-amber-500 font-mono">{caloriesRemaining} kcal</strong> remaining
+                  <strong className="text-[var(--text-primary)] font-tabular">{caloriesRemaining} kcal</strong> remaining
                 </>
               ) : (
-                <strong className="text-emerald-500 font-semibold">Calorie goal reached</strong>
+                <strong className="text-[var(--accent)] font-medium">Calorie target reached</strong>
               )}
             </span>
             <Link
               href="/settings"
-              className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition text-[11px]"
+              className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent)] transition"
             >
-              Edit Targets
+              Edit targets
             </Link>
           </div>
         </div>
@@ -409,26 +405,26 @@ export default function DashboardPage() {
       </div>
 
       {/* 2. Hydration / Water Tracker Widget */}
-      <div className="p-5 sm:p-6 rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-[var(--surface)] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-5">
+      <div className="p-5 sm:p-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
-            <Droplets className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] flex items-center justify-center text-[var(--accent)] shrink-0">
+            <Droplets className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-sm text-[var(--text-primary)]">Water &amp; Hydration</h3>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 font-bold font-mono">
+              <h3 className="font-semibold text-sm text-[var(--text-primary)]">Water &amp; Hydration</h3>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold font-tabular">
                 {waterPct}%
               </span>
             </div>
-            <div className="text-xs text-[var(--text-secondary)] mt-0.5 font-mono">
-              <strong className="text-sky-400 text-sm">{waterTotalMl}</strong> / {waterGoalMl} ml logged
+            <div className="text-xs text-[var(--text-secondary)] mt-0.5 font-tabular">
+              <strong className="text-[var(--text-primary)]">{waterTotalMl}</strong> / {waterGoalMl} ml logged
             </div>
-            {/* Water progress mini-bar */}
-            <div className="w-48 sm:w-64 h-2 rounded-full bg-zinc-800 overflow-hidden mt-1.5 border border-white/5">
+            {/* Water progress bar */}
+            <div className="w-48 sm:w-64 h-1.5 rounded-full bg-[var(--background)] overflow-hidden mt-2">
               <div
                 style={{ width: `${waterPct}%` }}
-                className="h-full bg-gradient-to-r from-sky-500 to-teal-400 rounded-full transition-all duration-300"
+                className="h-full bg-[var(--accent)] rounded-full transition-all duration-300"
               />
             </div>
           </div>
@@ -438,32 +434,32 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => handleAddWater(250)}
-            className="px-3 py-2 rounded-xl bg-[var(--surface)] hover:bg-sky-500 hover:text-zinc-950 text-[var(--text-primary)] border border-[var(--border)] text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-[var(--background)] hover:bg-[var(--accent-subtle)] text-[var(--text-primary)] border border-[var(--border)] text-xs font-medium flex items-center gap-1.5 transition"
           >
-            <Plus className="w-3.5 h-3.5 text-sky-400" />
+            <Plus className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>+250 ml (Glass)</span>
           </button>
 
           <button
             onClick={() => handleAddWater(500)}
-            className="px-3 py-2 rounded-xl bg-[var(--surface)] hover:bg-sky-500 hover:text-zinc-950 text-[var(--text-primary)] border border-[var(--border)] text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-[var(--background)] hover:bg-[var(--accent-subtle)] text-[var(--text-primary)] border border-[var(--border)] text-xs font-medium flex items-center gap-1.5 transition"
           >
-            <Plus className="w-3.5 h-3.5 text-sky-400" />
+            <Plus className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>+500 ml (Bottle)</span>
           </button>
 
           <button
             onClick={() => handleAddWater(750)}
-            className="px-3 py-2 rounded-xl bg-[var(--surface)] hover:bg-sky-500 hover:text-zinc-950 text-[var(--text-primary)] border border-[var(--border)] text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-[var(--background)] hover:bg-[var(--accent-subtle)] text-[var(--text-primary)] border border-[var(--border)] text-xs font-medium flex items-center gap-1.5 transition"
           >
-            <Plus className="w-3.5 h-3.5 text-sky-400" />
+            <Plus className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>+750 ml</span>
           </button>
 
           {waterTotalMl > 0 && (
             <button
               onClick={handleResetWater}
-              className="p-2 rounded-xl bg-[var(--surface)] hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 border border-[var(--border)] transition"
+              className="p-1.5 rounded-xl bg-[var(--background)] hover:text-[var(--ui-error)] text-[var(--text-secondary)] border border-[var(--border)] transition"
               title="Reset Water"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -476,8 +472,8 @@ export default function DashboardPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
-              <Utensils className="w-5 h-5 text-amber-500" />
+            <h2 className="text-lg font-medium tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+              <Utensils className="w-5 h-5 text-[var(--accent)]" />
               <span>What We Have Eaten Today</span>
             </h2>
             <p className="text-xs text-[var(--text-secondary)]">
@@ -487,7 +483,7 @@ export default function DashboardPage() {
 
           <button
             onClick={() => openLogModal("lunch")}
-            className="text-xs font-semibold text-amber-500 hover:underline flex items-center gap-1"
+            className="text-xs font-medium text-[var(--accent)] hover:underline flex items-center gap-1"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Item</span>
@@ -520,7 +516,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border)]">
                     <div className="flex items-center gap-2">
                       <span className="text-base">{slot.icon}</span>
-                      <h3 className="font-bold text-sm text-[var(--text-primary)]">
+                      <h3 className="font-semibold text-sm text-[var(--text-primary)]">
                         {slot.title}
                       </h3>
                       <span className="text-[11px] text-[var(--text-secondary)]">
@@ -528,13 +524,13 @@ export default function DashboardPage() {
                       </span>
                     </div>
 
-                    <div className="text-xs font-mono font-bold text-amber-500">
+                    <div className="text-xs font-tabular font-semibold text-[var(--text-primary)]">
                       {Math.round(slotCalories)} kcal
                     </div>
                   </div>
 
                   {/* Slot Items List */}
-                  <div className="space-y-2 mt-3 min-h-[70px]">
+                  <div className="space-y-2 mt-3 min-h-[60px]">
                     {items.length === 0 ? (
                       <div className="py-4 text-center text-xs text-[var(--text-secondary)] italic">
                         Nothing logged for {slot.title.toLowerCase()} yet.
@@ -543,30 +539,30 @@ export default function DashboardPage() {
                       items.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between p-2.5 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] text-xs hover:border-[var(--accent)]/30 transition group"
+                          className="flex items-center justify-between p-2.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] text-xs hover:border-[var(--accent)]/40 transition group"
                         >
                           <div className="min-w-0 pr-2">
-                            <div className="font-semibold text-xs text-[var(--text-primary)] truncate">
+                            <div className="font-medium text-xs text-[var(--text-primary)] truncate">
                               {item.name}
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-secondary)] font-mono mt-0.5">
+                            <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-secondary)] font-tabular mt-0.5">
                               <span>
                                 {item.servings} {item.servingUnit}
                               </span>
                               <span>•</span>
-                              <span className="text-amber-500 font-bold">{item.calories} kcal</span>
+                              <span className="font-semibold text-[var(--text-primary)]">{item.calories} kcal</span>
                               <span>•</span>
-                              <span className="text-emerald-500">{item.protein}g P</span>
+                              <span style={{ color: "var(--macro-protein)" }}>{item.protein}g Pro</span>
                               <span>•</span>
-                              <span className="text-sky-500">{item.carbs}g C</span>
+                              <span style={{ color: "var(--macro-carbs)" }}>{item.carbs}g Carb</span>
                               <span>•</span>
-                              <span className="text-rose-500">{item.fat}g F</span>
+                              <span style={{ color: "var(--macro-fat)" }}>{item.fat}g Fat</span>
                             </div>
                           </div>
 
                           <button
                             onClick={() => handleDeleteFoodLogEntry(item.id)}
-                            className="p-1 rounded-lg text-[var(--text-secondary)] hover:text-red-400 hover:bg-red-500/10 transition opacity-60 group-hover:opacity-100"
+                            className="p-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition opacity-60 group-hover:opacity-100"
                             title="Remove item"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -579,17 +575,17 @@ export default function DashboardPage() {
 
                 {/* Slot Footer: Subtotal Macros & Quick Add */}
                 <div className="pt-2.5 border-t border-[var(--border)] flex items-center justify-between">
-                  <div className="text-[10px] text-[var(--text-secondary)] font-mono flex items-center gap-1.5">
-                    <span className="text-emerald-500">{Math.round(slotProtein * 10) / 10}g P</span>
+                  <div className="text-[10px] text-[var(--text-secondary)] font-tabular flex items-center gap-1.5">
+                    <span style={{ color: "var(--macro-protein)" }}>{Math.round(slotProtein * 10) / 10}g P</span>
                     <span>•</span>
-                    <span className="text-sky-500">{Math.round(slotCarbs * 10) / 10}g C</span>
+                    <span style={{ color: "var(--macro-carbs)" }}>{Math.round(slotCarbs * 10) / 10}g C</span>
                     <span>•</span>
-                    <span className="text-rose-500">{Math.round(slotFat * 10) / 10}g F</span>
+                    <span style={{ color: "var(--macro-fat)" }}>{Math.round(slotFat * 10) / 10}g F</span>
                   </div>
 
                   <button
                     onClick={() => openLogModal(slot.id)}
-                    className="inline-flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400 font-semibold transition"
+                    className="inline-flex items-center gap-1 text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium transition"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add</span>
@@ -606,7 +602,7 @@ export default function DashboardPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+              <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[var(--accent)]" />
                 <span>Planned Meals from Weekly Schedule</span>
               </h2>
@@ -617,7 +613,7 @@ export default function DashboardPage() {
 
             <Link
               href="/meal-plan"
-              className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center"
+              className="text-xs font-medium text-[var(--accent)] hover:underline flex items-center"
             >
               <span>Weekly Planner</span>
               <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
@@ -631,14 +627,14 @@ export default function DashboardPage() {
                 className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs flex flex-col justify-between space-y-3"
               >
                 <div>
-                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] mb-1">
+                  <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)] mb-1">
                     <span>{meal.mealCategory}</span>
-                    <span className="font-mono text-amber-500">{meal.calories} kcal</span>
+                    <span className="font-tabular font-bold text-[var(--text-primary)]">{meal.calories} kcal</span>
                   </div>
                   <h4 className="font-semibold text-xs text-[var(--text-primary)]">
                     {meal.recipe?.name || meal.customName || "Planned Meal"}
                   </h4>
-                  <div className="text-[10px] text-[var(--text-secondary)] font-mono mt-0.5">
+                  <div className="text-[10px] text-[var(--text-secondary)] font-tabular mt-0.5">
                     {meal.servings} serving(s) • {meal.protein}g Pro • {meal.carbs}g Carb • {meal.fat}g Fat
                   </div>
                 </div>
@@ -646,7 +642,7 @@ export default function DashboardPage() {
                 <div className="pt-2 border-t border-[var(--border)] flex justify-end">
                   <button
                     onClick={() => handleLogPlannedMeal(meal)}
-                    className="px-3 py-1.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
+                    className="px-3 py-1.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-medium flex items-center gap-1.5 shadow-xs transition"
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>Log as Eaten</span>

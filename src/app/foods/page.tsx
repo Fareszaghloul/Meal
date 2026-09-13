@@ -362,8 +362,8 @@ export default function FoodsAndPantryPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-3">
             <span>Foods &amp; Pantry</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-semibold border border-amber-500/20">
-              Upgraded
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold border border-[var(--border)]">
+              Jordan Menu Included
             </span>
           </h1>
           <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-2xl leading-relaxed">
@@ -376,9 +376,9 @@ export default function FoodsAndPantryPage() {
           <button
             onClick={() => setActiveTab("mcdonalds")}
             className={cn(
-              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-2 shrink-0 whitespace-nowrap touch-manipulation",
+              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-2 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
               activeTab === "mcdonalds"
-                ? "bg-amber-500 text-zinc-950 font-bold shadow-md shadow-amber-500/20"
+                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
@@ -386,7 +386,7 @@ export default function FoodsAndPantryPage() {
             <span>McDonald&apos;s Jordan</span>
             <span className={cn(
               "text-[10px] px-1.5 py-0.2 rounded-full",
-              activeTab === "mcdonalds" ? "bg-zinc-950/20 text-zinc-950" : "bg-zinc-800 text-zinc-400"
+              activeTab === "mcdonalds" ? "bg-[var(--accent-subtle)] text-[var(--accent)]" : "bg-[var(--surface)] text-[var(--text-secondary)] border border-[var(--border)]"
             )}>
               79
             </span>
@@ -395,39 +395,39 @@ export default function FoodsAndPantryPage() {
           <button
             onClick={() => setActiveTab("foods")}
             className={cn(
-              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation",
+              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
               activeTab === "foods"
                 ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            <Apple className="w-3.5 h-3.5 text-emerald-500" />
+            <Apple className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Foods ({foods.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("pantry")}
             className={cn(
-              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation",
+              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
               activeTab === "pantry"
                 ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            <Package className="w-3.5 h-3.5 text-sky-500" />
+            <Package className="w-3.5 h-3.5 text-[var(--macro-protein)]" />
             <span>Pantry ({pantryItems.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("what-can-i-make")}
             className={cn(
-              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation",
+              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
               activeTab === "what-can-i-make"
                 ? "bg-[var(--surface)] text-[var(--accent)] font-semibold shadow-xs border border-[var(--border)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 text-[var(--macro-carbs)]" />
             <span>What Can I Make?</span>
           </button>
         </div>
@@ -630,7 +630,7 @@ export default function FoodsAndPantryPage() {
                               </span>
                             )}
                             {pDensity >= 10 && (
-                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]">
                                 High Protein
                               </span>
                             )}
@@ -647,7 +647,7 @@ export default function FoodsAndPantryPage() {
                             <button
                               onClick={() => handleDeleteFood(f.id)}
                               title="Delete food"
-                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-red-400 hover:bg-red-500/10 transition"
+                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -667,25 +667,25 @@ export default function FoodsAndPantryPage() {
                       <div className="grid grid-cols-4 gap-1.5 text-center pt-2 border-t border-[var(--border)]">
                         <div className="bg-[var(--background)] rounded-lg py-1 px-1">
                           <div className="text-[10px] text-[var(--text-secondary)]">Calories</div>
-                          <div className="text-xs font-bold text-amber-500 font-mono">
+                          <div className="text-xs font-bold text-[var(--text-primary)] font-mono">
                             {f.caloriesPer100g}
                           </div>
                         </div>
                         <div className="bg-[var(--background)] rounded-lg py-1 px-1">
                           <div className="text-[10px] text-[var(--text-secondary)]">Protein</div>
-                          <div className="text-xs font-bold text-emerald-500 font-mono">
+                          <div className="text-xs font-bold text-[var(--macro-protein)] font-mono">
                             {f.proteinPer100g}g
                           </div>
                         </div>
                         <div className="bg-[var(--background)] rounded-lg py-1 px-1">
                           <div className="text-[10px] text-[var(--text-secondary)]">Carbs</div>
-                          <div className="text-xs font-bold text-sky-500 font-mono">
+                          <div className="text-xs font-bold text-[var(--macro-carbs)] font-mono">
                             {f.carbsPer100g}g
                           </div>
                         </div>
                         <div className="bg-[var(--background)] rounded-lg py-1 px-1">
                           <div className="text-[10px] text-[var(--text-secondary)]">Fat</div>
-                          <div className="text-xs font-bold text-rose-500 font-mono">
+                          <div className="text-xs font-bold text-[var(--macro-fat)] font-mono">
                             {f.fatPer100g}g
                           </div>
                         </div>
@@ -696,24 +696,24 @@ export default function FoodsAndPantryPage() {
                         <div className="h-1.5 w-full rounded-full bg-[var(--background)] overflow-hidden flex">
                           <div
                             style={{ width: `${pPct}%` }}
-                            className="bg-emerald-500 h-full"
+                            className="bg-[var(--macro-protein)] h-full"
                             title={`Protein: ${pPct}%`}
                           />
                           <div
                             style={{ width: `${cPct}%` }}
-                            className="bg-sky-500 h-full"
+                            className="bg-[var(--macro-carbs)] h-full"
                             title={`Carbs: ${cPct}%`}
                           />
                           <div
                             style={{ width: `${fPct}%` }}
-                            className="bg-rose-500 h-full"
+                            className="bg-[var(--macro-fat)] h-full"
                             title={`Fat: ${fPct}%`}
                           />
                         </div>
                         <div className="flex justify-between text-[9px] text-[var(--text-secondary)] font-mono">
-                          <span className="text-emerald-500">{pPct}% P</span>
-                          <span className="text-sky-500">{cPct}% C</span>
-                          <span className="text-rose-500">{fPct}% F</span>
+                          <span className="text-[var(--macro-protein)]">{pPct}% P</span>
+                          <span className="text-[var(--macro-carbs)]">{cPct}% C</span>
+                          <span className="text-[var(--macro-fat)]">{fPct}% F</span>
                         </div>
                       </div>
                     </div>
@@ -1086,25 +1086,25 @@ export default function FoodsAndPantryPage() {
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div className="p-2.5 rounded-xl bg-[var(--background)]">
                   <div className="text-[10px] text-[var(--text-secondary)]">Calories</div>
-                  <div className="text-sm font-bold text-amber-500 font-mono">
+                  <div className="text-sm font-bold text-[var(--text-primary)] font-mono">
                     {selectedFoodDetails.caloriesPer100g}
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-[var(--background)]">
                   <div className="text-[10px] text-[var(--text-secondary)]">Protein</div>
-                  <div className="text-sm font-bold text-emerald-500 font-mono">
+                  <div className="text-sm font-bold text-[var(--macro-protein)] font-mono">
                     {selectedFoodDetails.proteinPer100g}g
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-[var(--background)]">
                   <div className="text-[10px] text-[var(--text-secondary)]">Carbs</div>
-                  <div className="text-sm font-bold text-sky-500 font-mono">
+                  <div className="text-sm font-bold text-[var(--macro-carbs)] font-mono">
                     {selectedFoodDetails.carbsPer100g}g
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-[var(--background)]">
                   <div className="text-[10px] text-[var(--text-secondary)]">Fat</div>
-                  <div className="text-sm font-bold text-rose-500 font-mono">
+                  <div className="text-sm font-bold text-[var(--macro-fat)] font-mono">
                     {selectedFoodDetails.fatPer100g}g
                   </div>
                 </div>

@@ -414,24 +414,24 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
     <div className="space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-3 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-5 py-3 rounded-2xl shadow-2xl border border-white/10 animate-in fade-in slide-in-from-top-4 duration-300">
-          <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-3 bg-[var(--surface)] text-[var(--text-primary)] px-5 py-3 rounded-2xl shadow-xl border border-[var(--border)] animate-in fade-in slide-in-from-top-4 duration-300">
+          <Sparkles className="w-5 h-5 text-[var(--accent)] shrink-0" />
           <span className="text-sm font-medium">{toastMessage}</span>
         </div>
       )}
 
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-red-500/5 to-zinc-900/50 p-6 sm:p-8 backdrop-blur-md">
+      <div className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold tracking-wide uppercase">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-subtle)] border border-[var(--border)] text-[var(--accent)] text-xs font-semibold tracking-wide uppercase">
+              <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
               Official McDonald&apos;s Jordan Interactive Nutrition Calculator
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100 flex items-center gap-3">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-3">
               Live Meal Tray &amp; Ingredient Customizer
             </h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
+            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
               Select or deselect items, and <strong>add or remove specific ingredients</strong> (cheese, pickles, sauce, patties, buns) to watch calories, protein, carbs, and fat automatically recalculate and subtract in real-time.
             </p>
           </div>
@@ -440,7 +440,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
             <button
               onClick={importAllMenu}
               disabled={isImportingAll}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-medium text-sm shadow-lg shadow-amber-500/20 transition-all active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-sm shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Download className="w-4 h-4" />
               {isImportingAll ? "Importing All 79..." : "Import Entire Menu (79 items)"}
@@ -449,7 +449,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
               href="https://www.mcdonalds.com.jo/En/NutritionCalculator"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs font-medium transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)] text-xs font-medium transition-colors"
             >
               <span>Original Site</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -463,22 +463,22 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
         {/* Left Column: Menu Items & Controls */}
         <div className="lg:col-span-7 space-y-6">
           {/* Controls: Search, Sort, Category Pills */}
-          <div className="space-y-4 bg-zinc-900/60 p-4 sm:p-5 rounded-2xl border border-white/5 backdrop-blur-sm">
+          <div className="space-y-4 bg-[var(--surface)] p-4 sm:p-5 rounded-2xl border border-[var(--border)] shadow-xs">
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Search input */}
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
                 <input
                   type="text"
                   placeholder="Search Big Mac, Grand Chicken, Fries, Latte, McFlurry..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-800/80 border border-white/10 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-colors"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -487,24 +487,24 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
 
               {/* Sort selector */}
               <div className="relative min-w-[170px]">
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-zinc-800/80 border border-white/10 text-sm text-zinc-200">
-                  <ArrowUpDown className="w-4 h-4 text-zinc-400 shrink-0" />
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-sm text-[var(--text-primary)]">
+                  <ArrowUpDown className="w-4 h-4 text-[var(--text-secondary)] shrink-0" />
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="w-full bg-transparent text-xs font-medium focus:outline-none cursor-pointer"
+                    className="w-full bg-transparent text-xs font-medium focus:outline-none cursor-pointer text-[var(--text-primary)]"
                   >
-                    <option value="name" className="bg-zinc-900 text-zinc-200">Sort: Name (A-Z)</option>
-                    <option value="cal-desc" className="bg-zinc-900 text-zinc-200">Calories: High to Low</option>
-                    <option value="cal-asc" className="bg-zinc-900 text-zinc-200">Calories: Low to High</option>
-                    <option value="protein-desc" className="bg-zinc-900 text-zinc-200">Protein: High to Low</option>
+                    <option value="name" className="bg-[var(--surface)] text-[var(--text-primary)]">Sort: Name (A-Z)</option>
+                    <option value="cal-desc" className="bg-[var(--surface)] text-[var(--text-primary)]">Calories: High to Low</option>
+                    <option value="cal-asc" className="bg-[var(--surface)] text-[var(--text-primary)]">Calories: Low to High</option>
+                    <option value="protein-desc" className="bg-[var(--surface)] text-[var(--text-primary)]">Protein: High to Low</option>
                   </select>
                 </div>
               </div>
             </div>
 
             {/* Category horizontal scrolling pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-700">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-[var(--border)]">
               {categories.map((cat) => {
                 const count =
                   cat === "All"
@@ -517,10 +517,10 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
+                      "px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer",
                       isSelected
-                        ? "bg-amber-500 text-zinc-950 font-semibold shadow-md shadow-amber-500/20"
-                        : "bg-zinc-800/80 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-white/5"
+                        ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
+                        : "bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
                     )}
                   >
                     <span>{cat}</span>
@@ -528,8 +528,8 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                       className={cn(
                         "text-[10px] px-1.5 py-0.5 rounded-full",
                         isSelected
-                          ? "bg-zinc-950/20 text-zinc-950 font-bold"
-                          : "bg-zinc-700/50 text-zinc-400"
+                          ? "bg-black/20 text-white font-bold"
+                          : "bg-[var(--surface)] text-[var(--text-secondary)] border border-[var(--border)]"
                       )}
                     >
                       {count}
@@ -551,21 +551,21 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                 <div
                   key={item.id}
                   className={cn(
-                    "group relative flex flex-col justify-between rounded-2xl border transition-all duration-200 p-4",
+                    "group relative flex flex-col justify-between rounded-2xl border transition-all duration-200 p-4 shadow-xs",
                     qty > 0
-                      ? "bg-zinc-900/90 border-amber-500/40 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/30"
-                      : "bg-zinc-900/50 hover:bg-zinc-900/80 border-white/5 hover:border-white/15"
+                      ? "bg-[var(--surface)] border-[var(--accent)] ring-1 ring-[var(--accent)]/30"
+                      : "bg-[var(--surface)] hover:border-[var(--accent)]/40 border-[var(--border)]"
                   )}
                 >
                   {/* Top: Category Tag & Inspection Button */}
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-semibold tracking-wider text-amber-400/90 uppercase bg-amber-400/10 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-semibold tracking-wider text-[var(--accent)] uppercase bg-[var(--accent-subtle)] border border-[var(--border)] px-2 py-0.5 rounded-md">
                       {item.category}
                     </span>
                     <button
                       onClick={() => handleOpenInspectModal(item)}
                       title="View Ingredients & Nutrition Details"
-                      className="p-1 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-colors flex items-center gap-1 text-[11px]"
+                      className="p-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors flex items-center gap-1 text-[11px] cursor-pointer"
                     >
                       <SlidersHorizontal className="w-3.5 h-3.5" />
                       <span>{ingCount} Ingr.</span>
@@ -582,47 +582,47 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                         <img
                           src={item.image}
                           alt={item.name}
-                          className="max-h-full max-w-full object-contain drop-shadow-md"
+                          className="max-h-full max-w-full object-contain drop-shadow-xs"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+                        <div className="w-16 h-16 rounded-full bg-[var(--background)] border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] text-xl">
                           🍔
                         </div>
                       )}
                     </div>
 
-                    <h3 className="font-semibold text-sm text-zinc-100 line-clamp-1 mt-1">
+                    <h3 className="font-semibold text-sm text-[var(--text-primary)] line-clamp-1 mt-1 group-hover:text-[var(--accent)] transition-colors">
                       {item.name}
                     </h3>
-                    <p className="text-[11px] text-zinc-400 mt-0.5 font-mono">
+                    <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 font-mono">
                       {item.servingSize}g serving
                     </p>
                   </div>
 
                   {/* Macro Highlights */}
-                  <div className="grid grid-cols-4 gap-1.5 my-3 pt-2.5 border-t border-white/5 text-center">
-                    <div className="bg-zinc-800/50 rounded-lg py-1 px-1">
-                      <div className="text-[10px] text-zinc-500">Cal</div>
-                      <div className="text-xs font-semibold text-amber-400 font-mono">
+                  <div className="grid grid-cols-4 gap-1.5 my-3 pt-2.5 border-t border-[var(--border)] text-center">
+                    <div className="bg-[var(--background)] rounded-lg py-1 px-1">
+                      <div className="text-[10px] text-[var(--text-secondary)]">Cal</div>
+                      <div className="text-xs font-semibold text-[var(--text-primary)] font-mono">
                         {item.calories}
                       </div>
                     </div>
-                    <div className="bg-zinc-800/50 rounded-lg py-1 px-1">
-                      <div className="text-[10px] text-zinc-500">Protein</div>
-                      <div className="text-xs font-semibold text-emerald-400 font-mono">
+                    <div className="bg-[var(--background)] rounded-lg py-1 px-1">
+                      <div className="text-[10px] text-[var(--text-secondary)]">Protein</div>
+                      <div className="text-xs font-semibold text-[var(--macro-protein)] font-mono">
                         {item.protein}g
                       </div>
                     </div>
-                    <div className="bg-zinc-800/50 rounded-lg py-1 px-1">
-                      <div className="text-[10px] text-zinc-500">Carbs</div>
-                      <div className="text-xs font-semibold text-sky-400 font-mono">
+                    <div className="bg-[var(--background)] rounded-lg py-1 px-1">
+                      <div className="text-[10px] text-[var(--text-secondary)]">Carbs</div>
+                      <div className="text-xs font-semibold text-[var(--macro-carbs)] font-mono">
                         {item.carbs}g
                       </div>
                     </div>
-                    <div className="bg-zinc-800/50 rounded-lg py-1 px-1">
-                      <div className="text-[10px] text-zinc-500">Fat</div>
-                      <div className="text-xs font-semibold text-rose-400 font-mono">
+                    <div className="bg-[var(--background)] rounded-lg py-1 px-1">
+                      <div className="text-[10px] text-[var(--text-secondary)]">Fat</div>
+                      <div className="text-xs font-semibold text-[var(--macro-fat)] font-mono">
                         {item.fat}g
                       </div>
                     </div>
@@ -632,7 +632,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                   <div className="pt-2 flex items-center gap-2">
                     <button
                       onClick={() => addItemToTray(item)}
-                      className="flex-1 py-2 px-3 rounded-xl bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 text-zinc-200 font-medium text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 border border-white/5"
+                      className="flex-1 py-2 px-3 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>{qty > 0 ? `Add Another (${qty})` : "Add to Tray"}</span>
@@ -640,7 +640,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                     <button
                       onClick={() => handleOpenInspectModal(item)}
                       title="Customize ingredients before adding"
-                      className="p-2 rounded-xl bg-zinc-800/60 hover:bg-zinc-800 text-zinc-400 hover:text-amber-400 border border-white/5 transition-colors"
+                      className="p-2 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)] transition-colors cursor-pointer"
                     >
                       <SlidersHorizontal className="w-3.5 h-3.5" />
                     </button>
@@ -651,14 +651,14 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
           </div>
 
           {filteredItems.length === 0 && (
-            <div className="text-center py-16 bg-zinc-900/40 rounded-3xl border border-white/5">
-              <p className="text-zinc-400 text-sm">No items found matching your filters.</p>
+            <div className="text-center py-16 bg-[var(--surface)] rounded-3xl border border-[var(--border)]">
+              <p className="text-[var(--text-secondary)] text-sm">No items found matching your filters.</p>
               <button
                 onClick={() => {
                   setSelectedCategory("All");
                   setSearchQuery("");
                 }}
-                className="mt-3 text-xs text-amber-400 hover:underline"
+                className="mt-3 text-xs text-[var(--accent)] hover:underline cursor-pointer"
               >
                 Reset filters
               </button>
@@ -668,16 +668,16 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
 
         {/* Right Column: Live Nutrition Tray Calculator with Ingredient Subtraction */}
         <div className="lg:col-span-5 sticky top-6 space-y-5">
-          <div className="rounded-3xl border border-amber-500/20 bg-zinc-900/95 backdrop-blur-xl shadow-2xl p-5 sm:p-6 space-y-6">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-xl p-5 sm:p-6 space-y-6">
             {/* Tray Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <div className="w-9 h-9 rounded-xl bg-[var(--accent-subtle)] border border-[var(--border)] flex items-center justify-center text-[var(--accent)]">
                   <ShoppingBag className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-zinc-100">Live Nutrition Tray</h3>
-                  <p className="text-xs text-zinc-400">
+                  <h3 className="font-semibold text-base text-[var(--text-primary)]">Live Nutrition Tray</h3>
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {totals.itemCount === 1 ? "1 item" : `${totals.itemCount} items`} • With auto-subtract
                   </p>
                 </div>
@@ -686,7 +686,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
               {totals.itemCount > 0 && (
                 <button
                   onClick={clearTray}
-                  className="text-xs text-zinc-400 hover:text-red-400 transition-colors flex items-center gap-1"
+                  className="text-xs text-[var(--text-secondary)] hover:text-[var(--ui-error)] transition-colors flex items-center gap-1 cursor-pointer"
                   title="Clear all selected items"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -696,47 +696,47 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
             </div>
 
             {/* Big Cumulative Calories Display */}
-            <div className="rounded-2xl bg-gradient-to-br from-amber-500/15 via-red-500/10 to-zinc-900 border border-amber-500/20 p-4 text-center relative overflow-hidden">
-              <div className="text-xs font-semibold uppercase tracking-wider text-amber-400">
+            <div className="rounded-2xl bg-[var(--background)] border border-[var(--border)] p-4 text-center relative overflow-hidden">
+              <div className="text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
                 Total Tray Calories
               </div>
-              <div className="text-4xl font-extrabold text-zinc-100 font-mono tracking-tight my-1">
+              <div className="text-4xl font-extrabold text-[var(--text-primary)] font-mono tracking-tight my-1">
                 {Math.round(totals.calories)}
-                <span className="text-sm font-normal text-zinc-400 ml-1.5 font-sans">kcal</span>
+                <span className="text-sm font-normal text-[var(--text-secondary)] ml-1.5 font-sans">kcal</span>
               </div>
-              <div className="text-[11px] text-zinc-400">
-                Total weight: <span className="font-mono text-zinc-300">{Math.round(totals.totalWeight)}g</span>
+              <div className="text-[11px] text-[var(--text-secondary)]">
+                Total weight: <span className="font-mono text-[var(--text-primary)]">{Math.round(totals.totalWeight)}g</span>
               </div>
             </div>
 
             {/* Macro Summary Grid */}
             <div className="grid grid-cols-3 gap-2.5">
-              <div className="bg-zinc-800/60 rounded-xl p-3 border border-white/5 text-center">
-                <div className="flex items-center justify-center gap-1 text-[11px] text-emerald-400 font-medium mb-0.5">
+              <div className="bg-[var(--background)] rounded-xl p-3 border border-[var(--border)] text-center">
+                <div className="flex items-center justify-center gap-1 text-[11px] text-[var(--macro-protein)] font-medium mb-0.5">
                   <Dna className="w-3 h-3" />
                   <span>Protein</span>
                 </div>
-                <div className="text-lg font-bold text-zinc-100 font-mono">
+                <div className="text-lg font-bold text-[var(--text-primary)] font-mono">
                   {Math.round(totals.protein * 10) / 10}g
                 </div>
               </div>
 
-              <div className="bg-zinc-800/60 rounded-xl p-3 border border-white/5 text-center">
-                <div className="flex items-center justify-center gap-1 text-[11px] text-sky-400 font-medium mb-0.5">
+              <div className="bg-[var(--background)] rounded-xl p-3 border border-[var(--border)] text-center">
+                <div className="flex items-center justify-center gap-1 text-[11px] text-[var(--macro-carbs)] font-medium mb-0.5">
                   <Wheat className="w-3 h-3" />
                   <span>Carbs</span>
                 </div>
-                <div className="text-lg font-bold text-zinc-100 font-mono">
+                <div className="text-lg font-bold text-[var(--text-primary)] font-mono">
                   {Math.round(totals.carbs * 10) / 10}g
                 </div>
               </div>
 
-              <div className="bg-zinc-800/60 rounded-xl p-3 border border-white/5 text-center">
-                <div className="flex items-center justify-center gap-1 text-[11px] text-rose-400 font-medium mb-0.5">
+              <div className="bg-[var(--background)] rounded-xl p-3 border border-[var(--border)] text-center">
+                <div className="flex items-center justify-center gap-1 text-[11px] text-[var(--macro-fat)] font-medium mb-0.5">
                   <Droplet className="w-3 h-3" />
                   <span>Fat</span>
                 </div>
-                <div className="text-lg font-bold text-zinc-100 font-mono">
+                <div className="text-lg font-bold text-[var(--text-primary)] font-mono">
                   {Math.round(totals.fat * 10) / 10}g
                 </div>
               </div>
@@ -744,37 +744,37 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
 
             {/* Micro Details (Saturated Fat, Sugar, Fiber, Sodium, Cholesterol) */}
             <div className="space-y-1.5 pt-1 text-xs">
-              <div className="flex justify-between py-1 border-b border-white/5 text-zinc-400">
+              <div className="flex justify-between py-1 border-b border-[var(--border)] text-[var(--text-secondary)]">
                 <span>Saturated Fat</span>
-                <span className="text-zinc-200 font-mono">{Math.round(totals.saturatedFat * 10) / 10}g</span>
+                <span className="text-[var(--text-primary)] font-mono">{Math.round(totals.saturatedFat * 10) / 10}g</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-white/5 text-zinc-400">
+              <div className="flex justify-between py-1 border-b border-[var(--border)] text-[var(--text-secondary)]">
                 <span>Sugars</span>
-                <span className="text-zinc-200 font-mono">{Math.round(totals.sugar * 10) / 10}g</span>
+                <span className="text-[var(--text-primary)] font-mono">{Math.round(totals.sugar * 10) / 10}g</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-white/5 text-zinc-400">
+              <div className="flex justify-between py-1 border-b border-[var(--border)] text-[var(--text-secondary)]">
                 <span>Dietary Fiber</span>
-                <span className="text-zinc-200 font-mono">{Math.round(totals.fiber * 10) / 10}g</span>
+                <span className="text-[var(--text-primary)] font-mono">{Math.round(totals.fiber * 10) / 10}g</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-white/5 text-zinc-400">
+              <div className="flex justify-between py-1 border-b border-[var(--border)] text-[var(--text-secondary)]">
                 <span>Sodium</span>
-                <span className="text-zinc-200 font-mono">{Math.round(totals.sodiumMg)}mg</span>
+                <span className="text-[var(--text-primary)] font-mono">{Math.round(totals.sodiumMg)}mg</span>
               </div>
             </div>
 
             {/* Selected Items List with Interactive Ingredient Subtraction */}
-            <div className="space-y-3 pt-2 border-t border-white/10">
-              <div className="flex items-center justify-between text-xs font-semibold text-zinc-300">
+            <div className="space-y-3 pt-2 border-t border-[var(--border)]">
+              <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-primary)]">
                 <span>Tray Items &amp; Ingredients:</span>
-                <span className="text-[11px] text-amber-400 font-normal">Click ✕ to subtract ingredient</span>
+                <span className="text-[11px] text-[var(--text-secondary)] font-normal">Click ✕ to subtract</span>
               </div>
 
               {trayItems.length === 0 ? (
-                <div className="py-6 text-center text-xs text-zinc-500 italic bg-zinc-800/30 rounded-2xl border border-dashed border-white/5">
+                <div className="py-6 text-center text-xs text-[var(--text-secondary)] italic bg-[var(--background)] rounded-2xl border border-dashed border-[var(--border)]">
                   No items in tray yet. Click &ldquo;+ Add to Tray&rdquo; on any item to calculate live totals!
                 </div>
               ) : (
-                <div className="max-h-96 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-zinc-700">
+                <div className="max-h-96 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-[var(--border)]">
                   {trayItems.map((ti) => {
                     const customNut = getCustomItemNutrition(ti.item, ti.removedIngredients);
                     const isExpanded = expandedTrayInstances.has(ti.instanceId);
@@ -787,8 +787,8 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                         className={cn(
                           "rounded-2xl border transition-all p-3 space-y-2.5",
                           hasRemoved
-                            ? "bg-zinc-800/70 border-amber-500/30 ring-1 ring-amber-500/20"
-                            : "bg-zinc-800/50 border-white/5"
+                            ? "bg-[var(--background)] border-[var(--accent)] ring-1 ring-[var(--accent)]/20"
+                            : "bg-[var(--background)] border-[var(--border)]"
                         )}
                       >
                         {/* Top: Item Title, Qty, & Macros */}
@@ -802,17 +802,17 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                               />
                             )}
                             <div className="min-w-0">
-                              <div className="font-semibold text-xs text-zinc-100 truncate flex items-center gap-1.5">
+                              <div className="font-semibold text-xs text-[var(--text-primary)] truncate flex items-center gap-1.5">
                                 <span>{ti.item.name}</span>
                                 {hasRemoved && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400">
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]">
                                     Customized
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[11px] text-amber-400 font-mono">
+                              <div className="text-[11px] text-[var(--text-primary)] font-mono">
                                 <strong>{customNut.calories * ti.quantity} kcal</strong>
-                                <span className="text-zinc-500 text-[10px] ml-1">
+                                <span className="text-[var(--text-secondary)] text-[10px] ml-1">
                                   ({customNut.calories} kcal ea • P: {customNut.protein}g • C: {customNut.carbs}g • F: {customNut.fat}g)
                                 </span>
                               </div>
@@ -823,22 +823,22 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               onClick={() => updateQuantity(ti.instanceId, -1)}
-                              className="w-5 h-5 rounded bg-zinc-700 hover:bg-zinc-600 flex items-center justify-center text-zinc-300 text-xs"
+                              className="w-5 h-5 rounded bg-[var(--surface)] hover:bg-[var(--border)] border border-[var(--border)] flex items-center justify-center text-[var(--text-primary)] text-xs cursor-pointer"
                             >
                               <Minus className="w-3 h-3" />
                             </button>
-                            <span className="w-5 text-center font-bold font-mono text-xs text-zinc-100">
+                            <span className="w-5 text-center font-bold font-mono text-xs text-[var(--text-primary)]">
                               {ti.quantity}
                             </span>
                             <button
                               onClick={() => updateQuantity(ti.instanceId, 1)}
-                              className="w-5 h-5 rounded bg-amber-500 hover:bg-amber-400 flex items-center justify-center text-zinc-950 font-bold text-xs"
+                              className="w-5 h-5 rounded bg-[var(--accent)] hover:bg-[var(--accent-hover)] flex items-center justify-center text-white font-bold text-xs cursor-pointer shadow-xs"
                             >
                               <Plus className="w-3 h-3" />
                             </button>
                             <button
                               onClick={() => removeTrayItem(ti.instanceId)}
-                              className="p-1 text-zinc-500 hover:text-red-400 ml-1 transition-colors"
+                              className="p-1 text-[var(--text-secondary)] hover:text-[var(--ui-error)] ml-1 transition-colors cursor-pointer"
                               title="Delete from tray"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -848,13 +848,13 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
 
                         {/* Ingredients Breakdown & Removal Chips */}
                         {ingredientsList.length > 0 && (
-                          <div className="pt-2 border-t border-white/5 space-y-2">
+                          <div className="pt-2 border-t border-[var(--border)] space-y-2">
                             <div className="flex items-center justify-between">
                               <button
                                 onClick={() => toggleExpand(ti.instanceId)}
-                                className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-1 font-medium"
+                                className="text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 font-medium cursor-pointer"
                               >
-                                <SlidersHorizontal className="w-3 h-3 text-amber-400" />
+                                <SlidersHorizontal className="w-3 h-3 text-[var(--accent)]" />
                                 <span>Customize Ingredients ({ingredientsList.length})</span>
                                 {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                               </button>
@@ -866,7 +866,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                                       prev.map((t) => (t.instanceId === ti.instanceId ? { ...t, removedIngredients: [] } : t))
                                     );
                                   }}
-                                  className="text-[10px] text-zinc-400 hover:text-amber-400 flex items-center gap-1"
+                                  className="text-[10px] text-[var(--text-secondary)] hover:text-[var(--accent)] flex items-center gap-1 cursor-pointer"
                                   title="Restore all ingredients"
                                 >
                                   <RotateCcw className="w-2.5 h-2.5" />
@@ -886,25 +886,25 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                                       key={ing.name}
                                       onClick={() => toggleTrayIngredient(ti.instanceId, ing.name)}
                                       className={cn(
-                                        "px-2 py-1 rounded-lg text-[10px] font-medium transition-all flex items-center gap-1.5 border",
+                                        "px-2 py-1 rounded-lg text-[10px] font-medium transition-all flex items-center gap-1.5 border cursor-pointer",
                                         isRemoved
-                                          ? "bg-red-500/10 border-red-500/30 text-red-400 line-through hover:bg-red-500/20"
-                                          : "bg-zinc-800/80 hover:bg-zinc-800 border-white/10 text-zinc-300 hover:text-white"
+                                          ? "bg-[var(--ui-error-bg)] border-[var(--ui-error-border)] text-[var(--ui-error)] line-through"
+                                          : "bg-[var(--surface)] hover:bg-[var(--background)] border-[var(--border)] text-[var(--text-primary)]"
                                       )}
                                       title={isRemoved ? `Click to add ${ing.name} back (+${ing.calories} kcal)` : `Click to remove ${ing.name} (-${ing.calories} kcal)`}
                                     >
                                       {isRemoved ? (
                                         <>
-                                          <Plus className="w-3 h-3 text-emerald-400 shrink-0" />
+                                          <Plus className="w-3 h-3 text-[var(--accent)] shrink-0" />
                                           <span>No {ing.name}</span>
-                                          <span className="text-[9px] text-red-400 font-mono">(-{ing.calories})</span>
+                                          <span className="text-[9px] text-[var(--ui-error)] font-mono">(-{ing.calories})</span>
                                         </>
                                       ) : (
                                         <>
-                                          <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                                          <Check className="w-3 h-3 text-[var(--accent)] shrink-0" />
                                           <span>{ing.name}</span>
-                                          <span className="text-[9px] text-zinc-500 font-mono">({ing.calories} kcal)</span>
-                                          <span className="w-3.5 h-3.5 rounded-full bg-zinc-700 flex items-center justify-center text-[8px] text-zinc-400 hover:text-red-400 ml-0.5">
+                                          <span className="text-[9px] text-[var(--text-secondary)] font-mono">({ing.calories} kcal)</span>
+                                          <span className="w-3.5 h-3.5 rounded-full bg-[var(--background)] flex items-center justify-center text-[8px] text-[var(--text-secondary)] hover:text-[var(--ui-error)] ml-0.5 border border-[var(--border)]">
                                             ✕
                                           </span>
                                         </>
@@ -924,11 +924,11 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
             </div>
 
             {/* Action Buttons: Import Selected */}
-            <div className="space-y-2.5 pt-2 border-t border-white/10">
+            <div className="space-y-2.5 pt-2 border-t border-[var(--border)]">
               <button
                 onClick={importSelectedToFoods}
                 disabled={trayItems.length === 0 || isImportingSelected}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all active:scale-98 disabled:opacity-40"
+                className="w-full py-3 px-4 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98 disabled:opacity-40 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 <span>
@@ -941,9 +941,9 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
               <button
                 onClick={addSelectedToPantry}
                 disabled={trayItems.length === 0 || isAddingToPantry}
-                className="w-full py-2.5 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs flex items-center justify-center gap-2 border border-white/10 transition-all active:scale-98 disabled:opacity-40"
+                className="w-full py-2.5 px-4 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-primary)] font-medium text-xs flex items-center justify-center gap-2 border border-[var(--border)] transition-all active:scale-98 disabled:opacity-40 cursor-pointer"
               >
-                <PackagePlus className="w-4 h-4 text-amber-400" />
+                <PackagePlus className="w-4 h-4 text-[var(--accent)]" />
                 <span>
                   {isAddingToPantry ? "Adding..." : "Add Tray to Active Pantry"}
                 </span>
@@ -955,18 +955,18 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
 
       {/* Item Nutrition Details & Pre-Customization Modal */}
       {inspectingItem && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-white/10 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto text-[var(--text-primary)]">
             <button
               onClick={() => setInspectingItem(null)}
-              className="absolute top-5 right-5 p-2 text-zinc-400 hover:text-white rounded-full bg-zinc-800/80"
+              className="absolute top-5 right-5 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full bg-[var(--background)] border border-[var(--border)] cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
 
             {/* Header */}
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-zinc-800/50 rounded-2xl flex items-center justify-center p-2 shrink-0">
+              <div className="w-20 h-20 bg-[var(--background)] border border-[var(--border)] rounded-2xl flex items-center justify-center p-2 shrink-0">
                 {inspectingItem.image ? (
                   <img
                     src={inspectingItem.image}
@@ -978,13 +978,13 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                 )}
               </div>
               <div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)] bg-[var(--accent-subtle)] border border-[var(--border)] px-2 py-0.5 rounded">
                   {inspectingItem.category}
                 </span>
-                <h3 className="text-xl font-bold text-zinc-100 mt-1">
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mt-1">
                   {inspectingItem.name}
                 </h3>
-                <p className="text-xs text-zinc-400 font-mono">
+                <p className="text-xs text-[var(--text-secondary)] font-mono">
                   Base Serving Size: {inspectingItem.servingSize}g
                 </p>
               </div>
@@ -998,37 +998,37 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
               return (
                 <div className="space-y-4">
                   {/* Macros Preview */}
-                  <div className="rounded-2xl bg-zinc-800/60 p-4 border border-white/5 space-y-2">
-                    <div className="flex items-center justify-between text-xs text-zinc-400">
+                  <div className="rounded-2xl bg-[var(--background)] p-4 border border-[var(--border)] space-y-2">
+                    <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
                       <span>Calculated Nutrition:</span>
                       {hasModalRemoved && (
-                        <span className="text-amber-400 font-medium">
+                        <span className="text-[var(--accent)] font-medium">
                           ({modalRemovedIngredients.length} ingredient{modalRemovedIngredients.length > 1 ? "s" : ""} subtracted)
                         </span>
                       )}
                     </div>
                     <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                      <div className="p-2 bg-zinc-900/60 rounded-xl">
-                        <div className="text-[10px] text-zinc-400">Calories</div>
-                        <div className="font-bold text-amber-400 font-mono text-sm">
+                      <div className="p-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl">
+                        <div className="text-[10px] text-[var(--text-secondary)]">Calories</div>
+                        <div className="font-bold text-[var(--text-primary)] font-mono text-sm">
                           {modalNut.calories} kcal
                         </div>
                       </div>
-                      <div className="p-2 bg-zinc-900/60 rounded-xl">
-                        <div className="text-[10px] text-zinc-400">Protein</div>
-                        <div className="font-bold text-emerald-400 font-mono text-sm">
+                      <div className="p-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl">
+                        <div className="text-[10px] text-[var(--text-secondary)]">Protein</div>
+                        <div className="font-bold text-[var(--macro-protein)] font-mono text-sm">
                           {modalNut.protein}g
                         </div>
                       </div>
-                      <div className="p-2 bg-zinc-900/60 rounded-xl">
-                        <div className="text-[10px] text-zinc-400">Carbs</div>
-                        <div className="font-bold text-sky-400 font-mono text-sm">
+                      <div className="p-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl">
+                        <div className="text-[10px] text-[var(--text-secondary)]">Carbs</div>
+                        <div className="font-bold text-[var(--macro-carbs)] font-mono text-sm">
                           {modalNut.carbs}g
                         </div>
                       </div>
-                      <div className="p-2 bg-zinc-900/60 rounded-xl">
-                        <div className="text-[10px] text-zinc-400">Fat</div>
-                        <div className="font-bold text-rose-400 font-mono text-sm">
+                      <div className="p-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl">
+                        <div className="text-[10px] text-[var(--text-secondary)]">Fat</div>
+                        <div className="font-bold text-[var(--macro-fat)] font-mono text-sm">
                           {modalNut.fat}g
                         </div>
                       </div>
@@ -1039,13 +1039,13 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                   {inspectingItem.customizableIngredients && inspectingItem.customizableIngredients.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                           Ingredients (Click to remove/add):
                         </h4>
                         {hasModalRemoved && (
                           <button
                             onClick={() => setModalRemovedIngredients([])}
-                            className="text-[11px] text-amber-400 hover:underline"
+                            className="text-[11px] text-[var(--accent)] hover:underline cursor-pointer"
                           >
                             Reset All
                           </button>
@@ -1065,17 +1065,17 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                                 );
                               }}
                               className={cn(
-                                "w-full p-2.5 rounded-xl text-xs flex items-center justify-between border transition-all text-left",
+                                "w-full p-2.5 rounded-xl text-xs flex items-center justify-between border transition-all text-left cursor-pointer",
                                 isRemoved
-                                  ? "bg-red-500/10 border-red-500/30 text-red-400 line-through"
-                                  : "bg-zinc-800/80 hover:bg-zinc-800 border-white/5 text-zinc-200"
+                                  ? "bg-[var(--ui-error-bg)] border-[var(--ui-error-border)] text-[var(--ui-error)] line-through"
+                                  : "bg-[var(--surface)] hover:bg-[var(--background)] border-[var(--border)] text-[var(--text-primary)]"
                               )}
                             >
                               <div className="flex items-center gap-2">
                                 <span
                                   className={cn(
                                     "w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold",
-                                    isRemoved ? "bg-red-500/20 text-red-400" : "bg-emerald-500/20 text-emerald-400"
+                                    isRemoved ? "bg-[var(--ui-error-bg)] text-[var(--ui-error)] border border-[var(--ui-error-border)]" : "bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]"
                                   )}
                                 >
                                   {isRemoved ? "✕" : "✓"}
@@ -1083,7 +1083,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                                 <span>{ing.name}</span>
                               </div>
 
-                              <span className="text-[11px] font-mono text-zinc-400">
+                              <span className="text-[11px] font-mono text-[var(--text-secondary)]">
                                 {isRemoved ? `-${ing.calories} kcal` : `${ing.calories} kcal`}
                               </span>
                             </button>
@@ -1095,20 +1095,20 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
 
                   {/* Product Description */}
                   {inspectingItem.brief && (
-                    <p className="text-xs text-zinc-300 bg-zinc-800/40 p-3 rounded-xl border border-white/5 leading-relaxed">
+                    <p className="text-xs text-[var(--text-secondary)] bg-[var(--background)] p-3 rounded-xl border border-[var(--border)] leading-relaxed">
                       {inspectingItem.brief}
                     </p>
                   )}
 
                   {/* Modal Actions */}
-                  <div className="flex items-center gap-3 pt-3 border-t border-white/10">
+                  <div className="flex items-center gap-3 pt-3 border-t border-[var(--border)]">
                     <button
                       onClick={() => {
                         addItemToTray(inspectingItem, modalRemovedIngredients);
                         setInspectingItem(null);
                         showToast(`Added ${formatItemDisplayName(inspectingItem, modalRemovedIngredients)} to your tray!`);
                       }}
-                      className="flex-1 py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-amber-500/20"
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Add to Tray ({modalNut.calories} kcal)</span>
@@ -1139,9 +1139,9 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                         onImportSuccess?.();
                         setInspectingItem(null);
                       }}
-                      className="py-2.5 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs flex items-center gap-1.5 transition-colors border border-white/10"
+                      className="py-2.5 px-4 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-primary)] font-medium text-xs flex items-center gap-1.5 transition-colors border border-[var(--border)] cursor-pointer"
                     >
-                      <Download className="w-4 h-4 text-amber-400" />
+                      <Download className="w-4 h-4 text-[var(--accent)]" />
                       <span>Direct Import</span>
                     </button>
                   </div>

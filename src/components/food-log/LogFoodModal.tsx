@@ -288,28 +288,28 @@ export function LogFoodModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-3xl bg-zinc-900 border border-white/10 shadow-2xl p-5 sm:p-6 space-y-5 flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl p-5 sm:p-6 space-y-5 flex flex-col max-h-[90vh] text-[var(--text-primary)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
           <div>
-            <h3 className="font-bold text-lg text-zinc-100 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-amber-400" />
+            <h3 className="font-semibold text-lg text-[var(--text-primary)] flex items-center gap-2">
+              <Plus className="w-5 h-5 text-[var(--accent)]" />
               <span>Log Food Intake</span>
             </h3>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
               Log foods from your recipes, personal food library, or McDonald&apos;s Jordan catalog.
             </p>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-full bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -319,10 +319,10 @@ export function LogFoodModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Meal Category Pills */}
           <div>
-            <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
               Meal Time
             </label>
-            <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-zinc-800/80 border border-white/5">
+            <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-[var(--background)] border border-[var(--border)]">
               {(
                 [
                   { id: "breakfast", label: "Breakfast", icon: "🌅" },
@@ -336,10 +336,10 @@ export function LogFoodModal({
                   type="button"
                   onClick={() => setMealCategory(cat.id)}
                   className={cn(
-                    "py-1.5 text-center rounded-lg text-xs font-medium transition-all",
+                    "py-1.5 text-center rounded-lg text-xs font-medium transition-all cursor-pointer",
                     mealCategory === cat.id
-                      ? "bg-amber-500 text-zinc-950 font-bold shadow-sm"
-                      : "text-zinc-400 hover:text-zinc-200"
+                      ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   )}
                 >
                   <span className="block text-xs">{cat.icon}</span>
@@ -351,56 +351,56 @@ export function LogFoodModal({
 
           {/* Date Picker */}
           <div>
-            <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
               Date Logged
             </label>
             <input
               type="date"
               value={logDate}
               onChange={(e) => setLogDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-zinc-800/80 border border-white/10 text-xs text-zinc-100 focus:outline-none focus:border-amber-500/50"
+              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
             />
           </div>
         </div>
 
         {/* Source Navigation Tabs */}
-        <div className="flex items-center gap-2 p-1 rounded-xl bg-zinc-800/60 border border-white/5 text-xs">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs">
           <button
             onClick={() => setActiveTab("recipes")}
             className={cn(
-              "flex-1 py-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all",
+              "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
               activeTab === "recipes"
-                ? "bg-amber-500 text-zinc-950 shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            <BookOpen className="w-3.5 h-3.5" />
+            <BookOpen className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>My Recipes ({recipes.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("foods")}
             className={cn(
-              "flex-1 py-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all",
+              "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
               activeTab === "foods"
-                ? "bg-amber-500 text-zinc-950 shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            <Apple className="w-3.5 h-3.5" />
+            <Apple className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Foods &amp; McDonald&apos;s</span>
           </button>
 
           <button
             onClick={() => setActiveTab("quick")}
             className={cn(
-              "flex-1 py-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all",
+              "flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer",
               activeTab === "quick"
-                ? "bg-amber-500 text-zinc-950 shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            <Zap className="w-3.5 h-3.5" />
+            <Zap className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Quick Add</span>
           </button>
         </div>
@@ -409,19 +409,19 @@ export function LogFoodModal({
         {activeTab === "recipes" && (
           <div className="flex-1 flex flex-col min-h-0 space-y-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
               <input
                 type="text"
                 placeholder="Search recipe by name..."
                 value={recipeSearch}
                 onChange={(e) => setRecipeSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-800/80 border border-white/10 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-amber-500/50"
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-white/5 scrollbar-thin scrollbar-thumb-zinc-700">
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-[var(--border)] scrollbar-thin scrollbar-thumb-[var(--border)]">
               {filteredRecipes.length === 0 ? (
-                <div className="py-12 text-center text-xs text-zinc-500">
+                <div className="py-12 text-center text-xs text-[var(--text-secondary)]">
                   No recipes found. Create recipes in the Recipes tab or use Quick Add!
                 </div>
               ) : (
@@ -442,33 +442,33 @@ export function LogFoodModal({
                           <img
                             src={r.imageUrl}
                             alt={r.name}
-                            className="w-12 h-12 rounded-xl object-cover shrink-0"
+                            className="w-12 h-12 rounded-xl object-cover shrink-0 border border-[var(--border)]"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-500 shrink-0 text-lg">
+                          <div className="w-12 h-12 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] shrink-0 text-lg">
                             🍲
                           </div>
                         )}
                         <div className="min-w-0">
-                          <h4 className="font-semibold text-xs text-zinc-100 truncate">
+                          <h4 className="font-semibold text-xs text-[var(--text-primary)] truncate">
                             {r.name}
                           </h4>
                           <div className="flex items-center gap-1.5 text-[11px] font-mono mt-0.5">
-                            <span className="text-amber-400 font-bold">{totalCal} kcal</span>
-                            <span className="text-zinc-600">•</span>
-                            <span className="text-emerald-400">{totalPro}g P</span>
-                            <span className="text-zinc-600">•</span>
-                            <span className="text-sky-400">{totalCarbs}g C</span>
-                            <span className="text-zinc-600">•</span>
-                            <span className="text-rose-400">{totalFat}g F</span>
+                            <span className="text-[var(--text-primary)] font-bold">{totalCal} kcal</span>
+                            <span className="text-[var(--border)]">•</span>
+                            <span className="text-[var(--macro-protein)] font-medium">{totalPro}g P</span>
+                            <span className="text-[var(--border)]">•</span>
+                            <span className="text-[var(--macro-carbs)] font-medium">{totalCarbs}g C</span>
+                            <span className="text-[var(--border)]">•</span>
+                            <span className="text-[var(--macro-fat)] font-medium">{totalFat}g F</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Servings Stepper & Log Button */}
                       <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <div className="flex items-center gap-1 bg-zinc-800 rounded-lg p-1 border border-white/5">
-                          <span className="text-[10px] text-zinc-400 px-1">Servings:</span>
+                        <div className="flex items-center gap-1 bg-[var(--background)] rounded-lg p-1 border border-[var(--border)]">
+                          <span className="text-[10px] text-[var(--text-secondary)] px-1">Servings:</span>
                           <input
                             type="number"
                             step="0.25"
@@ -481,7 +481,7 @@ export function LogFoodModal({
                                 [r.id]: Math.max(0.1, Number(e.target.value) || 1),
                               }))
                             }
-                            className="w-12 text-center bg-zinc-900 rounded py-0.5 text-xs text-zinc-100 font-mono focus:outline-none"
+                            className="w-12 text-center bg-[var(--surface)] border border-[var(--border)] rounded py-0.5 text-xs text-[var(--text-primary)] font-mono focus:outline-none"
                           />
                         </div>
 
@@ -489,7 +489,7 @@ export function LogFoodModal({
                           type="button"
                           disabled={isSubmitting}
                           onClick={() => handleLogRecipe(r)}
-                          className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center gap-1 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Log</span>
@@ -508,13 +508,13 @@ export function LogFoodModal({
           <div className="flex-1 flex flex-col min-h-0 space-y-3">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
                 <input
                   type="text"
                   placeholder="Search Big Mac, chicken, rice, banana, latte..."
                   value={foodSearch}
                   onChange={(e) => setFoodSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-800/80 border border-white/10 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-amber-500/50"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
                 />
               </div>
 
@@ -523,10 +523,10 @@ export function LogFoodModal({
                   type="button"
                   onClick={() => setFoodFilterSource("all")}
                   className={cn(
-                    "px-2.5 py-1.5 rounded-lg font-medium",
+                    "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
                     foodFilterSource === "all"
-                      ? "bg-amber-500 text-zinc-950 font-bold"
-                      : "bg-zinc-800 text-zinc-400"
+                      ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
+                      : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
                   )}
                 >
                   All
@@ -535,10 +535,10 @@ export function LogFoodModal({
                   type="button"
                   onClick={() => setFoodFilterSource("mcdonalds")}
                   className={cn(
-                    "px-2.5 py-1.5 rounded-lg font-medium flex items-center gap-1",
+                    "px-2.5 py-1.5 rounded-lg font-medium flex items-center gap-1 transition cursor-pointer",
                     foodFilterSource === "mcdonalds"
-                      ? "bg-amber-500 text-zinc-950 font-bold"
-                      : "bg-zinc-800 text-zinc-400"
+                      ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
+                      : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
                   )}
                 >
                   <span>🍔 McDonald&apos;s</span>
@@ -547,10 +547,10 @@ export function LogFoodModal({
                   type="button"
                   onClick={() => setFoodFilterSource("custom")}
                   className={cn(
-                    "px-2.5 py-1.5 rounded-lg font-medium",
+                    "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
                     foodFilterSource === "custom"
-                      ? "bg-amber-500 text-zinc-950 font-bold"
-                      : "bg-zinc-800 text-zinc-400"
+                      ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
+                      : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
                   )}
                 >
                   My Foods
@@ -558,9 +558,9 @@ export function LogFoodModal({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-white/5 scrollbar-thin scrollbar-thumb-zinc-700">
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-[var(--border)] scrollbar-thin scrollbar-thumb-[var(--border)]">
               {filteredFoods.length === 0 ? (
-                <div className="py-12 text-center text-xs text-zinc-500">
+                <div className="py-12 text-center text-xs text-[var(--text-secondary)]">
                   No foods matching your query.
                 </div>
               ) : (
@@ -585,35 +585,35 @@ export function LogFoodModal({
                             className="w-10 h-10 object-contain shrink-0"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-400 shrink-0 text-sm">
+                          <div className="w-10 h-10 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] shrink-0 text-sm">
                             {f.isMcDonalds ? "🍔" : "🥗"}
                           </div>
                         )}
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-semibold text-xs text-zinc-100 truncate">
+                            <span className="font-semibold text-xs text-[var(--text-primary)] truncate">
                               {f.name}
                             </span>
-                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-zinc-800 text-amber-400">
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-[var(--accent-subtle)] text-[var(--accent)] font-medium">
                               {f.category}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5 text-[11px] font-mono mt-0.5">
-                            <span className="text-amber-400 font-bold">{totalCal} kcal</span>
-                            <span className="text-zinc-600">•</span>
-                            <span className="text-emerald-400">{totalPro}g P</span>
-                            <span className="text-zinc-600">•</span>
-                            <span className="text-sky-400">{totalCarbs}g C</span>
-                            <span className="text-zinc-600">•</span>
-                            <span className="text-rose-400">{totalFat}g F</span>
+                            <span className="text-[var(--text-primary)] font-bold">{totalCal} kcal</span>
+                            <span className="text-[var(--border)]">•</span>
+                            <span className="text-[var(--macro-protein)] font-medium">{totalPro}g P</span>
+                            <span className="text-[var(--border)]">•</span>
+                            <span className="text-[var(--macro-carbs)] font-medium">{totalCarbs}g C</span>
+                            <span className="text-[var(--border)]">•</span>
+                            <span className="text-[var(--macro-fat)] font-medium">{totalFat}g F</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Weight Grams Input & Log Button */}
                       <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <div className="flex items-center gap-1 bg-zinc-800 rounded-lg p-1 border border-white/5">
-                          <span className="text-[10px] text-zinc-400 px-1">Weight:</span>
+                        <div className="flex items-center gap-1 bg-[var(--background)] rounded-lg p-1 border border-[var(--border)]">
+                          <span className="text-[10px] text-[var(--text-secondary)] px-1">Weight:</span>
                           <input
                             type="number"
                             step="5"
@@ -625,16 +625,16 @@ export function LogFoodModal({
                                 [f.id]: Math.max(1, Number(e.target.value) || 100),
                               }))
                             }
-                            className="w-14 text-center bg-zinc-900 rounded py-0.5 text-xs text-zinc-100 font-mono focus:outline-none"
+                            className="w-14 text-center bg-[var(--surface)] border border-[var(--border)] rounded py-0.5 text-xs text-[var(--text-primary)] font-mono focus:outline-none"
                           />
-                          <span className="text-[10px] text-zinc-400 pr-1">g</span>
+                          <span className="text-[10px] text-[var(--text-secondary)] pr-1">g</span>
                         </div>
 
                         <button
                           type="button"
                           disabled={isSubmitting}
                           onClick={() => handleLogFood(f)}
-                          className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center gap-1 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Log</span>
@@ -652,7 +652,7 @@ export function LogFoodModal({
         {activeTab === "quick" && (
           <form onSubmit={handleQuickAdd} className="space-y-4 pt-1">
             <div>
-              <label className="block text-xs text-zinc-400 mb-1 font-medium">
+              <label className="block text-xs text-[var(--text-secondary)] mb-1 font-medium">
                 Food / Meal Name *
               </label>
               <input
@@ -661,13 +661,13 @@ export function LogFoodModal({
                 placeholder="e.g. Protein shake with berries, Shawarma wrap..."
                 value={quickName}
                 onChange={(e) => setQuickName(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-zinc-800/80 border border-white/10 text-zinc-100 focus:outline-none focus:border-amber-500/50"
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
               />
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">Calories (kcal) *</label>
+                <label className="block text-[11px] text-[var(--text-secondary)] mb-1 font-medium">Calories (kcal) *</label>
                 <input
                   type="number"
                   step="any"
@@ -675,43 +675,43 @@ export function LogFoodModal({
                   placeholder="0"
                   value={quickCalories}
                   onChange={(e) => setQuickCalories(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-zinc-800/80 border border-white/10 text-zinc-100 font-mono focus:outline-none focus:border-amber-500/50"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">Protein (g)</label>
+                <label className="block text-[11px] text-[var(--text-secondary)] mb-1 font-medium">Protein (g)</label>
                 <input
                   type="number"
                   step="any"
                   placeholder="0"
                   value={quickProtein}
                   onChange={(e) => setQuickProtein(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-zinc-800/80 border border-white/10 text-zinc-100 font-mono focus:outline-none focus:border-amber-500/50"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">Carbs (g)</label>
+                <label className="block text-[11px] text-[var(--text-secondary)] mb-1 font-medium">Carbs (g)</label>
                 <input
                   type="number"
                   step="any"
                   placeholder="0"
                   value={quickCarbs}
                   onChange={(e) => setQuickCarbs(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-zinc-800/80 border border-white/10 text-zinc-100 font-mono focus:outline-none focus:border-amber-500/50"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">Fat (g)</label>
+                <label className="block text-[11px] text-[var(--text-secondary)] mb-1 font-medium">Fat (g)</label>
                 <input
                   type="number"
                   step="any"
                   placeholder="0"
                   value={quickFat}
                   onChange={(e) => setQuickFat(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-zinc-800/80 border border-white/10 text-zinc-100 font-mono focus:outline-none focus:border-amber-500/50"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors"
                 />
               </div>
             </div>
@@ -720,7 +720,7 @@ export function LogFoodModal({
               <button
                 type="submit"
                 disabled={isSubmitting || !quickName.trim()}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 <span>Log to {mealCategory.toUpperCase()}</span>

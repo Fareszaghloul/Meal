@@ -126,7 +126,7 @@ export function BodyFatTrendChart({
   if (!hasAnyInBody) {
     return (
       <div className={cn("p-8 rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-center shadow-xs", className)}>
-        <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center mx-auto mb-2.5">
+        <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center mx-auto mb-2.5">
           <Activity className="w-5 h-5" />
         </div>
         <h4 className="text-sm font-semibold text-[var(--text-primary)]">No InBody Scans Recorded Yet</h4>
@@ -270,11 +270,11 @@ export function BodyFatTrendChart({
                   "ml-2 font-medium font-tabular",
                   activeMetric === "smm"
                     ? totalChange >= 0
-                      ? "text-emerald-500"
-                      : "text-amber-500"
+                      ? "text-[var(--accent)]"
+                      : "text-[var(--macro-carbs)]"
                     : totalChange <= 0
-                    ? "text-emerald-500"
-                    : "text-amber-500"
+                    ? "text-[var(--accent)]"
+                    : "text-[var(--macro-carbs)]"
                 )}
               >
                 {totalChange > 0 ? `+${totalChange}` : `${totalChange}`}

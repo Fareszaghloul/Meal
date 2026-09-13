@@ -205,7 +205,7 @@ export default function AdminPage() {
             <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               User Management
             </h1>
-            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-500">
+            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]">
               Admin Only
             </span>
           </div>
@@ -239,15 +239,15 @@ export default function AdminPage() {
 
       {/* Data Isolation Guarantee Callout */}
       <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs flex items-start space-x-3.5">
-        <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+        <div className="w-8 h-8 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center shrink-0 mt-0.5">
           <ShieldCheck className="w-4 h-4" />
         </div>
         <div>
           <h3 className="text-xs font-bold text-[var(--text-primary)]">
-            Separate & Isolated Personal Data
+            Separate &amp; Isolated Personal Data
           </h3>
           <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-relaxed">
-            Every user account created operates in its own separate data space. Recipes, meal plans, pantry inventory, body weight & InBody measurements, and settings are completely private to each person.
+            Every user account created operates in its own separate data space. Recipes, meal plans, pantry inventory, body weight &amp; InBody measurements, and settings are completely private to each person.
           </p>
         </div>
       </div>
@@ -265,7 +265,7 @@ export default function AdminPage() {
         </div>
 
         <div className="p-5 bg-[var(--surface)] border border-[var(--border)] rounded-2xl flex items-center space-x-4 shadow-xs">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
             <Key className="w-5 h-5" />
           </div>
           <div>
@@ -275,7 +275,7 @@ export default function AdminPage() {
         </div>
 
         <div className="p-5 bg-[var(--surface)] border border-[var(--border)] rounded-2xl flex items-center space-x-4 shadow-xs">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-[var(--macro-protein-bg)] text-[var(--macro-protein)] flex items-center justify-center">
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
@@ -287,13 +287,13 @@ export default function AdminPage() {
 
       {/* Notifications */}
       {actionError && (
-        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs flex items-center space-x-2">
+        <div className="p-3.5 rounded-xl bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)] text-xs flex items-center space-x-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{actionError}</span>
         </div>
       )}
       {actionSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs flex items-center space-x-2">
+        <div className="p-3.5 rounded-xl bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)] text-xs flex items-center space-x-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{actionSuccess}</span>
         </div>
@@ -411,7 +411,7 @@ export default function AdminPage() {
                           className={cn(
                             "inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-md",
                             u.role === "admin"
-                              ? "bg-amber-500/15 text-amber-500"
+                              ? "bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]"
                               : "bg-[var(--background)] text-[var(--text-secondary)] border border-[var(--border)]"
                           )}
                         >
@@ -424,14 +424,14 @@ export default function AdminPage() {
                           className={cn(
                             "inline-flex items-center space-x-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-md",
                             u.status === "active"
-                              ? "bg-emerald-500/10 text-emerald-500"
-                              : "bg-red-500/10 text-red-500"
+                              ? "bg-[var(--ui-success-bg)] text-[var(--ui-success)] border border-[var(--ui-success-border)]"
+                              : "bg-[var(--ui-error-bg)] text-[var(--ui-error)] border border-[var(--ui-error-border)]"
                           )}
                         >
                           <span
                             className={cn(
                               "w-1.5 h-1.5 rounded-full",
-                              u.status === "active" ? "bg-emerald-500" : "bg-red-500"
+                              u.status === "active" ? "bg-[var(--ui-success)]" : "bg-[var(--ui-error)]"
                             )}
                           />
                           <span>{u.status}</span>
@@ -459,8 +459,8 @@ export default function AdminPage() {
                             className={cn(
                               "p-1.5 rounded-lg border border-[var(--border)] transition cursor-pointer disabled:opacity-30",
                               u.status === "active"
-                                ? "text-red-500 hover:bg-red-500/10"
-                                : "text-emerald-500 hover:bg-emerald-500/10"
+                                ? "text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)]"
+                                : "text-[var(--ui-success)] hover:bg-[var(--ui-success-bg)]"
                             )}
                             title={u.status === "active" ? "Disable account" : "Enable account"}
                           >
@@ -475,7 +475,7 @@ export default function AdminPage() {
                           <button
                             onClick={() => handleChangeRole(u)}
                             disabled={isCurrent || isBusy}
-                            className="p-1.5 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:text-amber-500 hover:bg-amber-500/10 transition cursor-pointer disabled:opacity-30"
+                            className="p-1.5 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition cursor-pointer disabled:opacity-30"
                             title="Toggle role (user/admin)"
                           >
                             <Key className="w-3.5 h-3.5" />

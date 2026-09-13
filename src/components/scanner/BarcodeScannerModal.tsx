@@ -732,7 +732,7 @@ export function BarcodeScannerModal({
                     onClick={toggleTorch}
                     className={`absolute top-3 right-3 z-20 p-2.5 rounded-full backdrop-blur-md transition shadow-md touch-manipulation flex items-center justify-center ${
                       isTorchOn
-                        ? "bg-amber-400 text-black shadow-amber-400/50"
+                        ? "bg-[var(--accent)] text-white shadow-xs"
                         : "bg-black/60 text-white hover:bg-black/80 border border-white/20"
                     }`}
                     title={isTorchOn ? "Turn off flashlight" : "Turn on flashlight"}
