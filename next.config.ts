@@ -6,6 +6,18 @@ const nextConfig: NextConfig = {
     "localhost:3000",
     "127.0.0.1:3000",
   ],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.mcdonalds.com.jo",
+      },
+      {
+        protocol: "http",
+        hostname: "**.mcdonalds.com.jo",
+      },
+    ],
+  },
   headers: async () => [
     {
       source: "/:path*",

@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Apple,
   Package,
   Sparkles,
   Plus,
+  Minus,
   Search,
   Trash2,
   ChefHat,
@@ -18,20 +19,34 @@ import {
   Check,
   Loader2,
   Info,
+  Layers,
+  ArrowUpDown,
+  Filter,
+  X,
+  Flame,
+  Dna,
+  Wheat,
+  Droplet,
 } from "lucide-react";
 import { MacroBadge } from "@/components/ui/MacroBadge";
 import { cn } from "@/lib/utils";
 import { BarcodeScannerModal } from "@/components/scanner/BarcodeScannerModal";
+import { McDonaldsCalculator } from "@/components/foods/McDonaldsCalculator";
 
-type ActiveTab = "foods" | "pantry" | "what-can-i-make";
+type ActiveTab = "mcdonalds" | "foods" | "pantry" | "what-can-i-make";
 
 export default function FoodsAndPantryPage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("what-can-i-make");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("mcdonalds");
 
   // Foods DB state
   const [foods, setFoods] = useState<any[]>([]);
   const [foodSearch, setFoodSearch] = useState("");
+  const [foodCategoryFilter, setFoodCategoryFilter] = useState("All");
+  const [foodSortBy, setFoodSortBy] = useState<
+    "category" | "name-asc" | "name-desc" | "cal-desc" | "cal-asc" | "protein-desc" | "carbs-desc" | "fat-desc"
+  >("category");
   const [isAddFoodModalOpen, setIsAddFoodModalOpen] = useState(false);
+  const [selectedFoodDetails, setSelectedFoodDetails] = useState<any | null>(null);
 
   // External Search State (USDA & Open Food Facts)
   const [isExternalModalOpen, setIsExternalModalOpen] = useState(false);
@@ -49,6 +64,9 @@ export default function FoodsAndPantryPage() {
 
   // Pantry state
   const [pantryItems, setPantryItems] = useState<any[]>([]);
+  const [pantrySearch, setPantrySearch] = useState("");
+  const [pantryCategoryFilter, setPantryCategoryFilter] = useState("All");
+  const [pantrySortBy, setPantrySortBy] = useState<"category" | "name" | "qty-desc" | "qty-asc">("category");
   const [isAddPantryModalOpen, setIsAddPantryModalOpen] = useState(false);
 
   // What Can I Make state
@@ -194,6 +212,7 @@ export default function FoodsAndPantryPage() {
   };
 
   const handleDeleteFood = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this food?")) return;
     await fetch(`/api/foods/${id}`, { method: "DELETE" });
     fetchFoods();
   };
@@ -227,17 +246,108 @@ export default function FoodsAndPantryPage() {
     }
   };
 
+  const handleUpdatePantryQuantity = async (item: any, delta: number) => {
+    const newQty = Math.max(0, (Number(item.quantity) || 0) + delta);
+    if (newQty === 0) {
+      if (confirm(`Remove "${item.name}" from your pantry?`)) {
+        await handleDeletePantryItem(item.id);
+      }
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/pantry", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: item.id,
+          quantity: newQty,
+        }),
+      });
+
+      if (res.ok) {
+        setPantryItems((prev) =>
+          prev.map((pi) => (pi.id === item.id ? { ...pi, quantity: newQty } : pi))
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleDeletePantryItem = async (id: string) => {
     await fetch(`/api/pantry?id=${id}`, { method: "DELETE" });
     fetchPantry();
     fetchWhatCanIMake();
   };
 
-  const filteredFoods = foods.filter(
-    (f) =>
-      f.name.toLowerCase().includes(foodSearch.toLowerCase()) ||
-      f.category.toLowerCase().includes(foodSearch.toLowerCase())
-  );
+  // Distinct categories in user foods
+  const foodCategories = useMemo(() => {
+    const cats = new Set<string>();
+    foods.forEach((f) => {
+      if (f.category) cats.add(f.category);
+    });
+    return ["All", ...Array.from(cats).sort()];
+  }, [foods]);
+
+  // Distinct categories in pantry items
+  const pantryCategories = useMemo(() => {
+    const cats = new Set<string>();
+    pantryItems.forEach((p) => {
+      if (p.category) cats.add(p.category);
+    });
+    return ["All", ...Array.from(cats).sort()];
+  }, [pantryItems]);
+
+  // Filtered & Sorted Foods
+  const filteredFoods = useMemo(() => {
+    let result = foods.filter((f) => {
+      const matchesSearch =
+        f.name.toLowerCase().includes(foodSearch.toLowerCase()) ||
+        f.category.toLowerCase().includes(foodSearch.toLowerCase());
+      const matchesCategory =
+        foodCategoryFilter === "All" || f.category === foodCategoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+
+    return result.sort((a, b) => {
+      if (foodSortBy === "category") {
+        const catComp = (a.category || "").localeCompare(b.category || "");
+        return catComp !== 0 ? catComp : (a.name || "").localeCompare(b.name || "");
+      }
+      if (foodSortBy === "name-asc") return (a.name || "").localeCompare(b.name || "");
+      if (foodSortBy === "name-desc") return (b.name || "").localeCompare(a.name || "");
+      if (foodSortBy === "cal-desc") return (b.caloriesPer100g || 0) - (a.caloriesPer100g || 0);
+      if (foodSortBy === "cal-asc") return (a.caloriesPer100g || 0) - (b.caloriesPer100g || 0);
+      if (foodSortBy === "protein-desc") return (b.proteinPer100g || 0) - (a.proteinPer100g || 0);
+      if (foodSortBy === "carbs-desc") return (b.carbsPer100g || 0) - (a.carbsPer100g || 0);
+      if (foodSortBy === "fat-desc") return (b.fatPer100g || 0) - (a.fatPer100g || 0);
+      return 0;
+    });
+  }, [foods, foodSearch, foodCategoryFilter, foodSortBy]);
+
+  // Filtered & Sorted Pantry Items
+  const filteredPantryItems = useMemo(() => {
+    let result = pantryItems.filter((p) => {
+      const matchesSearch =
+        p.name.toLowerCase().includes(pantrySearch.toLowerCase()) ||
+        p.category.toLowerCase().includes(pantrySearch.toLowerCase());
+      const matchesCategory =
+        pantryCategoryFilter === "All" || p.category === pantryCategoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+
+    return result.sort((a, b) => {
+      if (pantrySortBy === "category") {
+        const catComp = (a.category || "").localeCompare(b.category || "");
+        return catComp !== 0 ? catComp : (a.name || "").localeCompare(b.name || "");
+      }
+      if (pantrySortBy === "name") return (a.name || "").localeCompare(b.name || "");
+      if (pantrySortBy === "qty-desc") return (Number(b.quantity) || 0) - (Number(a.quantity) || 0);
+      if (pantrySortBy === "qty-asc") return (Number(a.quantity) || 0) - (Number(b.quantity) || 0);
+      return 0;
+    });
+  }, [pantryItems, pantrySearch, pantryCategoryFilter, pantrySortBy]);
 
   const filteredExternalResults = externalResults.filter((c) => {
     if (externalSourceFilter === "usda") return c.source === "usda";
@@ -246,24 +356,72 @@ export default function FoodsAndPantryPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-16">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-6xl mx-auto pb-16 px-4 sm:px-6">
+      {/* Header & Main Tabs */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Foods &amp; Pantry
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-3">
+            <span>Foods &amp; Pantry</span>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-semibold border border-amber-500/20">
+              Upgraded
+            </span>
           </h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Manage your personal ingredient database, track kitchen inventory, and see recipe matches
+          <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-2xl leading-relaxed">
+            Detailed foods database, category sorting, pantry inventory tracker, recipe matcher, and the official McDonald&apos;s Jordan Nutrition Calculator.
           </p>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center p-1 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs overflow-x-auto max-w-full scrollbar-none shrink-0">
+        <div className="flex items-center p-1 rounded-2xl bg-[var(--background)] border border-[var(--border)] text-xs overflow-x-auto max-w-full scrollbar-none shrink-0 shadow-inner">
+          <button
+            onClick={() => setActiveTab("mcdonalds")}
+            className={cn(
+              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-2 shrink-0 whitespace-nowrap touch-manipulation",
+              activeTab === "mcdonalds"
+                ? "bg-amber-500 text-zinc-950 font-bold shadow-md shadow-amber-500/20"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            )}
+          >
+            <span className="text-sm">🍔</span>
+            <span>McDonald&apos;s Jordan</span>
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.2 rounded-full",
+              activeTab === "mcdonalds" ? "bg-zinc-950/20 text-zinc-950" : "bg-zinc-800 text-zinc-400"
+            )}>
+              79
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("foods")}
+            className={cn(
+              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation",
+              activeTab === "foods"
+                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            )}
+          >
+            <Apple className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Foods ({foods.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("pantry")}
+            className={cn(
+              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation",
+              activeTab === "pantry"
+                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            )}
+          >
+            <Package className="w-3.5 h-3.5 text-sky-500" />
+            <span>Pantry ({pantryItems.length})</span>
+          </button>
+
           <button
             onClick={() => setActiveTab("what-can-i-make")}
             className={cn(
-              "px-3.5 py-1.5 rounded-lg font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation",
+              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation",
               activeTab === "what-can-i-make"
                 ? "bg-[var(--surface)] text-[var(--accent)] font-semibold shadow-xs border border-[var(--border)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -272,59 +430,521 @@ export default function FoodsAndPantryPage() {
             <Sparkles className="w-3.5 h-3.5" />
             <span>What Can I Make?</span>
           </button>
-          <button
-            onClick={() => setActiveTab("pantry")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation",
-              activeTab === "pantry"
-                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            <Package className="w-3.5 h-3.5" />
-            <span>Pantry ({pantryItems.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("foods")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation",
-              activeTab === "foods"
-                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            <Apple className="w-3.5 h-3.5" />
-            <span>Foods ({foods.length})</span>
-          </button>
         </div>
       </div>
 
-      {/* Tab: "What Can I Make?" (Section 19) */}
+      {/* TAB 1: McDonald's Jordan Nutrition Calculator */}
+      {activeTab === "mcdonalds" && (
+        <div className="animate-in fade-in duration-300">
+          <McDonaldsCalculator
+            onImportSuccess={() => {
+              fetchFoods();
+              fetchPantry();
+            }}
+          />
+        </div>
+      )}
+
+      {/* TAB 2: Foods Database (Detailed with Category Sorting) */}
+      {activeTab === "foods" && (
+        <div className="space-y-5 animate-in fade-in duration-300">
+          {/* Controls Bar: Search, Category Pills, Sort Selector, Action Buttons */}
+          <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              {/* Search input */}
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                <input
+                  type="text"
+                  placeholder="Search foods by name or category..."
+                  value={foodSearch}
+                  onChange={(e) => setFoodSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-hidden focus:border-[var(--accent)] transition-colors"
+                />
+                {foodSearch && (
+                  <button
+                    onClick={() => setFoodSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Sort by selector */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] w-full sm:w-auto">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-[var(--text-secondary)] shrink-0" />
+                  <select
+                    value={foodSortBy}
+                    onChange={(e) => setFoodSortBy(e.target.value as any)}
+                    className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer w-full"
+                  >
+                    <option value="category">Sort: By Category</option>
+                    <option value="name-asc">Sort: Name (A → Z)</option>
+                    <option value="name-desc">Sort: Name (Z → A)</option>
+                    <option value="protein-desc">Sort: Protein (High → Low)</option>
+                    <option value="cal-desc">Sort: Calories (High → Low)</option>
+                    <option value="cal-asc">Sort: Calories (Low → High)</option>
+                    <option value="carbs-desc">Sort: Carbs (High → Low)</option>
+                    <option value="fat-desc">Sort: Fat (High → Low)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScannerMode("food");
+                    setIsScannerOpen(true);
+                  }}
+                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition"
+                >
+                  <Barcode className="w-4 h-4 text-[var(--accent)]" />
+                  <span className="hidden sm:inline">Scan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExternalModalOpen(true);
+                    if (!externalQuery && foodSearch) setExternalQuery(foodSearch);
+                  }}
+                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition"
+                >
+                  <Globe className="w-4 h-4 text-[var(--accent)]" />
+                  <span className="hidden sm:inline">Online DB</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddFoodModalOpen(true)}
+                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Custom Food</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-[var(--border)]">
+              <span className="text-[11px] text-[var(--text-secondary)] font-medium mr-1 shrink-0 flex items-center gap-1">
+                <Filter className="w-3 h-3" />
+                Category:
+              </span>
+              {foodCategories.map((cat) => {
+                const isSelected = foodCategoryFilter === cat;
+                const count =
+                  cat === "All"
+                    ? foods.length
+                    : foods.filter((f) => f.category === cat).length;
+
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setFoodCategoryFilter(cat)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0",
+                      isSelected
+                        ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
+                        : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
+                    )}
+                  >
+                    <span>{cat}</span>
+                    <span
+                      className={cn(
+                        "text-[10px] px-1.5 py-0.2 rounded-full",
+                        isSelected
+                          ? "bg-black/20 text-white"
+                          : "bg-[var(--surface)] text-[var(--text-secondary)]"
+                      )}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Foods Cards Grid / List */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] px-1">
+              <span>
+                Showing <strong>{filteredFoods.length}</strong> of {foods.length} foods
+              </span>
+              <span>All nutritional metrics shown per 100g</span>
+            </div>
+
+            {filteredFoods.length === 0 ? (
+              <div className="p-12 text-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
+                <Apple className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
+                <h3 className="font-semibold text-sm text-[var(--text-primary)]">No foods found</h3>
+                <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
+                  Try adjusting your search query, selecting another category, or importing items from the McDonald&apos;s Jordan menu.
+                </p>
+                <button
+                  onClick={() => {
+                    setFoodSearch("");
+                    setFoodCategoryFilter("All");
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--accent)] font-semibold"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {filteredFoods.map((f) => {
+                  // Macro calorie percentages: protein (4 kcal/g), carbs (4 kcal/g), fat (9 kcal/g)
+                  const pCal = (f.proteinPer100g || 0) * 4;
+                  const cCal = (f.carbsPer100g || 0) * 4;
+                  const fCal = (f.fatPer100g || 0) * 9;
+                  const totalCalcCal = pCal + cCal + fCal || 1;
+                  const pPct = Math.round((pCal / totalCalcCal) * 100);
+                  const cPct = Math.round((cCal / totalCalcCal) * 100);
+                  const fPct = Math.max(0, 100 - pPct - cPct);
+
+                  // Protein density (grams per 100 calories)
+                  const pDensity =
+                    f.caloriesPer100g > 0
+                      ? Math.round(((f.proteinPer100g || 0) / f.caloriesPer100g) * 100 * 10) / 10
+                      : 0;
+
+                  return (
+                    <div
+                      key={f.id}
+                      className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/40 hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
+                    >
+                      <div>
+                        {/* Top: Category Tag, Raw/Cooked, Action Buttons */}
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--accent)]">
+                              {f.category}
+                            </span>
+                            {f.rawOrCooked && f.rawOrCooked !== "unspecified" && (
+                              <span className="text-[10px] font-medium uppercase px-1.5 py-0.5 rounded bg-[var(--background)] text-[var(--text-secondary)]">
+                                {f.rawOrCooked}
+                              </span>
+                            )}
+                            {pDensity >= 10 && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                                High Protein
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setSelectedFoodDetails(f)}
+                              title="View detailed nutrition"
+                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition"
+                            >
+                              <Info className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteFood(f.id)}
+                              title="Delete food"
+                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-red-400 hover:bg-red-500/10 transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Title & Serving info */}
+                        <h4 className="font-semibold text-sm text-[var(--text-primary)] leading-tight group-hover:text-[var(--accent)] transition-colors">
+                          {f.name}
+                        </h4>
+                        <div className="text-[11px] text-[var(--text-secondary)] mt-0.5 font-mono">
+                          Serving: {f.servingWeightGrams || 100}g {f.defaultUnit !== "g" ? `(${f.defaultUnit})` : ""}
+                        </div>
+                      </div>
+
+                      {/* Macro Badges Grid */}
+                      <div className="grid grid-cols-4 gap-1.5 text-center pt-2 border-t border-[var(--border)]">
+                        <div className="bg-[var(--background)] rounded-lg py-1 px-1">
+                          <div className="text-[10px] text-[var(--text-secondary)]">Calories</div>
+                          <div className="text-xs font-bold text-amber-500 font-mono">
+                            {f.caloriesPer100g}
+                          </div>
+                        </div>
+                        <div className="bg-[var(--background)] rounded-lg py-1 px-1">
+                          <div className="text-[10px] text-[var(--text-secondary)]">Protein</div>
+                          <div className="text-xs font-bold text-emerald-500 font-mono">
+                            {f.proteinPer100g}g
+                          </div>
+                        </div>
+                        <div className="bg-[var(--background)] rounded-lg py-1 px-1">
+                          <div className="text-[10px] text-[var(--text-secondary)]">Carbs</div>
+                          <div className="text-xs font-bold text-sky-500 font-mono">
+                            {f.carbsPer100g}g
+                          </div>
+                        </div>
+                        <div className="bg-[var(--background)] rounded-lg py-1 px-1">
+                          <div className="text-[10px] text-[var(--text-secondary)]">Fat</div>
+                          <div className="text-xs font-bold text-rose-500 font-mono">
+                            {f.fatPer100g}g
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Macro Ratio Mini Progress Bar */}
+                      <div className="space-y-1 pt-1">
+                        <div className="h-1.5 w-full rounded-full bg-[var(--background)] overflow-hidden flex">
+                          <div
+                            style={{ width: `${pPct}%` }}
+                            className="bg-emerald-500 h-full"
+                            title={`Protein: ${pPct}%`}
+                          />
+                          <div
+                            style={{ width: `${cPct}%` }}
+                            className="bg-sky-500 h-full"
+                            title={`Carbs: ${cPct}%`}
+                          />
+                          <div
+                            style={{ width: `${fPct}%` }}
+                            className="bg-rose-500 h-full"
+                            title={`Fat: ${fPct}%`}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[9px] text-[var(--text-secondary)] font-mono">
+                          <span className="text-emerald-500">{pPct}% P</span>
+                          <span className="text-sky-500">{cPct}% C</span>
+                          <span className="text-rose-500">{fPct}% F</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: Pantry Inventory (Detailed with Category Sorting & Quick Qty Adjust) */}
+      {activeTab === "pantry" && (
+        <div className="space-y-5 animate-in fade-in duration-300">
+          {/* Controls Bar: Search, Category Pills, Sort Selector, Action Buttons */}
+          <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              {/* Search */}
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                <input
+                  type="text"
+                  placeholder="Search pantry items..."
+                  value={pantrySearch}
+                  onChange={(e) => setPantrySearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-hidden focus:border-[var(--accent)] transition-colors"
+                />
+                {pantrySearch && (
+                  <button
+                    onClick={() => setPantrySearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Sort by */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] w-full sm:w-auto">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-[var(--text-secondary)] shrink-0" />
+                  <select
+                    value={pantrySortBy}
+                    onChange={(e) => setPantrySortBy(e.target.value as any)}
+                    className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer w-full"
+                  >
+                    <option value="category">Sort: By Category</option>
+                    <option value="name">Sort: Name (A → Z)</option>
+                    <option value="qty-desc">Sort: Quantity (High → Low)</option>
+                    <option value="qty-asc">Sort: Quantity (Low → High)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScannerMode("pantry");
+                    setIsScannerOpen(true);
+                  }}
+                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition"
+                >
+                  <Barcode className="w-4 h-4 text-[var(--accent)]" />
+                  <span>Scan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddPantryModalOpen(true)}
+                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add to Pantry</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-[var(--border)]">
+              <span className="text-[11px] text-[var(--text-secondary)] font-medium mr-1 shrink-0 flex items-center gap-1">
+                <Filter className="w-3 h-3" />
+                Category:
+              </span>
+              {pantryCategories.map((cat) => {
+                const isSelected = pantryCategoryFilter === cat;
+                const count =
+                  cat === "All"
+                    ? pantryItems.length
+                    : pantryItems.filter((p) => p.category === cat).length;
+
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setPantryCategoryFilter(cat)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0",
+                      isSelected
+                        ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
+                        : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
+                    )}
+                  >
+                    <span>{cat}</span>
+                    <span
+                      className={cn(
+                        "text-[10px] px-1.5 py-0.2 rounded-full",
+                        isSelected
+                          ? "bg-black/20 text-white"
+                          : "bg-[var(--surface)] text-[var(--text-secondary)]"
+                      )}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Pantry Cards Grid */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] px-1">
+              <span>
+                Showing <strong>{filteredPantryItems.length}</strong> of {pantryItems.length} inventory items
+              </span>
+              <span>Use +/- to update quantity instantly</span>
+            </div>
+
+            {filteredPantryItems.length === 0 ? (
+              <div className="p-12 text-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
+                <Package className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
+                <h3 className="font-semibold text-sm text-[var(--text-primary)]">Pantry is empty</h3>
+                <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
+                  Add items to your pantry manually, scan a barcode, or import a tray from the McDonald&apos;s Jordan menu!
+                </p>
+                <button
+                  onClick={() => setIsAddPantryModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold text-xs shadow-xs"
+                >
+                  Add First Item
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {filteredPantryItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/40 hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--accent)]">
+                          {item.category || "Pantry"}
+                        </span>
+                        <button
+                          onClick={() => handleDeletePantryItem(item.id)}
+                          title="Delete item"
+                          className="p-1 text-[var(--text-secondary)] hover:text-red-400 rounded-md transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <h4 className="font-semibold text-sm text-[var(--text-primary)] leading-tight">
+                        {item.name}
+                      </h4>
+                      {item.food && (
+                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                          Linked to: {item.food.name} ({item.food.caloriesPer100g} kcal/100g)
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Quantity Adjustment Controls */}
+                    <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between">
+                      <div className="text-xs text-[var(--text-secondary)]">Stock:</div>
+                      <div className="flex items-center gap-2 bg-[var(--background)] border border-[var(--border)] rounded-xl p-1">
+                        <button
+                          onClick={() => handleUpdatePantryQuantity(item, -1)}
+                          className="w-6 h-6 rounded-lg bg-[var(--surface)] hover:bg-[var(--border)] flex items-center justify-center text-[var(--text-primary)] transition"
+                          title="Decrease by 1"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="font-mono font-bold text-xs text-[var(--text-primary)] px-2">
+                          {item.quantity} {item.unit}
+                        </span>
+                        <button
+                          onClick={() => handleUpdatePantryQuantity(item, 1)}
+                          className="w-6 h-6 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] flex items-center justify-center text-white font-bold transition"
+                          title="Increase by 1"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: What Can I Make? */}
       {activeTab === "what-can-i-make" && (
-        <div className="space-y-4 animate-in fade-in">
-          <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--text-primary)] flex items-center justify-between">
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--text-primary)] flex items-center justify-between shadow-xs">
             <div className="flex items-center space-x-2">
               <ChefHat className="w-5 h-5 text-[var(--accent)] shrink-0" />
               <span>
-                Recipes are ranked by how many of their ingredients you already have in your pantry.
+                Recipes are automatically matched and ranked based on the ingredients in your pantry inventory.
               </span>
             </div>
             <button
               onClick={fetchWhatCanIMake}
-              className="text-xs font-medium text-[var(--accent)] hover:underline"
+              className="text-xs font-semibold text-[var(--accent)] hover:underline"
             >
               Refresh
             </button>
           </div>
 
           {isLoadingMatches ? (
-            <div className="py-16 text-center text-xs text-[var(--text-secondary)]">
-              Matching pantry against recipes...
+            <div className="py-16 text-center text-xs text-[var(--text-secondary)] space-y-2">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-[var(--accent)]" />
+              <p>Matching pantry against recipes...</p>
             </div>
           ) : recipeMatches.length === 0 ? (
             <div className="p-12 text-center rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-2">
               <Package className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
-              <h3 className="font-semibold text-sm text-[var(--text-primary)]">No recipes or pantry items found</h3>
+              <h3 className="font-semibold text-sm text-[var(--text-primary)]">No recipe matches found</h3>
               <p className="text-xs text-[var(--text-secondary)]">
                 Add recipes to your library and ingredients to your pantry to see availability rankings.
               </p>
@@ -340,9 +960,7 @@ export default function FoodsAndPantryPage() {
                     key={r.id}
                     className={cn(
                       "p-5 rounded-2xl border bg-[var(--surface)] shadow-xs flex flex-col justify-between space-y-3 transition",
-                      is100
-                        ? "border-[var(--accent)]"
-                        : "border-[var(--border)]"
+                      is100 ? "border-[var(--accent)]" : "border-[var(--border)]"
                     )}
                   >
                     <div>
@@ -425,188 +1043,93 @@ export default function FoodsAndPantryPage() {
         </div>
       )}
 
-      {/* Tab: Pantry Inventory (Section 18) */}
-      {activeTab === "pantry" && (
-        <div className="space-y-4 animate-in fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              Pantry Inventory ({pantryItems.length} items)
-            </h2>
-            <div className="flex items-center gap-2">
+      {/* Modal: Food Details Inspector */}
+      {selectedFoodDetails && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setSelectedFoodDetails(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--background)] text-[var(--accent)]">
+                  {selectedFoodDetails.category}
+                </span>
+                <h3 className="font-bold text-lg text-[var(--text-primary)] mt-1">
+                  {selectedFoodDetails.name}
+                </h3>
+              </div>
               <button
-                onClick={() => {
-                  setScannerMode("pantry");
-                  setIsScannerOpen(true);
-                }}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--surface)] hover:bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition"
+                onClick={() => setSelectedFoodDetails(null)}
+                className="p-1.5 rounded-full bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
-                <Barcode className="w-4 h-4 text-[var(--accent)]" />
-                <span>Scan Barcode</span>
-              </button>
-              <button
-                onClick={() => setIsAddPantryModalOpen(true)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs shadow-xs transition"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add to Pantry</span>
+                <X className="w-4 h-4" />
               </button>
             </div>
-          </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] divide-y divide-[var(--border)] overflow-hidden shadow-xs">
-            {pantryItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-4 hover:bg-[var(--background)]/40 transition"
-              >
-                <div>
-                  <h4 className="font-semibold text-sm text-[var(--text-primary)]">
-                    {item.name}
-                  </h4>
-                  <span className="text-xs text-[var(--text-secondary)]">
-                    Category: {item.category}
-                  </span>
+            <div className="p-3 rounded-xl bg-[var(--background)] text-xs text-[var(--text-secondary)] space-y-1">
+              <div>
+                Default Serving: <strong className="text-[var(--text-primary)]">{selectedFoodDetails.servingWeightGrams}g</strong> ({selectedFoodDetails.defaultUnit})
+              </div>
+              <div>
+                State: <strong className="text-[var(--text-primary)] capitalize">{selectedFoodDetails.rawOrCooked || "unspecified"}</strong>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
+                Nutritional Values (Per 100g)
+              </h4>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="p-2.5 rounded-xl bg-[var(--background)]">
+                  <div className="text-[10px] text-[var(--text-secondary)]">Calories</div>
+                  <div className="text-sm font-bold text-amber-500 font-mono">
+                    {selectedFoodDetails.caloriesPer100g}
+                  </div>
                 </div>
-
-                <div className="flex items-center space-x-4">
-                  <span className="font-tabular font-semibold text-sm text-[var(--text-primary)]">
-                    {item.quantity} {item.unit}
-                  </span>
-                  <button
-                    onClick={() => handleDeletePantryItem(item.id)}
-                    className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <div className="p-2.5 rounded-xl bg-[var(--background)]">
+                  <div className="text-[10px] text-[var(--text-secondary)]">Protein</div>
+                  <div className="text-sm font-bold text-emerald-500 font-mono">
+                    {selectedFoodDetails.proteinPer100g}g
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[var(--background)]">
+                  <div className="text-[10px] text-[var(--text-secondary)]">Carbs</div>
+                  <div className="text-sm font-bold text-sky-500 font-mono">
+                    {selectedFoodDetails.carbsPer100g}g
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[var(--background)]">
+                  <div className="text-[10px] text-[var(--text-secondary)]">Fat</div>
+                  <div className="text-sm font-bold text-rose-500 font-mono">
+                    {selectedFoodDetails.fatPer100g}g
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tab: Foods Database (Section 10, 11, 12, 39) */}
-      {activeTab === "foods" && (
-        <div className="space-y-4 animate-in fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-[var(--text-secondary)]" />
-              <input
-                type="text"
-                placeholder="Search local food database..."
-                value={foodSearch}
-                onChange={(e) => setFoodSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-              />
             </div>
-            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+
+            <div className="pt-3 border-t border-[var(--border)] flex justify-end">
               <button
-                type="button"
-                onClick={() => {
-                  setScannerMode("food");
-                  setIsScannerOpen(true);
-                }}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--surface)] hover:bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition touch-manipulation"
+                onClick={() => setSelectedFoodDetails(null)}
+                className="px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold text-xs"
               >
-                <Barcode className="w-4 h-4 text-[var(--accent)]" />
-                <span>Scan Barcode</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsExternalModalOpen(true);
-                  if (!externalQuery && foodSearch) {
-                    setExternalQuery(foodSearch);
-                  }
-                }}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--surface)] hover:bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition touch-manipulation"
-              >
-                <Globe className="w-4 h-4 text-[var(--accent)]" />
-                <span>Search Online</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAddFoodModalOpen(true)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs shadow-xs transition touch-manipulation"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Custom Food</span>
+                Close
               </button>
             </div>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] divide-y divide-[var(--border)] overflow-hidden shadow-xs">
-            {filteredFoods.map((f) => (
-              <div
-                key={f.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 hover:bg-[var(--background)]/40 transition"
-              >
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-semibold text-sm text-[var(--text-primary)]">
-                      {f.name}
-                    </span>
-                    {f.rawOrCooked && f.rawOrCooked !== "unspecified" && (
-                      <span className="text-[10px] font-medium uppercase px-1.5 py-0.5 rounded bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)]">
-                        {f.rawOrCooked}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs text-[var(--text-secondary)]">
-                    Category: {f.category} • Default Unit: {f.defaultUnit}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between sm:justify-end space-x-4">
-                  <div className="grid grid-cols-4 gap-1.5 text-center">
-                    <MacroBadge
-                      label="Cal"
-                      value={f.caloriesPer100g}
-                      type="calories"
-                      size="sm"
-                    />
-                    <MacroBadge
-                      label="Pro"
-                      value={f.proteinPer100g}
-                      unit="g"
-                      type="protein"
-                      size="sm"
-                    />
-                    <MacroBadge
-                      label="Carb"
-                      value={f.carbsPer100g}
-                      unit="g"
-                      type="carbs"
-                      size="sm"
-                    />
-                    <MacroBadge
-                      label="Fat"
-                      value={f.fatPer100g}
-                      unit="g"
-                      type="fat"
-                      size="sm"
-                    />
-                  </div>
-                  <button
-                    onClick={() => handleDeleteFood(f.id)}
-                    className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       )}
 
       {/* Modal: External Food Lookup (USDA & Open Food Facts) */}
       {isExternalModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
           onClick={() => setIsExternalModalOpen(false)}
         >
-          <div 
+          <div
             className="w-full max-w-2xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
@@ -617,15 +1140,15 @@ export default function FoodsAndPantryPage() {
                   <span>External Food Lookup</span>
                 </h3>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                  Search whole ingredients via <strong>USDA FoodData Central</strong> and packaged goods or barcodes via <strong>Open Food Facts</strong>.
+                  Search whole ingredients via <strong>USDA FoodData Central</strong> and packaged goods via <strong>Open Food Facts</strong>.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsExternalModalOpen(false)}
-                className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
+                className="p-2 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -636,10 +1159,10 @@ export default function FoodsAndPantryPage() {
                 <input
                   type="text"
                   autoFocus
-                  placeholder="e.g. Chicken breast raw, brown rice, oats, or barcode (UPC)..."
+                  placeholder="e.g. Chicken breast raw, brown rice, oats..."
                   value={externalQuery}
                   onChange={(e) => setExternalQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                 />
               </div>
               <button
@@ -671,7 +1194,7 @@ export default function FoodsAndPantryPage() {
                   "px-2.5 py-1 rounded-lg transition font-medium",
                   externalSourceFilter === "all"
                     ? "bg-[var(--accent)] text-white"
-                    : "bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    : "bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)]"
                 )}
               >
                 All Sources
@@ -683,7 +1206,7 @@ export default function FoodsAndPantryPage() {
                   "px-2.5 py-1 rounded-lg transition font-medium",
                   externalSourceFilter === "usda"
                     ? "bg-[var(--accent)] text-white"
-                    : "bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    : "bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)]"
                 )}
               >
                 USDA (Whole / Raw)
@@ -695,7 +1218,7 @@ export default function FoodsAndPantryPage() {
                   "px-2.5 py-1 rounded-lg transition font-medium",
                   externalSourceFilter === "openfoodfacts"
                     ? "bg-[var(--accent)] text-white"
-                    : "bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    : "bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)]"
                 )}
               >
                 Open Food Facts (Branded)
@@ -717,7 +1240,7 @@ export default function FoodsAndPantryPage() {
               ) : filteredExternalResults.length === 0 ? (
                 <div className="py-12 text-center text-xs text-[var(--text-secondary)] space-y-1">
                   <p className="font-medium text-[var(--text-primary)]">Ready to search</p>
-                  <p>Type an ingredient or barcode above to find nutrition data per 100g.</p>
+                  <p>Type an ingredient above to find nutrition data per 100g.</p>
                 </div>
               ) : (
                 filteredExternalResults.map((candidate) => {
@@ -749,229 +1272,199 @@ export default function FoodsAndPantryPage() {
                               {candidate.rawOrCooked}
                             </span>
                           )}
-                          {candidate.barcode && (
-                            <span className="text-[10px] font-mono text-[var(--text-secondary)]">
-                              UPC: {candidate.barcode}
-                            </span>
-                          )}
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
-                          <span>{candidate.category}</span>
+                        <div className="flex items-center space-x-2 text-[11px] text-[var(--text-secondary)]">
+                          <span>{candidate.caloriesPer100g} kcal</span>
                           <span>•</span>
-                          <span className="font-tabular">Serving: {candidate.servingWeightGrams}{candidate.defaultUnit}</span>
+                          <span>{candidate.proteinPer100g}g Pro</span>
+                          <span>•</span>
+                          <span>{candidate.carbsPer100g}g Carb</span>
+                          <span>•</span>
+                          <span>{candidate.fatPer100g}g Fat</span>
+                          <span>(per 100g)</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                        {/* Nutrition per 100g */}
-                        <div className="grid grid-cols-4 gap-1 text-center">
-                          <MacroBadge
-                            label="Cal"
-                            value={candidate.caloriesPer100g}
-                            type="calories"
-                            size="sm"
-                          />
-                          <MacroBadge
-                            label="Pro"
-                            value={candidate.proteinPer100g}
-                            unit="g"
-                            type="protein"
-                            size="sm"
-                          />
-                          <MacroBadge
-                            label="Carb"
-                            value={candidate.carbsPer100g}
-                            unit="g"
-                            type="carbs"
-                            size="sm"
-                          />
-                          <MacroBadge
-                            label="Fat"
-                            value={candidate.fatPer100g}
-                            unit="g"
-                            type="fat"
-                            size="sm"
-                          />
-                        </div>
-
-                        {/* Import Button */}
-                        <button
-                          type="button"
-                          disabled={isImported || isImporting}
-                          onClick={() => handleImportCandidate(candidate)}
-                          className={cn(
-                            "px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1 transition shadow-xs",
-                            isImported
-                              ? "bg-[var(--accent-subtle)] text-[var(--accent)] cursor-default"
-                              : "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white"
-                          )}
-                        >
-                          {isImporting ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : isImported ? (
-                            <>
-                              <Check className="w-3.5 h-3.5" />
-                              <span>Imported</span>
-                            </>
-                          ) : (
-                            <>
-                              <DownloadCloud className="w-3.5 h-3.5" />
-                              <span>Import</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        disabled={isImported || isImporting}
+                        onClick={() => handleImportCandidate(candidate)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-xl font-medium text-xs flex items-center justify-center space-x-1 transition shrink-0",
+                          isImported
+                            ? "bg-[var(--surface)] text-[var(--accent)] border border-[var(--border)] cursor-default"
+                            : "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-xs"
+                        )}
+                      >
+                        {isImporting ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : isImported ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Imported</span>
+                          </>
+                        ) : (
+                          <>
+                            <DownloadCloud className="w-3.5 h-3.5" />
+                            <span>Import</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   );
                 })
               )}
             </div>
-
-            {/* Footer with Manual Fallback */}
-            <div className="flex items-center justify-between pt-2 border-t border-[var(--border)] text-xs">
-              <span className="text-[var(--text-secondary)]">
-                Selected foods are saved locally in SQLite and work offline.
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsExternalModalOpen(false);
-                  setIsAddFoodModalOpen(true);
-                }}
-                className="text-[var(--accent)] hover:underline font-medium"
-              >
-                Can&apos;t find it? Enter manually →
-              </button>
-            </div>
           </div>
         </div>
       )}
 
-      {/* Modal: Add Food (Manual Entry) */}
+      {/* Modal: Add Custom Food */}
       {isAddFoodModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
           onClick={() => setIsAddFoodModalOpen(false)}
         >
-          <div 
-            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+          <div
+            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-base text-[var(--text-primary)]">
-                Create New Food (Manual)
+                Add Custom Food (Per 100g)
               </h3>
               <button
                 type="button"
                 onClick={() => setIsAddFoodModalOpen(false)}
-                className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
+                className="p-1 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
+
             <form onSubmit={handleCreateFood} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">
                   Food Name *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Ground Turkey 93/7"
+                  placeholder="e.g. Greek Yogurt 0%"
                   value={newFoodName}
                   onChange={(e) => setNewFoodName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
                     Category
                   </label>
                   <select
                     value={newFoodCategory}
                     onChange={(e) => setNewFoodCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                   >
                     <option value="Meat">Meat</option>
-                    <option value="Dairy & Eggs">Dairy & Eggs</option>
-                    <option value="Grains">Grains / Carbs</option>
+                    <option value="Poultry">Poultry</option>
+                    <option value="Dairy">Dairy</option>
                     <option value="Produce">Produce</option>
-                    <option value="Seafood">Seafood</option>
+                    <option value="Grains">Grains</option>
+                    <option value="Fast Food">Fast Food</option>
                     <option value="Pantry">Pantry</option>
-                    <option value="Supplements">Supplements</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Beverages">Beverages</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                    State (Raw / Cooked)
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Raw or Cooked
                   </label>
                   <select
                     value={newFoodRawCooked}
                     onChange={(e) => setNewFoodRawCooked(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                   >
                     <option value="raw">Raw</option>
                     <option value="cooked">Cooked</option>
-                    <option value="dry">Dry</option>
                     <option value="unspecified">Unspecified</option>
                   </select>
                 </div>
               </div>
 
-              <div className="pt-2">
-                <span className="text-xs font-semibold text-[var(--text-primary)]">
-                  Nutrition per 100g
-                </span>
-                <div className="grid grid-cols-4 gap-2 mt-1">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Calories / 100g
+                  </label>
                   <input
                     type="number"
-                    placeholder="Calories"
+                    step="0.1"
+                    placeholder="0"
                     value={newFoodCalories}
                     onChange={(e) => setNewFoodCalories(e.target.value)}
-                    className="px-2 py-1.5 text-xs font-tabular rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Protein / 100g (g)
+                  </label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="Protein"
+                    placeholder="0"
                     value={newFoodProtein}
                     onChange={(e) => setNewFoodProtein(e.target.value)}
-                    className="px-2 py-1.5 text-xs font-tabular rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                  />
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Carbs"
-                    value={newFoodCarbs}
-                    onChange={(e) => setNewFoodCarbs(e.target.value)}
-                    className="px-2 py-1.5 text-xs font-tabular rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                  />
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Fat"
-                    value={newFoodFat}
-                    onChange={(e) => setNewFoodFat(e.target.value)}
-                    className="px-2 py-1.5 text-xs font-tabular rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Carbs / 100g (g)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="0"
+                    value={newFoodCarbs}
+                    onChange={(e) => setNewFoodCarbs(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Fat / 100g (g)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="0"
+                    value={newFoodFat}
+                    onChange={(e) => setNewFoodFat(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsAddFoodModalOpen(false)}
-                  className="px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  className="px-3.5 py-2 rounded-xl border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-medium rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-xs transition"
+                  className="px-3.5 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-semibold shadow-xs hover:bg-[var(--accent-hover)] transition"
                 >
-                  Create Food
+                  Save Food
                 </button>
               </div>
             </form>
@@ -979,48 +1472,48 @@ export default function FoodsAndPantryPage() {
         </div>
       )}
 
-      {/* Modal: Add Pantry Item */}
+      {/* Modal: Add to Pantry */}
       {isAddPantryModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
           onClick={() => setIsAddPantryModalOpen(false)}
         >
-          <div 
-            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+          <div
+            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-base text-[var(--text-primary)]">
-                Add Item to Pantry Inventory
+                Add Pantry Item
               </h3>
               <button
                 type="button"
                 onClick={() => setIsAddPantryModalOpen(false)}
-                className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
+                className="p-1 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreatePantryItem} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">
                   Item Name *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Basmati Rice, Olive Oil, Rolled Oats"
+                  placeholder="e.g. Basmati Rice"
                   value={pantryName}
                   onChange={(e) => setPantryName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                    Quantity In Stock
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Quantity
                   </label>
                   <input
                     type="number"
@@ -1028,56 +1521,57 @@ export default function FoodsAndPantryPage() {
                     required
                     value={pantryQuantity}
                     onChange={(e) => setPantryQuantity(e.target.value)}
-                    className="w-full px-3 py-2 text-sm font-semibold font-tabular rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
                     Unit
                   </label>
                   <select
                     value={pantryUnit}
                     onChange={(e) => setPantryUnit(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                   >
                     <option value="g">Grams (g)</option>
                     <option value="kg">Kilograms (kg)</option>
                     <option value="ml">Milliliters (ml)</option>
                     <option value="l">Liters (l)</option>
-                    <option value="piece">Pieces</option>
+                    <option value="serving">Serving / Item</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">
                   Category
                 </label>
                 <select
                   value={pantryCategory}
                   onChange={(e) => setPantryCategory(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                 >
-                  <option value="Grains">Grains / Carbs</option>
-                  <option value="Pantry">Pantry / Oil / Spices</option>
-                  <option value="Dairy & Eggs">Dairy & Eggs</option>
-                  <option value="Meat">Meat / Poultry</option>
+                  <option value="Pantry">Pantry</option>
                   <option value="Produce">Produce</option>
-                  <option value="Frozen">Frozen</option>
+                  <option value="Meat">Meat</option>
+                  <option value="Dairy">Dairy</option>
+                  <option value="Spices">Spices</option>
+                  <option value="Snacks">Snacks</option>
+                  <option value="Fast Food">Fast Food</option>
                 </select>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-3">
+              <div className="pt-2 flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsAddPantryModalOpen(false)}
-                  className="px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  className="px-3.5 py-2 rounded-xl border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-medium rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-xs transition"
+                  className="px-3.5 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-semibold shadow-xs hover:bg-[var(--accent-hover)] transition"
                 >
                   Add to Pantry
                 </button>
@@ -1092,12 +1586,20 @@ export default function FoodsAndPantryPage() {
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         mode={scannerMode}
-        onSuccess={() => {
-          fetchFoods();
-          fetchPantry();
+        onProductSelected={(product: any) => {
+          if (scannerMode === "food") {
+            setNewFoodName(product.name);
+            setNewFoodCalories(String(product.caloriesPer100g || 0));
+            setNewFoodProtein(String(product.proteinPer100g || 0));
+            setNewFoodCarbs(String(product.carbsPer100g || 0));
+            setNewFoodFat(String(product.fatPer100g || 0));
+            setIsAddFoodModalOpen(true);
+          } else if (scannerMode === "pantry") {
+            setPantryName(product.name);
+            setIsAddPantryModalOpen(true);
+          }
         }}
       />
     </div>
   );
 }
-
