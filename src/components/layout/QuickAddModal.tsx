@@ -3,30 +3,23 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  BookOpen,
-  Apple,
   Calendar,
-  Package,
   Barcode,
   X,
-  Plus,
   ArrowRight,
   Calculator,
   Loader2,
   Check,
-  Search,
 } from "lucide-react";
-import { MacroBadge } from "@/components/ui/MacroBadge";
 import { BarcodeScannerModal } from "@/components/scanner/BarcodeScannerModal";
 
 interface QuickAddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddFoodSuccess?: () => void;
   onAddMealSuccess?: () => void;
 }
 
-type TabType = "menu" | "meal" | "pantry" | "food";
+type TabType = "menu" | "meal";
 type MealSource = "custom" | "recipe";
 
 export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
@@ -35,7 +28,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
 
   // Scanner modal state
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [scannerMode, setScannerMode] = useState<"meal" | "pantry" | "food" | "general">("general");
+  const [scannerMode, setScannerMode] = useState<"meal" | "general">("general");
 
   // Meal Tab State
   const [mealSource, setMealSource] = useState<MealSource>("custom");
@@ -53,26 +46,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
   // Recipe selection in Meal Tab
   const [recipes, setRecipes] = useState<any[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState("");
-  const [recipeSearch, setRecipeSearch] = useState("");
   const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
-
-  // Quick Food State
-  const [foodName, setFoodName] = useState("");
-  const [foodCategory, setFoodCategory] = useState("Meat");
-  const [foodRawCooked, setFoodRawCooked] = useState("raw");
-  const [foodCalories, setFoodCalories] = useState("");
-  const [foodProtein, setFoodProtein] = useState("");
-  const [foodCarbs, setFoodCarbs] = useState("");
-  const [foodFat, setFoodFat] = useState("");
-  const [foodUnit, setFoodUnit] = useState("g");
-  const [isSubmittingFood, setIsSubmittingFood] = useState(false);
-
-  // Quick Pantry State
-  const [pantryName, setPantryName] = useState("");
-  const [pantryQuantity, setPantryQuantity] = useState("1");
-  const [pantryUnit, setPantryUnit] = useState("piece");
-  const [pantryCategory, setPantryCategory] = useState("Pantry");
-  const [isSubmittingPantry, setIsSubmittingPantry] = useState(false);
 
   // Fetch user's recipes when meal tab is opened
   useEffect(() => {
@@ -164,70 +138,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
     }
   };
 
-  const handleSaveFood = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!foodName.trim()) return;
-    setIsSubmittingFood(true);
-    try {
-      const res = await fetch("/api/foods", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: foodName.trim(),
-          category: foodCategory,
-          rawOrCooked: foodRawCooked,
-          caloriesPer100g: Number(foodCalories) || 0,
-          proteinPer100g: Number(foodProtein) || 0,
-          carbsPer100g: Number(foodCarbs) || 0,
-          fatPer100g: Number(foodFat) || 0,
-          defaultUnit: foodUnit,
-          servingWeightGrams: 100,
-        }),
-      });
-      if (res.ok) {
-        setFoodName("");
-        setFoodCalories("");
-        setFoodProtein("");
-        setFoodCarbs("");
-        setFoodFat("");
-        handleClose();
-        router.refresh();
-      }
-    } finally {
-      setIsSubmittingFood(false);
-    }
-  };
-
-  const handleSavePantry = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pantryName.trim()) return;
-    setIsSubmittingPantry(true);
-    try {
-      const res = await fetch("/api/pantry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: pantryName.trim(),
-          quantity: Number(pantryQuantity) || 1,
-          unit: pantryUnit || "piece",
-          category: pantryCategory,
-        }),
-      });
-      if (res.ok) {
-        setPantryName("");
-        setPantryQuantity("1");
-        handleClose();
-        router.refresh();
-      }
-    } finally {
-      setIsSubmittingPantry(false);
-    }
-  };
-
   const selectedRecipe = recipes.find((r) => r.id === selectedRecipeId);
-  const filteredRecipes = recipes.filter((r) =>
-    r.name.toLowerCase().includes(recipeSearch.toLowerCase())
-  );
 
   return (
     <>
@@ -246,8 +157,6 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
               <h2 className="text-base font-semibold text-[var(--text-primary)]">
                 {activeTab === "menu" && "Quick Add"}
                 {activeTab === "meal" && "Log Meal to Plan"}
-                {activeTab === "pantry" && "Add to Pantry Inventory"}
-                {activeTab === "food" && "Add Food / Ingredient"}
               </h2>
             </div>
             <button
@@ -265,7 +174,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
             <div className="flex items-center justify-between px-6 py-2 bg-[var(--background)]/40 border-b border-[var(--border)] text-xs">
               <button
                 onClick={() => setActiveTab("menu")}
-                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium flex items-center gap-1"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium flex items-center gap-1 cursor-pointer"
               >
                 ← Back to Menu
               </button>
@@ -273,10 +182,10 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => {
-                    setScannerMode(activeTab === "pantry" ? "pantry" : "meal");
+                    setScannerMode("meal");
                     setIsScannerOpen(true);
                   }}
-                  className="px-2.5 py-1 rounded-md bg-[var(--accent-subtle)] text-[var(--accent)] font-medium text-[11px] flex items-center gap-1 hover:opacity-90 transition"
+                  className="px-2.5 py-1 rounded-md bg-[var(--accent-subtle)] text-[var(--accent)] font-medium text-[11px] flex items-center gap-1 hover:opacity-90 transition cursor-pointer"
                 >
                   <Barcode className="w-3.5 h-3.5" />
                   <span>Scan Barcode</span>
@@ -293,7 +202,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
                 {/* 1. Log Meal */}
                 <button
                   onClick={() => setActiveTab("meal")}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:border-[var(--macro-protein)] hover:bg-[var(--background)] text-left transition group"
+                  className="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:border-[var(--macro-protein)] hover:bg-[var(--background)] text-left transition group cursor-pointer"
                 >
                   <div className="flex items-center space-x-3.5">
                     <div className="w-10 h-10 rounded-lg bg-[var(--macro-protein-bg)] text-[var(--macro-protein)] flex items-center justify-center shrink-0">
@@ -317,7 +226,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
                     setScannerMode("general");
                     setIsScannerOpen(true);
                   }}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--background)] text-left transition group"
+                  className="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--background)] text-left transition group cursor-pointer"
                 >
                   <div className="flex items-center space-x-3.5">
                     <div className="w-10 h-10 rounded-lg bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center shrink-0">
@@ -329,72 +238,6 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
                       </div>
                       <div className="text-xs text-[var(--text-secondary)]">
                         Use device camera to instantly scan packaged food &amp; lookup nutrition
-                      </div>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:translate-x-0.5 transition shrink-0" />
-                </button>
-
-                {/* 3. Add to Pantry */}
-                <button
-                  onClick={() => setActiveTab("pantry")}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--background)] text-left transition group"
-                >
-                  <div className="flex items-center space-x-3.5">
-                    <div className="w-10 h-10 rounded-lg bg-[var(--background)] text-[var(--text-primary)] flex items-center justify-center border border-[var(--border)] shrink-0">
-                      <Package className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition">
-                        Add to Pantry Inventory
-                      </div>
-                      <div className="text-xs text-[var(--text-secondary)]">
-                        Track ingredients in your fridge, freezer, or cupboard
-                      </div>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:translate-x-0.5 transition shrink-0" />
-                </button>
-
-                {/* 4. Add Food to Database */}
-                <button
-                  onClick={() => setActiveTab("food")}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:border-[var(--macro-carbs)] hover:bg-[var(--background)] text-left transition group"
-                >
-                  <div className="flex items-center space-x-3.5">
-                    <div className="w-10 h-10 rounded-lg bg-[var(--macro-carbs-bg)] text-[var(--macro-carbs)] flex items-center justify-center shrink-0">
-                      <Apple className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--macro-carbs)] transition">
-                        Add Food / Ingredient
-                      </div>
-                      <div className="text-xs text-[var(--text-secondary)]">
-                        Add custom item with 100g macros to your local database
-                      </div>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:translate-x-0.5 transition shrink-0" />
-                </button>
-
-                {/* 5. Create Recipe */}
-                <button
-                  onClick={() => {
-                    handleClose();
-                    router.push("/recipes/new");
-                  }}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--background)] text-left transition group"
-                >
-                  <div className="flex items-center space-x-3.5">
-                    <div className="w-10 h-10 rounded-lg bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center shrink-0">
-                      <BookOpen className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition">
-                        Create New Recipe
-                      </div>
-                      <div className="text-xs text-[var(--text-secondary)]">
-                        AI parser, text paste, link import, or manual builder
                       </div>
                     </div>
                   </div>
@@ -418,7 +261,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
                   <button
                     type="button"
                     onClick={() => setMealSource("custom")}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition cursor-pointer ${
                       mealSource === "custom"
                         ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-xs"
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -429,7 +272,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
                   <button
                     type="button"
                     onClick={() => setMealSource("recipe")}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition cursor-pointer ${
                       mealSource === "recipe"
                         ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-xs"
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -491,7 +334,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
                             setScannerMode("meal");
                             setIsScannerOpen(true);
                           }}
-                          className="text-[11px] font-medium text-[var(--accent)] hover:underline flex items-center gap-1"
+                          className="text-[11px] font-medium text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
                         >
                           <Barcode className="w-3.5 h-3.5" />
                           <span>Scan barcode</span>
@@ -516,7 +359,7 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
                         <button
                           type="button"
                           onClick={handleAutoCalcCalories}
-                          className="text-[11px] text-[var(--text-secondary)] hover:text-[var(--accent)] flex items-center gap-1 font-medium transition"
+                          className="text-[11px] text-[var(--text-secondary)] hover:text-[var(--accent)] flex items-center gap-1 font-medium transition cursor-pointer"
                           title="Calculate Calories = (4*P + 4*C + 9*F)"
                         >
                           <Calculator className="w-3.5 h-3.5" />
@@ -677,14 +520,14 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
                   <button
                     type="button"
                     onClick={() => setActiveTab("menu")}
-                    className="px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    className="px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingMeal}
-                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-xs transition flex items-center gap-1.5"
+                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer"
                   >
                     {isSubmittingMeal ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -692,263 +535,6 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
                       <Calendar className="w-3.5 h-3.5" />
                     )}
                     <span>Log to Meal Plan</span>
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* TAB: ADD TO PANTRY */}
-            {activeTab === "pantry" && (
-              <form onSubmit={handleSavePantry} className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-medium text-[var(--text-primary)]">
-                      Item Name *
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setScannerMode("pantry");
-                        setIsScannerOpen(true);
-                      }}
-                      className="text-[11px] font-medium text-[var(--accent)] hover:underline flex items-center gap-1"
-                    >
-                      <Barcode className="w-3.5 h-3.5" />
-                      <span>Scan barcode</span>
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Rolled Oats, Greek Yogurt, Olive Oil"
-                    value={pantryName}
-                    onChange={(e) => setPantryName(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                      Quantity
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      required
-                      value={pantryQuantity}
-                      onChange={(e) => setPantryQuantity(e.target.value)}
-                      className="w-full px-3 py-2 text-sm font-tabular rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                      Unit
-                    </label>
-                    <select
-                      value={pantryUnit}
-                      onChange={(e) => setPantryUnit(e.target.value)}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                    >
-                      <option value="g">Grams (g)</option>
-                      <option value="kg">Kilograms (kg)</option>
-                      <option value="ml">Milliliters (ml)</option>
-                      <option value="l">Liters (l)</option>
-                      <option value="piece">Pieces / Items</option>
-                      <option value="can">Cans</option>
-                      <option value="package">Packages / Bags</option>
-                      <option value="scoop">Scoops</option>
-                      <option value="tbsp">Tablespoons (tbsp)</option>
-                      <option value="cup">Cups</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                    Storage Category
-                  </label>
-                  <select
-                    value={pantryCategory}
-                    onChange={(e) => setPantryCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                  >
-                    <option value="Pantry">Pantry / Dry Goods</option>
-                    <option value="Meat">Meat &amp; Poultry</option>
-                    <option value="Dairy & Eggs">Dairy &amp; Eggs</option>
-                    <option value="Produce">Produce / Fresh Fruits &amp; Veggies</option>
-                    <option value="Grains">Grains &amp; Pasta</option>
-                    <option value="Seafood">Seafood</option>
-                    <option value="Supplements">Supplements &amp; Whey</option>
-                  </select>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4 border-t border-[var(--border)]">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("menu")}
-                    className="px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmittingPantry}
-                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-xs transition flex items-center gap-1.5"
-                  >
-                    {isSubmittingPantry ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Package className="w-3.5 h-3.5" />
-                    )}
-                    <span>Add to Pantry</span>
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* TAB: ADD FOOD / INGREDIENT */}
-            {activeTab === "food" && (
-              <form onSubmit={handleSaveFood} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                    Food Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Greek Yogurt 2%, Chicken Thigh, Oats"
-                    value={foodName}
-                    onChange={(e) => setFoodName(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2.5">
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                      Category
-                    </label>
-                    <select
-                      value={foodCategory}
-                      onChange={(e) => setFoodCategory(e.target.value)}
-                      className="w-full px-2.5 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                    >
-                      <option value="Meat">Meat</option>
-                      <option value="Dairy & Eggs">Dairy & Eggs</option>
-                      <option value="Grains">Grains / Carbs</option>
-                      <option value="Produce">Produce</option>
-                      <option value="Seafood">Seafood</option>
-                      <option value="Pantry">Pantry</option>
-                      <option value="Supplements">Supplements</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                      State
-                    </label>
-                    <select
-                      value={foodRawCooked}
-                      onChange={(e) => setFoodRawCooked(e.target.value)}
-                      className="w-full px-2.5 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                    >
-                      <option value="raw">Raw</option>
-                      <option value="cooked">Cooked</option>
-                      <option value="dry">Dry</option>
-                      <option value="unspecified">Unspecified</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                      Default Unit
-                    </label>
-                    <select
-                      value={foodUnit}
-                      onChange={(e) => setFoodUnit(e.target.value)}
-                      className="w-full px-2.5 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                    >
-                      <option value="g">Grams (g)</option>
-                      <option value="ml">Milliliters (ml)</option>
-                      <option value="piece">Piece</option>
-                      <option value="tbsp">Tablespoon (tbsp)</option>
-                      <option value="scoop">Scoop</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <div className="text-xs font-semibold text-[var(--text-secondary)] mb-2">
-                    Nutrition per 100g (or standard serving)
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    <div>
-                      <label className="block text-[11px] text-[var(--text-primary)] font-medium mb-1">
-                        Calories
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="kcal"
-                        value={foodCalories}
-                        onChange={(e) => setFoodCalories(e.target.value)}
-                        className="w-full px-2 py-1.5 text-xs font-tabular rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-[var(--macro-protein)] font-medium mb-1">
-                        Protein (g)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        placeholder="g"
-                        value={foodProtein}
-                        onChange={(e) => setFoodProtein(e.target.value)}
-                        className="w-full px-2 py-1.5 text-xs font-tabular rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-[var(--macro-carbs)] font-medium mb-1">
-                        Carbs (g)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        placeholder="g"
-                        value={foodCarbs}
-                        onChange={(e) => setFoodCarbs(e.target.value)}
-                        className="w-full px-2 py-1.5 text-xs font-tabular rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-[var(--macro-fat)] font-medium mb-1">
-                        Fat (g)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        placeholder="g"
-                        value={foodFat}
-                        onChange={(e) => setFoodFat(e.target.value)}
-                        className="w-full px-2 py-1.5 text-xs font-tabular rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4 border-t border-[var(--border)]">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("menu")}
-                    className="px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmittingFood}
-                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-xs transition"
-                  >
-                    {isSubmittingFood ? "Saving..." : "Save Food to DB"}
                   </button>
                 </div>
               </form>
@@ -974,9 +560,6 @@ export function QuickAddModal({ isOpen, onClose }: QuickAddModalProps) {
             setMealProtein(String(prod.proteinPer100g || ""));
             setMealCarbs(String(prod.carbsPer100g || ""));
             setMealFat(String(prod.fatPer100g || ""));
-          } else if (activeTab === "pantry") {
-            setPantryName(prod.name);
-            setPantryCategory(prod.category || "Pantry");
           }
         }}
       />
