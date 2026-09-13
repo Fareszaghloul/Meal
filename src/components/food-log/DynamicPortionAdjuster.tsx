@@ -12,6 +12,11 @@ export interface ScaledNutrition {
   carbs: number;
   fat: number;
   fiber: number;
+  totalSugars?: number | null;
+  addedSugars?: number | null;
+  saturatedFat?: number | null;
+  transFat?: number | null;
+  sodium?: number | null;
 }
 
 interface DynamicPortionAdjusterProps {
@@ -21,6 +26,11 @@ interface DynamicPortionAdjusterProps {
   baseCarbs: number;
   baseFat: number;
   baseFiber?: number;
+  baseTotalSugars?: number | null;
+  baseAddedSugars?: number | null;
+  baseSaturatedFat?: number | null;
+  baseTransFat?: number | null;
+  baseSodium?: number | null;
   initialGrams?: number;
   initialServings?: number;
   unitLabel?: string;
@@ -35,6 +45,11 @@ export function DynamicPortionAdjuster({
   baseCarbs = 0,
   baseFat = 0,
   baseFiber = 0,
+  baseTotalSugars = null,
+  baseAddedSugars = null,
+  baseSaturatedFat = null,
+  baseTransFat = null,
+  baseSodium = null,
   initialGrams,
   initialServings,
   unitLabel = "g",
@@ -67,6 +82,27 @@ export function DynamicPortionAdjuster({
   const currentFiber = Math.round(baseFiber * multiplier * 10) / 10;
   const currentServings = Math.round(multiplier * 100) / 100;
 
+  const currentTotalSugars =
+    baseTotalSugars !== null && baseTotalSugars !== undefined
+      ? Math.round(baseTotalSugars * multiplier * 10) / 10
+      : null;
+  const currentAddedSugars =
+    baseAddedSugars !== null && baseAddedSugars !== undefined
+      ? Math.round(baseAddedSugars * multiplier * 10) / 10
+      : null;
+  const currentSaturatedFat =
+    baseSaturatedFat !== null && baseSaturatedFat !== undefined
+      ? Math.round(baseSaturatedFat * multiplier * 10) / 10
+      : null;
+  const currentTransFat =
+    baseTransFat !== null && baseTransFat !== undefined
+      ? Math.round(baseTransFat * multiplier * 10) / 10
+      : null;
+  const currentSodium =
+    baseSodium !== null && baseSodium !== undefined
+      ? Math.round(baseSodium * multiplier)
+      : null;
+
   // Ref-stabilized onChange to avoid render loops if parent provides inline function
   const onChangeRef = React.useRef(onChange);
   onChangeRef.current = onChange;
@@ -81,8 +117,26 @@ export function DynamicPortionAdjuster({
       carbs: currentCarbs,
       fat: currentFat,
       fiber: currentFiber,
+      totalSugars: currentTotalSugars,
+      addedSugars: currentAddedSugars,
+      saturatedFat: currentSaturatedFat,
+      transFat: currentTransFat,
+      sodium: currentSodium,
     });
-  }, [currentGrams, currentServings, currentCalories, currentProtein, currentCarbs, currentFat, currentFiber]);
+  }, [
+    currentGrams,
+    currentServings,
+    currentCalories,
+    currentProtein,
+    currentCarbs,
+    currentFat,
+    currentFiber,
+    currentTotalSugars,
+    currentAddedSugars,
+    currentSaturatedFat,
+    currentTransFat,
+    currentSodium,
+  ]);
 
   const handleGramsChange = (val: string) => {
     setGramsInput(val);

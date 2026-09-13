@@ -29,12 +29,16 @@ import {
   Wheat,
   Droplet,
   SlidersHorizontal,
+  Camera,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { MacroBadge } from "@/components/ui/MacroBadge";
 import { cn } from "@/lib/utils";
 import { BarcodeScannerModal } from "@/components/scanner/BarcodeScannerModal";
 import { McDonaldsCalculator } from "@/components/foods/McDonaldsCalculator";
 import { EditFoodModal } from "@/components/foods/EditFoodModal";
+import { NutritionLabelScannerModal } from "@/components/scanner/NutritionLabelScannerModal";
 
 type ActiveTab = "foods" | "pantry" | "what-can-i-make";
 
@@ -81,14 +85,28 @@ export default function FoodsAndPantryPage() {
 
   // New Food Form State
   const [newFoodName, setNewFoodName] = useState("");
+  const [newFoodBrand, setNewFoodBrand] = useState("");
   const [newFoodCategory, setNewFoodCategory] = useState("Meat");
   const [newFoodRawCooked, setNewFoodRawCooked] = useState("raw");
+  const [newFoodServingSize, setNewFoodServingSize] = useState("1");
+  const [newFoodServingUnit, setNewFoodServingUnit] = useState("g");
+  const [newFoodServingWeight, setNewFoodServingWeight] = useState("100");
+  const [newFoodNutritionBasis, setNewFoodNutritionBasis] = useState<"PER_SERVING" | "PER_100G">("PER_SERVING");
   const [newFoodCalories, setNewFoodCalories] = useState("");
   const [newFoodProtein, setNewFoodProtein] = useState("");
   const [newFoodCarbs, setNewFoodCarbs] = useState("");
   const [newFoodFat, setNewFoodFat] = useState("");
+  const [newFoodFiber, setNewFoodFiber] = useState("");
+  const [newFoodTotalSugars, setNewFoodTotalSugars] = useState("");
+  const [newFoodAddedSugars, setNewFoodAddedSugars] = useState("");
+  const [newFoodSaturatedFat, setNewFoodSaturatedFat] = useState("");
+  const [newFoodTransFat, setNewFoodTransFat] = useState("");
+  const [newFoodSodium, setNewFoodSodium] = useState("");
+  const [showNewFoodAdditional, setShowNewFoodAdditional] = useState(false);
   const [newFoodDefaultUnit, setNewFoodDefaultUnit] = useState("g");
-  const [newFoodServingWeight, setNewFoodServingWeight] = useState("100");
+
+  // Nutrition Label Scanner Modal State
+  const [isNutritionScannerOpen, setIsNutritionScannerOpen] = useState(false);
 
   // New Pantry Form State
   const [pantryName, setPantryName] = useState("");
@@ -187,29 +205,70 @@ export default function FoodsAndPantryPage() {
     if (!newFoodName.trim()) return;
 
     try {
+      const parseNum = (val: string) => {
+        if (val === "" || val === null || val === undefined) return null;
+        const n = Number(val);
+        return isNaN(n) ? null : n;
+      };
+
+      const payload: Record<string, any> = {
+        name: newFoodName.trim(),
+        brand: newFoodBrand.trim() || null,
+        category: newFoodCategory,
+        rawOrCooked: newFoodRawCooked,
+        servingSize: Number(newFoodServingSize) || 1,
+        servingUnit: newFoodServingUnit.trim() || "g",
+        servingWeightGrams: Number(newFoodServingWeight) || 100,
+        nutritionBasis: newFoodNutritionBasis,
+        defaultUnit: newFoodDefaultUnit || "g",
+        source: "MANUAL",
+      };
+
+      if (newFoodNutritionBasis === "PER_SERVING") {
+        payload.caloriesPerServing = Number(newFoodCalories) || 0;
+        payload.proteinPerServing = Number(newFoodProtein) || 0;
+        payload.carbsPerServing = Number(newFoodCarbs) || 0;
+        payload.fatPerServing = Number(newFoodFat) || 0;
+        payload.fiberPerServing = parseNum(newFoodFiber);
+        payload.totalSugarsPerServing = parseNum(newFoodTotalSugars);
+        payload.addedSugarsPerServing = parseNum(newFoodAddedSugars);
+        payload.saturatedFatPerServing = parseNum(newFoodSaturatedFat);
+        payload.transFatPerServing = parseNum(newFoodTransFat);
+        payload.sodiumPerServing = parseNum(newFoodSodium);
+      } else {
+        payload.caloriesPer100g = Number(newFoodCalories) || 0;
+        payload.proteinPer100g = Number(newFoodProtein) || 0;
+        payload.carbsPer100g = Number(newFoodCarbs) || 0;
+        payload.fatPer100g = Number(newFoodFat) || 0;
+        payload.fiberPer100g = parseNum(newFoodFiber);
+        payload.totalSugarsPer100g = parseNum(newFoodTotalSugars);
+        payload.addedSugarsPer100g = parseNum(newFoodAddedSugars);
+        payload.saturatedFatPer100g = parseNum(newFoodSaturatedFat);
+        payload.transFatPer100g = parseNum(newFoodTransFat);
+        payload.sodiumPer100g = parseNum(newFoodSodium);
+      }
+
       const res = await fetch("/api/foods", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newFoodName,
-          category: newFoodCategory,
-          rawOrCooked: newFoodRawCooked,
-          caloriesPer100g: Number(newFoodCalories) || 0,
-          proteinPer100g: Number(newFoodProtein) || 0,
-          carbsPer100g: Number(newFoodCarbs) || 0,
-          fatPer100g: Number(newFoodFat) || 0,
-          defaultUnit: newFoodDefaultUnit,
-          servingWeightGrams: Number(newFoodServingWeight) || 100,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         setIsAddFoodModalOpen(false);
         setNewFoodName("");
+        setNewFoodBrand("");
         setNewFoodCalories("");
         setNewFoodProtein("");
         setNewFoodCarbs("");
         setNewFoodFat("");
+        setNewFoodFiber("");
+        setNewFoodTotalSugars("");
+        setNewFoodAddedSugars("");
+        setNewFoodSaturatedFat("");
+        setNewFoodTransFat("");
+        setNewFoodSodium("");
+        setShowNewFoodAdditional(false);
         fetchFoods();
       }
     } catch (err) {
@@ -525,17 +584,27 @@ export default function FoodsAndPantryPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsNutritionScannerOpen(true)}
+                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition cursor-pointer"
+                  title="Scan nutrition label from packaging"
+                >
+                  <Camera className="w-4 h-4 text-[var(--accent)]" />
+                  <span>Scan Label</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
                     setScannerMode("food");
                     setIsScannerOpen(true);
                   }}
-                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition"
+                  className="flex items-center space-x-1.5 px-3 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition cursor-pointer"
+                  title="Barcode scanner"
                 >
-                  <Barcode className="w-4 h-4 text-[var(--accent)]" />
-                  <span className="hidden sm:inline">Scan</span>
+                  <Barcode className="w-4 h-4 text-[var(--text-secondary)]" />
+                  <span className="hidden md:inline">Barcode</span>
                 </button>
                 <button
                   type="button"
@@ -543,7 +612,7 @@ export default function FoodsAndPantryPage() {
                     setIsExternalModalOpen(true);
                     if (!externalQuery && foodSearch) setExternalQuery(foodSearch);
                   }}
-                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition"
+                  className="flex items-center space-x-1.5 px-3 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition cursor-pointer"
                 >
                   <Globe className="w-4 h-4 text-[var(--accent)]" />
                   <span className="hidden sm:inline">Online DB</span>
@@ -551,7 +620,7 @@ export default function FoodsAndPantryPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddFoodModalOpen(true)}
-                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition"
+                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Custom Food</span>
@@ -1090,25 +1159,37 @@ export default function FoodsAndPantryPage() {
       {/* Modal: Food Details Inspector */}
       {selectedFoodDetails && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
           onClick={() => setSelectedFoodDetails(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4"
+            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--background)] text-[var(--accent)]">
-                  {selectedFoodDetails.category}
-                </span>
-                <h3 className="font-bold text-lg text-[var(--text-primary)] mt-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--background)] text-[var(--accent)]">
+                    {selectedFoodDetails.category}
+                  </span>
+                  {selectedFoodDetails.brand && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[var(--background)] text-[var(--text-secondary)]">
+                      {selectedFoodDetails.brand}
+                    </span>
+                  )}
+                  {selectedFoodDetails.source === "SCANNED" && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      Scanned Label
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-bold text-lg text-[var(--text-primary)] mt-1.5">
                   {selectedFoodDetails.name}
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedFoodDetails(null)}
-                className="p-1.5 rounded-full bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1116,42 +1197,116 @@ export default function FoodsAndPantryPage() {
 
             <div className="p-3 rounded-xl bg-[var(--background)] text-xs text-[var(--text-secondary)] space-y-1">
               <div>
-                Default Serving: <strong className="text-[var(--text-primary)]">{selectedFoodDetails.servingWeightGrams}g</strong> ({selectedFoodDetails.defaultUnit})
+                Serving:{" "}
+                <strong className="text-[var(--text-primary)]">
+                  {selectedFoodDetails.servingSize || 1} {selectedFoodDetails.servingUnit || selectedFoodDetails.defaultUnit || "serving"}
+                </strong>{" "}
+                ({selectedFoodDetails.servingWeightGrams || 100}g)
               </div>
               <div>
                 State: <strong className="text-[var(--text-primary)] capitalize">{selectedFoodDetails.rawOrCooked || "unspecified"}</strong>
               </div>
             </div>
 
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
-                Nutritional Values (Per 100g)
-              </h4>
-              <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="p-2.5 rounded-xl bg-[var(--background)]">
-                  <div className="text-[10px] text-[var(--text-secondary)]">Calories</div>
-                  <div className="text-sm font-bold text-[var(--text-primary)] font-mono">
-                    {selectedFoodDetails.caloriesPer100g}
+            {/* Hierarchical Nutrition Facts Table */}
+            <div className="border border-[var(--border)] rounded-xl p-4 bg-[var(--background)]/50 space-y-2.5">
+              <div className="flex items-baseline justify-between border-b border-[var(--border)] pb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Nutrition Facts
+                </span>
+                <span className="text-[11px] text-[var(--text-secondary)] font-medium">
+                  {selectedFoodDetails.nutritionBasis === "PER_100G" ? "Per 100g" : "Per Serving"}
+                </span>
+              </div>
+
+              {/* Calories */}
+              <div className="flex items-baseline justify-between py-1 border-b border-[var(--border)]">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Calories</span>
+                <span className="text-base font-bold font-mono text-[var(--text-primary)]">
+                  {selectedFoodDetails.caloriesPerServing ?? selectedFoodDetails.caloriesPer100g} kcal
+                </span>
+              </div>
+
+              {/* Protein */}
+              <div className="flex items-baseline justify-between py-0.5">
+                <span className="text-xs font-medium text-[var(--text-primary)]">Protein</span>
+                <span className="text-xs font-bold font-mono text-[var(--macro-protein)]">
+                  {selectedFoodDetails.proteinPerServing ?? selectedFoodDetails.proteinPer100g}g
+                </span>
+              </div>
+
+              {/* Carbohydrates & details */}
+              <div className="space-y-1 pt-1 border-t border-[var(--border)]">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-xs font-medium text-[var(--text-primary)]">Total Carbohydrate</span>
+                  <span className="text-xs font-bold font-mono text-[var(--macro-carbs)]">
+                    {selectedFoodDetails.carbsPerServing ?? selectedFoodDetails.carbsPer100g}g
+                  </span>
+                </div>
+                <div className="pl-4 space-y-1 text-[11px] text-[var(--text-secondary)]">
+                  <div className="flex items-baseline justify-between">
+                    <span>Dietary Fiber</span>
+                    <span className="font-mono">
+                      {(selectedFoodDetails.fiberPerServing ?? selectedFoodDetails.fiberPer100g) !== null && (selectedFoodDetails.fiberPerServing ?? selectedFoodDetails.fiberPer100g) !== undefined
+                        ? `${selectedFoodDetails.fiberPerServing ?? selectedFoodDetails.fiberPer100g}g`
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span>Total Sugars</span>
+                    <span className="font-mono">
+                      {(selectedFoodDetails.totalSugarsPerServing ?? selectedFoodDetails.totalSugarsPer100g) !== null && (selectedFoodDetails.totalSugarsPerServing ?? selectedFoodDetails.totalSugarsPer100g) !== undefined
+                        ? `${selectedFoodDetails.totalSugarsPerServing ?? selectedFoodDetails.totalSugarsPer100g}g`
+                        : "—"}
+                    </span>
+                  </div>
+                  {(selectedFoodDetails.addedSugarsPerServing ?? selectedFoodDetails.addedSugarsPer100g) !== null && (selectedFoodDetails.addedSugarsPerServing ?? selectedFoodDetails.addedSugarsPer100g) !== undefined && (
+                    <div className="flex items-baseline justify-between pl-3 text-[10px]">
+                      <span>Includes Added Sugars</span>
+                      <span className="font-mono">
+                        {selectedFoodDetails.addedSugarsPerServing ?? selectedFoodDetails.addedSugarsPer100g}g
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Fat & details */}
+              <div className="space-y-1 pt-1 border-t border-[var(--border)]">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-xs font-medium text-[var(--text-primary)]">Total Fat</span>
+                  <span className="text-xs font-bold font-mono text-[var(--macro-fat)]">
+                    {selectedFoodDetails.fatPerServing ?? selectedFoodDetails.fatPer100g}g
+                  </span>
+                </div>
+                <div className="pl-4 space-y-1 text-[11px] text-[var(--text-secondary)]">
+                  <div className="flex items-baseline justify-between">
+                    <span>Saturated Fat</span>
+                    <span className="font-mono">
+                      {(selectedFoodDetails.saturatedFatPerServing ?? selectedFoodDetails.saturatedFatPer100g) !== null && (selectedFoodDetails.saturatedFatPerServing ?? selectedFoodDetails.saturatedFatPer100g) !== undefined
+                        ? `${selectedFoodDetails.saturatedFatPerServing ?? selectedFoodDetails.saturatedFatPer100g}g`
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span>Trans Fat</span>
+                    <span className="font-mono">
+                      {(selectedFoodDetails.transFatPerServing ?? selectedFoodDetails.transFatPer100g) !== null && (selectedFoodDetails.transFatPerServing ?? selectedFoodDetails.transFatPer100g) !== undefined
+                        ? `${selectedFoodDetails.transFatPerServing ?? selectedFoodDetails.transFatPer100g}g`
+                        : "—"}
+                    </span>
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-[var(--background)]">
-                  <div className="text-[10px] text-[var(--text-secondary)]">Protein</div>
-                  <div className="text-sm font-bold text-[var(--macro-protein)] font-mono">
-                    {selectedFoodDetails.proteinPer100g}g
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[var(--background)]">
-                  <div className="text-[10px] text-[var(--text-secondary)]">Carbs</div>
-                  <div className="text-sm font-bold text-[var(--macro-carbs)] font-mono">
-                    {selectedFoodDetails.carbsPer100g}g
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[var(--background)]">
-                  <div className="text-[10px] text-[var(--text-secondary)]">Fat</div>
-                  <div className="text-sm font-bold text-[var(--macro-fat)] font-mono">
-                    {selectedFoodDetails.fatPer100g}g
-                  </div>
-                </div>
+              </div>
+
+              {/* Sodium */}
+              <div className="flex items-baseline justify-between pt-1 border-t border-[var(--border)]">
+                <span className="text-xs font-medium text-[var(--text-primary)]">Sodium</span>
+                <span className="text-xs font-mono font-bold text-[var(--text-primary)]">
+                  {(selectedFoodDetails.sodiumPerServing ?? selectedFoodDetails.sodiumPer100g) !== null && (selectedFoodDetails.sodiumPerServing ?? selectedFoodDetails.sodiumPer100g) !== undefined
+                    ? `${selectedFoodDetails.sodiumPerServing ?? selectedFoodDetails.sodiumPer100g} mg`
+                    : "—"}
+                </span>
               </div>
             </div>
 
@@ -1384,38 +1539,75 @@ export default function FoodsAndPantryPage() {
           onClick={() => setIsAddFoodModalOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4"
+            className="w-full max-w-lg rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <h3 className="font-semibold text-base text-[var(--text-primary)]">
-                Add Custom Food (Per 100g)
+                Add Food
               </h3>
               <button
                 type="button"
                 onClick={() => setIsAddFoodModalOpen(false)}
-                className="p-1 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="p-1 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateFood} className="space-y-3">
-              <div>
-                <label className="block text-xs text-[var(--text-secondary)] mb-1">
-                  Food Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Greek Yogurt 0%"
-                  value={newFoodName}
-                  onChange={(e) => setNewFoodName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                />
+            {/* Entry Mode Switcher */}
+            <div className="flex rounded-xl bg-[var(--background)] p-1 border border-[var(--border)] text-xs">
+              <button
+                type="button"
+                className="flex-1 py-1.5 rounded-lg font-semibold bg-[var(--surface)] text-[var(--text-primary)] shadow-xs transition"
+              >
+                Create Manually
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAddFoodModalOpen(false);
+                  setIsNutritionScannerOpen(true);
+                }}
+                className="flex-1 py-1.5 rounded-lg font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center space-x-1.5 transition cursor-pointer"
+              >
+                <Camera className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>Scan Nutrition Label</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateFood} className="space-y-3.5">
+              {/* Name & Brand */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Food Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Greek Yogurt 0%"
+                    value={newFoodName}
+                    onChange={(e) => setNewFoodName(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Brand (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Fage, Chobani"
+                    value={newFoodBrand}
+                    onChange={(e) => setNewFoodBrand(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              {/* Category & State */}
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-xs text-[var(--text-secondary)] mb-1">
                     Category
@@ -1452,75 +1644,263 @@ export default function FoodsAndPantryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              {/* Serving basis & unit */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div>
                   <label className="block text-xs text-[var(--text-secondary)] mb-1">
-                    Calories / 100g
+                    Nutrition Basis
+                  </label>
+                  <select
+                    value={newFoodNutritionBasis}
+                    onChange={(e) => setNewFoodNutritionBasis(e.target.value as any)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  >
+                    <option value="PER_SERVING">Per Serving</option>
+                    <option value="PER_100G">Per 100g</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Serving Size
                   </label>
                   <input
                     type="number"
-                    step="0.1"
-                    placeholder="0"
-                    value={newFoodCalories}
-                    onChange={(e) => setNewFoodCalories(e.target.value)}
+                    step="any"
+                    placeholder="1"
+                    value={newFoodServingSize}
+                    onChange={(e) => setNewFoodServingSize(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                   />
                 </div>
                 <div>
                   <label className="block text-xs text-[var(--text-secondary)] mb-1">
-                    Protein / 100g (g)
+                    Serving Unit
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="g, bar, scoop"
+                    value={newFoodServingUnit}
+                    onChange={(e) => setNewFoodServingUnit(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                    Weight (g)
                   </label>
                   <input
                     type="number"
-                    step="0.1"
-                    placeholder="0"
-                    value={newFoodProtein}
-                    onChange={(e) => setNewFoodProtein(e.target.value)}
+                    step="any"
+                    placeholder="100"
+                    value={newFoodServingWeight}
+                    onChange={(e) => setNewFoodServingWeight(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
-                    Carbs / 100g (g)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="0"
-                    value={newFoodCarbs}
-                    onChange={(e) => setNewFoodCarbs(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                  />
+              {/* Core Nutrition */}
+              <div className="pt-2 border-t border-[var(--border)] space-y-2">
+                <span className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
+                  Core Nutrition {newFoodNutritionBasis === "PER_SERVING" ? "(Per Serving)" : "(Per 100g)"}
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                      Calories
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={newFoodCalories}
+                        onChange={(e) => setNewFoodCalories(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] font-mono font-bold focus:outline-hidden focus:border-[var(--accent)]"
+                      />
+                      <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">kcal</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                      Protein
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={newFoodProtein}
+                        onChange={(e) => setNewFoodProtein(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--macro-protein)] font-mono font-bold focus:outline-hidden focus:border-[var(--accent)]"
+                      />
+                      <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">g</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                      Carbs
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={newFoodCarbs}
+                        onChange={(e) => setNewFoodCarbs(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--macro-carbs)] font-mono font-bold focus:outline-hidden focus:border-[var(--accent)]"
+                      />
+                      <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">g</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                      Fat
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={newFoodFat}
+                        onChange={(e) => setNewFoodFat(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--macro-fat)] font-mono font-bold focus:outline-hidden focus:border-[var(--accent)]"
+                      />
+                      <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">g</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
-                    Fat / 100g (g)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="0"
-                    value={newFoodFat}
-                    onChange={(e) => setNewFoodFat(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                  />
-                </div>
+              </div>
+
+              {/* Additional Nutrition Toggle */}
+              <div className="pt-2 border-t border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => setShowNewFoodAdditional(!showNewFoodAdditional)}
+                  className="w-full flex items-center justify-between py-1 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
+                >
+                  <span className="uppercase tracking-wider">Additional Nutrition (Fibers, Sugars, Fats, Sodium)</span>
+                  {showNewFoodAdditional ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+
+                {showNewFoodAdditional && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
+                    <div>
+                      <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                        Dietary Fiber
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Not specified"
+                          value={newFoodFiber}
+                          onChange={(e) => setNewFoodFiber(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">g</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                        Total Sugars
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Not specified"
+                          value={newFoodTotalSugars}
+                          onChange={(e) => setNewFoodTotalSugars(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">g</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                        Added Sugars
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Not specified"
+                          value={newFoodAddedSugars}
+                          onChange={(e) => setNewFoodAddedSugars(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">g</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                        Saturated Fat
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Not specified"
+                          value={newFoodSaturatedFat}
+                          onChange={(e) => setNewFoodSaturatedFat(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">g</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                        Trans Fat
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Not specified"
+                          value={newFoodTransFat}
+                          onChange={(e) => setNewFoodTransFat(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">g</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                        Sodium
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="1"
+                          placeholder="Not specified"
+                          value={newFoodSodium}
+                          onChange={(e) => setNewFoodSodium(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[10px] text-[var(--text-secondary)]">mg</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsAddFoodModalOpen(false)}
-                  className="px-3.5 py-2 rounded-xl border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+                  className="px-3.5 py-2 rounded-xl border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3.5 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-semibold shadow-xs hover:bg-[var(--accent-hover)] transition"
+                  className="px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-semibold shadow-xs hover:bg-[var(--accent-hover)] transition cursor-pointer"
                 >
                   Save Food
                 </button>
@@ -1671,6 +2051,16 @@ export default function FoodsAndPantryPage() {
           fetchPantry();
         }}
         food={foodToEdit}
+      />
+
+      {/* Nutrition Label Scanner Modal */}
+      <NutritionLabelScannerModal
+        isOpen={isNutritionScannerOpen}
+        onClose={() => setIsNutritionScannerOpen(false)}
+        onFoodSaved={(savedFood) => {
+          fetchFoods();
+          setSelectedFoodDetails(savedFood);
+        }}
       />
     </div>
   );

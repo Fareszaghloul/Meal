@@ -87,6 +87,28 @@ model Food {
   fiberPer100g       Float              @default(0)
   defaultUnit        String             @default("g") // "g", "ml", "piece", etc.
   servingWeightGrams Float              @default(100)
+  brand                 String?
+  source                String             @default("MANUAL") // "MANUAL" | "SCANNED" | "IMPORTED" | "SYSTEM"
+  scannedAt             DateTime?
+  servingSize           Float?             // e.g. 40, 1, 250
+  servingUnit           String?            // e.g. "g", "bar", "ml", "container", "slice", "scoop"
+  nutritionBasis        String             @default("PER_SERVING") // "PER_SERVING" | "PER_100G" | "PER_100ML" | "PER_CONTAINER"
+  totalSugarsPer100g    Float?
+  addedSugarsPer100g    Float?
+  saturatedFatPer100g   Float?
+  transFatPer100g       Float?
+  sodiumPer100g         Float?             // in mg per 100g
+  // Exact label values per serving
+  caloriesPerServing    Float?
+  proteinPerServing     Float?
+  carbsPerServing       Float?
+  fatPerServing         Float?
+  fiberPerServing       Float?
+  totalSugarsPerServing Float?
+  addedSugarsPerServing Float?
+  saturatedFatPerServing Float?
+  transFatPerServing    Float?
+  sodiumPerServing      Float?             // in mg per serving
   recipeIngredients  RecipeIngredient[]
   pantryItems        PantryItem[]
   foodLogEntries     FoodLogEntry[]
@@ -117,6 +139,11 @@ model Recipe {
   carbsPerServing       Float              @default(0)
   fatPerServing         Float              @default(0)
   fiberPerServing       Float              @default(0)
+  totalSugarsPerServing Float?
+  addedSugarsPerServing Float?
+  saturatedFatPerServing Float?
+  transFatPerServing    Float?
+  sodiumPerServing      Float?
   isNutritionCalculated Boolean            @default(true)
 
   ingredients           RecipeIngredient[]
@@ -194,6 +221,12 @@ model Meal {
   protein      Float     @default(0)
   carbs        Float     @default(0)
   fat          Float     @default(0)
+  fiber        Float?
+  totalSugars  Float?
+  addedSugars  Float?
+  saturatedFat Float?
+  transFat     Float?
+  sodium       Float?
   isCompleted  Boolean   @default(false)
   sortOrder    Int       @default(0)
 }
@@ -325,6 +358,11 @@ model FoodLogEntry {
   carbs        Float     @default(0)
   fat          Float     @default(0)
   fiber        Float     @default(0)
+  totalSugars  Float?
+  addedSugars  Float?
+  saturatedFat Float?
+  transFat     Float?
+  sodium       Float?
   
   recipeId     String?
   recipe       Recipe?   @relation(fields: [recipeId], references: [id], onDelete: SetNull)

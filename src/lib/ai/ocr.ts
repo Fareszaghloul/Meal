@@ -1,3 +1,4 @@
+import path from "path";
 import { createWorker } from "tesseract.js";
 
 /**
@@ -6,7 +7,16 @@ import { createWorker } from "tesseract.js";
 export async function extractTextFromImage(imageInput: string | Buffer): Promise<string> {
   let worker;
   try {
-    worker = await createWorker("eng");
+    const workerPath = path.join(
+      process.cwd(),
+      "node_modules",
+      "tesseract.js",
+      "src",
+      "worker-script",
+      "node",
+      "index.js"
+    );
+    worker = await createWorker("eng", 1, { workerPath });
     const ret = await worker.recognize(imageInput);
     return ret.data.text || "";
   } catch (error) {

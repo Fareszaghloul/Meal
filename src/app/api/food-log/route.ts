@@ -31,9 +31,25 @@ export async function GET(request: Request) {
         acc.carbs += e.carbs || 0;
         acc.fat += e.fat || 0;
         acc.fiber += e.fiber || 0;
+        acc.totalSugars += e.totalSugars || 0;
+        acc.addedSugars += e.addedSugars || 0;
+        acc.saturatedFat += e.saturatedFat || 0;
+        acc.transFat += e.transFat || 0;
+        acc.sodium += e.sodium || 0;
         return acc;
       },
-      { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+      {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        totalSugars: 0,
+        addedSugars: 0,
+        saturatedFat: 0,
+        transFat: 0,
+        sodium: 0,
+      }
     );
 
     totals.calories = Math.round(totals.calories);
@@ -41,6 +57,11 @@ export async function GET(request: Request) {
     totals.carbs = Math.round(totals.carbs * 10) / 10;
     totals.fat = Math.round(totals.fat * 10) / 10;
     totals.fiber = Math.round(totals.fiber * 10) / 10;
+    totals.totalSugars = Math.round(totals.totalSugars * 10) / 10;
+    totals.addedSugars = Math.round(totals.addedSugars * 10) / 10;
+    totals.saturatedFat = Math.round(totals.saturatedFat * 10) / 10;
+    totals.transFat = Math.round(totals.transFat * 10) / 10;
+    totals.sodium = Math.round(totals.sodium);
 
     return NextResponse.json({
       date,
@@ -71,6 +92,11 @@ export async function POST(request: Request) {
       carbs = 0,
       fat = 0,
       fiber = 0,
+      totalSugars,
+      addedSugars,
+      saturatedFat,
+      transFat,
+      sodium,
       recipeId,
       foodId,
     } = body;
@@ -78,6 +104,12 @@ export async function POST(request: Request) {
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Item name is required" }, { status: 400 });
     }
+
+    const parseNullable = (val: any) => {
+      if (val === undefined || val === null || val === "") return null;
+      const n = Number(val);
+      return isNaN(n) ? null : Math.round(n * 10) / 10;
+    };
 
     const entry = await prisma.foodLogEntry.create({
       data: {
@@ -92,6 +124,11 @@ export async function POST(request: Request) {
         carbs: Number(carbs) || 0,
         fat: Number(fat) || 0,
         fiber: Number(fiber) || 0,
+        totalSugars: parseNullable(totalSugars),
+        addedSugars: parseNullable(addedSugars),
+        saturatedFat: parseNullable(saturatedFat),
+        transFat: parseNullable(transFat),
+        sodium: parseNullable(sodium) !== null ? Math.round(Number(sodium)) : null,
         recipeId: recipeId || null,
         foodId: foodId || null,
       },

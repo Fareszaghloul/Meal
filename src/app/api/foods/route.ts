@@ -45,49 +45,183 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       name,
+      brand,
+      source = "MANUAL",
       category = "Pantry",
       rawOrCooked = "unspecified",
-      caloriesPer100g,
-      proteinPer100g,
-      carbsPer100g,
-      fatPer100g,
-      fiberPer100g = 0,
       defaultUnit = "g",
-      servingWeightGrams = 100,
+      servingSize,
+      servingUnit = "g",
+      servingWeightGrams,
+      nutritionBasis = "PER_SERVING",
+      caloriesPer100g: rawCal100,
+      proteinPer100g: rawPro100,
+      carbsPer100g: rawCarbs100,
+      fatPer100g: rawFat100,
+      fiberPer100g: rawFiber100,
+      totalSugarsPer100g: rawSugars100,
+      addedSugarsPer100g: rawAddedSugars100,
+      saturatedFatPer100g: rawSatFat100,
+      transFatPer100g: rawTransFat100,
+      sodiumPer100g: rawSodium100,
+      caloriesPerServing: rawCalServing,
+      proteinPerServing: rawProServing,
+      carbsPerServing: rawCarbsServing,
+      fatPerServing: rawFatServing,
+      fiberPerServing: rawFiberServing,
+      totalSugarsPerServing: rawSugarsServing,
+      addedSugarsPerServing: rawAddedSugarsServing,
+      saturatedFatPerServing: rawSatFatServing,
+      transFatPerServing: rawTransFatServing,
+      sodiumPerServing: rawSodiumServing,
+      forceCreate = false,
     } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Food name is required" }, { status: 400 });
     }
 
-    // Check if food with this name already exists for this user or globally
+    const cleanName = name.trim();
+    const safeServingWeight = Number(servingWeightGrams) > 0 ? Number(servingWeightGrams) : 100;
+    const safeServingSize = servingSize !== undefined && servingSize !== null ? Number(servingSize) : 1;
+
+    // Check if food with this name already exists for this user
     const existing = await prisma.food.findFirst({
       where: {
-        name: name.trim(),
+        name: cleanName,
         OR: [{ userId: null }, { userId: user.id }],
       },
     });
 
+    let finalName = cleanName;
     if (existing) {
-      return NextResponse.json(
-        { error: "A food with this name already exists in your database" },
-        { status: 409 }
-      );
+      if (!forceCreate) {
+        return NextResponse.json(
+          {
+            error: "A food with this name already exists in your database",
+            existingFood: existing,
+          },
+          { status: 409 }
+        );
+      } else {
+        finalName = `${cleanName} (${new Date().toLocaleDateString()})`;
+      }
     }
+
+    const isPerServingBasis = nutritionBasis === "PER_SERVING";
+
+    // Resolve nutrient inputs allowing flat aliases (calories, protein, carbs, etc.)
+    const resolvedCalServing = rawCalServing ?? (isPerServingBasis ? body.calories : undefined);
+    const resolvedProServing = rawProServing ?? (isPerServingBasis ? body.protein : undefined);
+    const resolvedCarbsServing = rawCarbsServing ?? (isPerServingBasis ? (body.carbohydrates ?? body.carbs) : undefined);
+    const resolvedFatServing = rawFatServing ?? (isPerServingBasis ? body.fat : undefined);
+    const resolvedFiberServing = rawFiberServing ?? (isPerServingBasis ? body.fiber : undefined);
+    const resolvedSugarsServing = rawSugarsServing ?? (isPerServingBasis ? (body.totalSugars ?? body.sugars) : undefined);
+    const resolvedAddedSugarsServing = rawAddedSugarsServing ?? (isPerServingBasis ? body.addedSugars : undefined);
+    const resolvedSatFatServing = rawSatFatServing ?? (isPerServingBasis ? body.saturatedFat : undefined);
+    const resolvedTransFatServing = rawTransFatServing ?? (isPerServingBasis ? body.transFat : undefined);
+    const resolvedSodiumServing = rawSodiumServing ?? (isPerServingBasis ? body.sodium : undefined);
+
+    const resolvedCal100 = rawCal100 ?? (!isPerServingBasis ? body.calories : undefined);
+    const resolvedPro100 = rawPro100 ?? (!isPerServingBasis ? body.protein : undefined);
+    const resolvedCarbs100 = rawCarbs100 ?? (!isPerServingBasis ? (body.carbohydrates ?? body.carbs) : undefined);
+    const resolvedFat100 = rawFat100 ?? (!isPerServingBasis ? body.fat : undefined);
+    const resolvedFiber100 = rawFiber100 ?? (!isPerServingBasis ? body.fiber : undefined);
+    const resolvedSugars100 = rawSugars100 ?? (!isPerServingBasis ? (body.totalSugars ?? body.sugars) : undefined);
+    const resolvedAddedSugars100 = rawAddedSugars100 ?? (!isPerServingBasis ? body.addedSugars : undefined);
+    const resolvedSatFat100 = rawSatFat100 ?? (!isPerServingBasis ? body.saturatedFat : undefined);
+    const resolvedTransFat100 = rawTransFat100 ?? (!isPerServingBasis ? body.transFat : undefined);
+    const resolvedSodium100 = rawSodium100 ?? (!isPerServingBasis ? body.sodium : undefined);
+
+    // Helper: Parse nullable nutrient preserving 0 vs null
+    const parseNullable = (val: any): number | null => {
+      if (val === undefined || val === null || val === "") return null;
+      const num = Number(val);
+      if (isNaN(num) || num < 0) return null;
+      return Math.round(num * 10) / 10;
+    };
+
+    // Calculate canonical per-100g and per-serving values
+    const factorTo100g = safeServingWeight > 0 ? 100 / safeServingWeight : 1;
+    const factorToServing = safeServingWeight > 0 ? safeServingWeight / 100 : 1;
+
+    let cal100 = 0;
+    let calServ: number | null = null;
+    if (isPerServingBasis && resolvedCalServing !== undefined && resolvedCalServing !== null) {
+      calServ = Math.max(0, Math.round(Number(resolvedCalServing)));
+      cal100 = Math.round(calServ * factorTo100g);
+    } else {
+      cal100 = Math.max(0, Math.round(Number(resolvedCal100) || 0));
+      calServ = resolvedCalServing !== undefined ? Math.round(Number(resolvedCalServing)) : Math.round(cal100 * factorToServing);
+    }
+
+    const deriveNutrientPair = (per100Input: any, perServInput: any) => {
+      const parsed100 = parseNullable(per100Input);
+      const parsedServ = parseNullable(perServInput);
+
+      if (isPerServingBasis && parsedServ !== null) {
+        const val100 = Math.round(parsedServ * factorTo100g * 10) / 10;
+        return { per100: val100, perServing: parsedServ };
+      }
+      if (parsed100 !== null) {
+        const valServ = parsedServ !== null ? parsedServ : Math.round(parsed100 * factorToServing * 10) / 10;
+        return { per100: parsed100, perServing: valServ };
+      }
+      if (parsedServ !== null) {
+        const val100 = Math.round(parsedServ * factorTo100g * 10) / 10;
+        return { per100: val100, perServing: parsedServ };
+      }
+      return { per100: null, perServing: null };
+    };
+
+    const proteinPair = deriveNutrientPair(resolvedPro100, resolvedProServing);
+    const carbsPair = deriveNutrientPair(resolvedCarbs100, resolvedCarbsServing);
+    const fatPair = deriveNutrientPair(resolvedFat100, resolvedFatServing);
+    const fiberPair = deriveNutrientPair(resolvedFiber100, resolvedFiberServing);
+    const sugarsPair = deriveNutrientPair(resolvedSugars100, resolvedSugarsServing);
+    const addedSugarsPair = deriveNutrientPair(resolvedAddedSugars100, resolvedAddedSugarsServing);
+    const satFatPair = deriveNutrientPair(resolvedSatFat100, resolvedSatFatServing);
+    const transFatPair = deriveNutrientPair(resolvedTransFat100, resolvedTransFatServing);
+    const sodiumPair = deriveNutrientPair(resolvedSodium100, resolvedSodiumServing);
 
     const food = await prisma.food.create({
       data: {
-        userId: user.id,
-        name: name.trim(),
+        ...(user.id ? { user: { connect: { id: user.id } } } : {}),
+        name: finalName,
+        brand: brand ? String(brand).trim() : null,
+        source: source || "MANUAL",
+        scannedAt: source === "SCANNED" ? new Date() : null,
         category,
         rawOrCooked,
-        caloriesPer100g: Number(caloriesPer100g) || 0,
-        proteinPer100g: Number(proteinPer100g) || 0,
-        carbsPer100g: Number(carbsPer100g) || 0,
-        fatPer100g: Number(fatPer100g) || 0,
-        fiberPer100g: Number(fiberPer100g) || 0,
-        defaultUnit,
-        servingWeightGrams: Number(servingWeightGrams) || 100,
+        servingSize: safeServingSize,
+        servingUnit: servingUnit || "g",
+        servingWeightGrams: safeServingWeight,
+        nutritionBasis,
+        defaultUnit: defaultUnit || "g",
+
+        // Canonical per 100g
+        caloriesPer100g: cal100,
+        proteinPer100g: proteinPair.per100 ?? 0,
+        carbsPer100g: carbsPair.per100 ?? 0,
+        fatPer100g: fatPair.per100 ?? 0,
+        fiberPer100g: fiberPair.per100 ?? 0,
+        totalSugarsPer100g: sugarsPair.per100,
+        addedSugarsPer100g: addedSugarsPair.per100,
+        saturatedFatPer100g: satFatPair.per100,
+        transFatPer100g: transFatPair.per100,
+        sodiumPer100g: sodiumPair.per100,
+
+        // Exact per-serving label values
+        caloriesPerServing: calServ,
+        proteinPerServing: proteinPair.perServing,
+        carbsPerServing: carbsPair.perServing,
+        fatPerServing: fatPair.perServing,
+        fiberPerServing: fiberPair.perServing,
+        totalSugarsPerServing: sugarsPair.perServing,
+        addedSugarsPerServing: addedSugarsPair.perServing,
+        saturatedFatPerServing: satFatPair.perServing,
+        transFatPerServing: transFatPair.perServing,
+        sodiumPerServing: sodiumPair.perServing,
       },
     });
 

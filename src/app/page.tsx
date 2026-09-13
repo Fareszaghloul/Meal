@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  X,
 } from "lucide-react";
 import { WeightTrendWidget } from "@/components/dashboard/WeightTrendWidget";
 import { WeightAnalyticsSummary } from "@/lib/nutrition/weight-analytics";
@@ -55,7 +56,13 @@ export default function DashboardPage() {
     carbs: 0,
     fat: 0,
     fiber: 0,
+    totalSugars: 0,
+    addedSugars: 0,
+    saturatedFat: 0,
+    transFat: 0,
+    sodium: 0,
   });
+  const [isNutritionDetailsModalOpen, setIsNutritionDetailsModalOpen] = useState(false);
   const [waterTotalMl, setWaterTotalMl] = useState(0);
   const [waterGoalMl, setWaterGoalMl] = useState(2500);
 
@@ -582,6 +589,21 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Hairline Divider & Secondary Nutrition Action */}
+        <div className="border-t border-[var(--border)] pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="text-xs text-[var(--text-secondary)]">
+            Detailed breakdown: fiber, sugars, saturated & trans fats, sodium
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsNutritionDetailsModalOpen(true)}
+            className="inline-flex items-center space-x-1 text-xs font-medium text-[var(--accent)] hover:underline cursor-pointer self-start sm:self-auto"
+          >
+            <span>View nutrition details</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* ─── 2. Today's Meals Section ─── */}
@@ -868,8 +890,88 @@ export default function DashboardPage() {
         onClose={() => setIsLogFoodModalOpen(false)}
         defaultMealCategory={modalDefaultCategory}
         selectedDate={selectedDate}
-        onLogSuccess={() => fetchFoodAndWaterLog(selectedDate)}
+        onLogSuccess={() => {
+          fetchDashboardData();
+        }}
       />
+
+      {/* Modal: Today's Detailed Nutrition */}
+      {isNutritionDetailsModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+          onClick={() => setIsNutritionDetailsModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <div>
+                <h3 className="font-semibold text-base text-[var(--text-primary)]">
+                  Nutrition details
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  {formattedDateTitle} total consumption
+                </p>
+              </div>
+              <button
+                onClick={() => setIsNutritionDetailsModalOpen(false)}
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 divide-y divide-[var(--border)] text-xs">
+              <div className="flex items-center justify-between pt-2 first:pt-0">
+                <span className="text-[var(--text-secondary)]">Fiber</span>
+                <span className="font-mono font-semibold text-[var(--text-primary)]">
+                  {foodLogTotals.fiber || 0} g
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[var(--text-secondary)]">Total sugars</span>
+                <span className="font-mono font-semibold text-[var(--text-primary)]">
+                  {(foodLogTotals as any).totalSugars || 0} g
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[var(--text-secondary)]">Added sugars</span>
+                <span className="font-mono font-semibold text-[var(--text-primary)]">
+                  {(foodLogTotals as any).addedSugars || 0} g
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[var(--text-secondary)]">Saturated fat</span>
+                <span className="font-mono font-semibold text-[var(--text-primary)]">
+                  {(foodLogTotals as any).saturatedFat || 0} g
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[var(--text-secondary)]">Trans fat</span>
+                <span className="font-mono font-semibold text-[var(--text-primary)]">
+                  {(foodLogTotals as any).transFat || 0} g
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[var(--text-secondary)]">Sodium</span>
+                <span className="font-mono font-semibold text-[var(--text-primary)]">
+                  {Math.round((foodLogTotals as any).sodium || 0).toLocaleString()} mg
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[var(--border)] flex justify-end">
+              <button
+                onClick={() => setIsNutritionDetailsModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

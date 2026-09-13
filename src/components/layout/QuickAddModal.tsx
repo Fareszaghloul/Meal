@@ -81,6 +81,11 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
     baseCarbs: number;
     baseFat: number;
     baseFiber?: number;
+    baseTotalSugars?: number | null;
+    baseAddedSugars?: number | null;
+    baseSaturatedFat?: number | null;
+    baseTransFat?: number | null;
+    baseSodium?: number | null;
     defaultUnit?: string;
   } | null>(null);
 
@@ -230,6 +235,11 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
       baseCarbs: Math.round((f.carbsPer100g || 0) * factor * 10) / 10,
       baseFat: Math.round((f.fatPer100g || 0) * factor * 10) / 10,
       baseFiber: Math.round((f.fiberPer100g || 0) * factor * 10) / 10,
+      baseTotalSugars: f.totalSugarsPer100g !== null && f.totalSugarsPer100g !== undefined ? Math.round(f.totalSugarsPer100g * factor * 10) / 10 : null,
+      baseAddedSugars: f.addedSugarsPer100g !== null && f.addedSugarsPer100g !== undefined ? Math.round(f.addedSugarsPer100g * factor * 10) / 10 : null,
+      baseSaturatedFat: f.saturatedFatPer100g !== null && f.saturatedFatPer100g !== undefined ? Math.round(f.saturatedFatPer100g * factor * 10) / 10 : null,
+      baseTransFat: f.transFatPer100g !== null && f.transFatPer100g !== undefined ? Math.round(f.transFatPer100g * factor * 10) / 10 : null,
+      baseSodium: f.sodiumPer100g !== null && f.sodiumPer100g !== undefined ? Math.round(f.sodiumPer100g * factor) : null,
       defaultUnit: f.defaultUnit || "g",
     });
   };
@@ -311,6 +321,11 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
             carbs: scaledPortion.carbs,
             fat: scaledPortion.fat,
             fiber: scaledPortion.fiber,
+            totalSugars: scaledPortion.totalSugars,
+            addedSugars: scaledPortion.addedSugars,
+            saturatedFat: scaledPortion.saturatedFat,
+            transFat: scaledPortion.transFat,
+            sodium: scaledPortion.sodium,
             recipeId,
             foodId,
           }),
@@ -692,6 +707,11 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
                   baseCarbs={selectedItem.baseCarbs}
                   baseFat={selectedItem.baseFat}
                   baseFiber={selectedItem.baseFiber}
+                  baseTotalSugars={selectedItem.baseTotalSugars}
+                  baseAddedSugars={selectedItem.baseAddedSugars}
+                  baseSaturatedFat={selectedItem.baseSaturatedFat}
+                  baseTransFat={selectedItem.baseTransFat}
+                  baseSodium={selectedItem.baseSodium}
                   initialGrams={selectedItem.baseWeightGrams}
                   onChange={setScaledPortion}
                 />

@@ -12,6 +12,7 @@ export async function PUT(
     const body = await request.json();
     const {
       name,
+      brand,
       category,
       rawOrCooked,
       caloriesPer100g,
@@ -19,8 +20,26 @@ export async function PUT(
       carbsPer100g,
       fatPer100g,
       fiberPer100g,
+      totalSugarsPer100g,
+      addedSugarsPer100g,
+      saturatedFatPer100g,
+      transFatPer100g,
+      sodiumPer100g,
+      caloriesPerServing,
+      proteinPerServing,
+      carbsPerServing,
+      fatPerServing,
+      fiberPerServing,
+      totalSugarsPerServing,
+      addedSugarsPerServing,
+      saturatedFatPerServing,
+      transFatPerServing,
+      sodiumPerServing,
       defaultUnit,
+      servingSize,
+      servingUnit,
       servingWeightGrams,
+      nutritionBasis,
     } = body;
 
     const existingFood = await prisma.food.findUnique({ where: { id } });
@@ -37,20 +56,52 @@ export async function PUT(
       );
     }
 
+    const parseNullable = (val: any) => {
+      if (val === undefined) return undefined;
+      if (val === null || val === "") return null;
+      const n = Number(val);
+      return isNaN(n) ? null : Math.round(n * 10) / 10;
+    };
+
     const updated = await prisma.food.update({
       where: { id },
       data: {
-        userId: existingFood.userId === null && user.role !== "admin" ? user.id : undefined,
+        ...(existingFood.userId === null && user.role !== "admin" ? { user: { connect: { id: user.id } } } : {}),
         name: name ? name.trim() : undefined,
+        brand: brand !== undefined ? (brand ? String(brand).trim() : null) : undefined,
         category,
         rawOrCooked,
+        servingSize: servingSize !== undefined ? (servingSize !== null ? Number(servingSize) : null) : undefined,
+        servingUnit: servingUnit !== undefined ? (servingUnit || "g") : undefined,
+        servingWeightGrams: servingWeightGrams !== undefined ? Number(servingWeightGrams) : undefined,
+        nutritionBasis: nutritionBasis !== undefined ? nutritionBasis : undefined,
+        defaultUnit,
+
+        // Core per 100g
         caloriesPer100g: caloriesPer100g !== undefined ? Number(caloriesPer100g) : undefined,
         proteinPer100g: proteinPer100g !== undefined ? Number(proteinPer100g) : undefined,
         carbsPer100g: carbsPer100g !== undefined ? Number(carbsPer100g) : undefined,
         fatPer100g: fatPer100g !== undefined ? Number(fatPer100g) : undefined,
         fiberPer100g: fiberPer100g !== undefined ? Number(fiberPer100g) : undefined,
-        defaultUnit,
-        servingWeightGrams: servingWeightGrams !== undefined ? Number(servingWeightGrams) : undefined,
+
+        // Expanded per 100g
+        totalSugarsPer100g: parseNullable(totalSugarsPer100g),
+        addedSugarsPer100g: parseNullable(addedSugarsPer100g),
+        saturatedFatPer100g: parseNullable(saturatedFatPer100g),
+        transFatPer100g: parseNullable(transFatPer100g),
+        sodiumPer100g: parseNullable(sodiumPer100g),
+
+        // Exact per-serving
+        caloriesPerServing: parseNullable(caloriesPerServing),
+        proteinPerServing: parseNullable(proteinPerServing),
+        carbsPerServing: parseNullable(carbsPerServing),
+        fatPerServing: parseNullable(fatPerServing),
+        fiberPerServing: parseNullable(fiberPerServing),
+        totalSugarsPerServing: parseNullable(totalSugarsPerServing),
+        addedSugarsPerServing: parseNullable(addedSugarsPerServing),
+        saturatedFatPerServing: parseNullable(saturatedFatPerServing),
+        transFatPerServing: parseNullable(transFatPerServing),
+        sodiumPerServing: parseNullable(sodiumPerServing),
       },
     });
 

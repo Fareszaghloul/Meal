@@ -206,6 +206,11 @@ export async function POST(request: Request) {
         carbsPerServing,
         fatPerServing,
         fiberPerServing,
+        totalSugarsPerServing: calculated.perServing.totalSugars,
+        addedSugarsPerServing: calculated.perServing.addedSugars,
+        saturatedFatPerServing: calculated.perServing.saturatedFat,
+        transFatPerServing: calculated.perServing.transFat,
+        sodiumPerServing: calculated.perServing.sodium,
         isNutritionCalculated,
         tags: {
           create: tagConnects,
