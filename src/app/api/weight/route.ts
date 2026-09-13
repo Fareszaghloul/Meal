@@ -18,9 +18,20 @@ export async function GET(request: Request) {
       prisma.userSettings.findUnique({ where: { userId: user.id } }),
     ]);
 
-    const processed = processWeightEntries(entries);
+    // Separate everyday weigh-in entries from InBody scans
+    const dailyEntries = entries.filter(
+      (e) => e.entryType === "daily" || (!e.entryType && !e.bodyFatPct && !e.smmKg)
+    );
+    const inbodyEntries = entries.filter(
+      (e) => e.entryType === "inbody" || (!e.entryType && (e.bodyFatPct != null || e.smmKg != null))
+    );
+
+    const processedDaily = processWeightEntries(dailyEntries);
+    const processedAll = processWeightEntries(entries);
+
+    // Compute analytics strictly on everyday weigh-ins so sporadic scans don't distort rolling averages
     const analytics = calculateWeightAnalytics(
-      entries,
+      dailyEntries.length > 0 ? dailyEntries : entries,
       settings?.goalWeightKg,
       settings?.goalType || "lose",
       settings?.goalWeeklyRateKg || 0.5,
@@ -28,7 +39,9 @@ export async function GET(request: Request) {
     );
 
     return NextResponse.json({
-      entries: processed,
+      entries: processedAll,
+      dailyEntries: processedDaily,
+      inbodyEntries: inbodyEntries,
       analytics,
       measurementSystem: settings?.measurementSystem || "metric",
       userHeightCm: settings?.heightCm || null,
@@ -63,17 +76,22 @@ export async function POST(request: Request) {
     const nowTimeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
     const targetTime = time || nowTimeStr;
     const safeWeight = Number(weightKg);
-    const safeBodyFat = bodyFatPct !== undefined && bodyFatPct !== null && bodyFatPct !== "" ? Number(bodyFatPct) : null;
-    const safeSmm = smmKg !== undefined && smmKg !== null && smmKg !== "" ? Number(smmKg) : null;
-    const safeBmi = bmi !== undefined && bmi !== null && bmi !== "" ? Number(bmi) : null;
-    const computedEntryType = entryType || (safeBodyFat !== null || safeSmm !== null ? "inbody" : "daily");
 
-    // Check if an entry with exact same date & time exists for this user to update or create
+    const computedEntryType = entryType === "inbody" ? "inbody" : "daily";
+    const isDaily = computedEntryType === "daily";
+
+    // Strictly isolate InBody metrics to InBody scans only
+    const safeBodyFat = !isDaily && bodyFatPct !== undefined && bodyFatPct !== null && bodyFatPct !== "" ? Number(bodyFatPct) : null;
+    const safeSmm = !isDaily && smmKg !== undefined && smmKg !== null && smmKg !== "" ? Number(smmKg) : null;
+    const safeBmi = !isDaily && bmi !== undefined && bmi !== null && bmi !== "" ? Number(bmi) : null;
+
+    // Check if an entry with exact same date, time, and entryType exists for this user to update or create
     const existingEntry = await prisma.weightEntry.findFirst({
       where: {
         userId: user.id,
         date: targetDate,
         time: targetTime,
+        entryType: computedEntryType,
       },
     });
 
@@ -83,9 +101,9 @@ export async function POST(request: Request) {
         where: { id: existingEntry.id },
         data: {
           weightKg: safeWeight,
-          bodyFatPct: safeBodyFat !== null ? safeBodyFat : undefined,
-          smmKg: safeSmm !== null ? safeSmm : undefined,
-          bmi: safeBmi !== null ? safeBmi : undefined,
+          bodyFatPct: safeBodyFat,
+          smmKg: safeSmm,
+          bmi: safeBmi,
           entryType: computedEntryType,
           notes: notes !== undefined ? notes : undefined,
         },
@@ -108,13 +126,13 @@ export async function POST(request: Request) {
 
     // Also update UserSettings to keep in sync
     const settingsUpdate: Record<string, any> = { currentWeightKg: safeWeight };
-    if (safeBodyFat !== null) {
+    if (!isDaily && safeBodyFat !== null) {
       settingsUpdate.currentBodyFatPct = safeBodyFat;
     }
-    if (safeSmm !== null) {
+    if (!isDaily && safeSmm !== null) {
       settingsUpdate.currentSmmKg = safeSmm;
     }
-    if (safeBmi !== null) {
+    if (!isDaily && safeBmi !== null) {
       settingsUpdate.currentBmi = safeBmi;
     }
     await prisma.userSettings.updateMany({
@@ -153,9 +171,30 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Weight entry not found" }, { status: 404 });
     }
 
-    const safeBodyFat = bodyFatPct !== undefined ? (bodyFatPct !== null && bodyFatPct !== "" ? Number(bodyFatPct) : null) : undefined;
-    const safeSmm = smmKg !== undefined ? (smmKg !== null && smmKg !== "" ? Number(smmKg) : null) : undefined;
-    const safeBmi = bmi !== undefined ? (bmi !== null && bmi !== "" ? Number(bmi) : null) : undefined;
+    const targetEntryType = entryType || existing.entryType;
+    const isDaily = targetEntryType === "daily";
+
+    const safeBodyFat = isDaily
+      ? null
+      : bodyFatPct !== undefined
+      ? bodyFatPct !== null && bodyFatPct !== ""
+        ? Number(bodyFatPct)
+        : null
+      : undefined;
+    const safeSmm = isDaily
+      ? null
+      : smmKg !== undefined
+      ? smmKg !== null && smmKg !== ""
+        ? Number(smmKg)
+        : null
+      : undefined;
+    const safeBmi = isDaily
+      ? null
+      : bmi !== undefined
+      ? bmi !== null && bmi !== ""
+        ? Number(bmi)
+        : null
+      : undefined;
 
     const updated = await prisma.weightEntry.update({
       where: { id },

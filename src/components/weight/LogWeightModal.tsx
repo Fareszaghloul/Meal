@@ -127,14 +127,15 @@ export function LogWeightModal({
       ? Math.round((numericVal / 2.20462) * 100) / 100
       : numericVal;
 
-    const parsedBodyFat = bodyFatInput ? parseFloat(bodyFatInput) : null;
+    const isDaily = entryType === "daily";
+    const parsedBodyFat = !isDaily && bodyFatInput ? parseFloat(bodyFatInput) : null;
 
-    const parsedSmm = smmInput ? parseFloat(smmInput) : null;
+    const parsedSmm = !isDaily && smmInput ? parseFloat(smmInput) : null;
     const smmKg = parsedSmm !== null && !isNaN(parsedSmm)
       ? (isImperial ? Math.round((parsedSmm / 2.20462) * 100) / 100 : parsedSmm)
       : null;
 
-    const parsedBmi = bmiInput ? parseFloat(bmiInput) : (calculatedBmi ?? null);
+    const parsedBmi = !isDaily ? (bmiInput ? parseFloat(bmiInput) : (calculatedBmi ?? null)) : null;
     const bmi = parsedBmi !== null && !isNaN(parsedBmi) ? parsedBmi : null;
 
     setIsSubmitting(true);
@@ -339,12 +340,12 @@ export function LogWeightModal({
             </div>
           </div>
 
-          {/* InBody Scan Fields (Always visible for InBody, or collapsible in Daily) */}
-          {entryType === "inbody" ? (
-            <div className="pt-2 pb-1 border-t border-[var(--border)] space-y-2.5">
+          {/* InBody Scan Specific Fields (Visible ONLY when InBody Scan is selected) */}
+          {entryType === "inbody" && (
+            <div className="pt-2 pb-1 border-t border-[var(--border)] space-y-2.5 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-                  InBody Composition Scan
+                  InBody Composition Metrics
                 </span>
                 {calculatedBmi && (
                   <button
@@ -419,70 +420,6 @@ export function LogWeightModal({
                   />
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => setShowInBodyInDaily(!showInBodyInDaily)}
-                className="w-full flex items-center justify-between text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] py-1 font-medium transition cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  <span>Attach InBody report metrics to this weigh-in (optional)</span>
-                </span>
-                {showInBodyInDaily ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
-
-              {showInBodyInDaily && (
-                <div className="mt-2 p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2.5 animate-in fade-in">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">
-                        Body Fat %
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        placeholder="15.4"
-                        value={bodyFatInput}
-                        onChange={(e) => setBodyFatInput(e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">
-                        SMM ({unitLabel})
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        placeholder={isImperial ? "76.5" : "34.8"}
-                        value={smmInput}
-                        onChange={(e) => setSmmInput(e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">
-                        BMI
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        placeholder={calculatedBmi ? String(calculatedBmi) : "23.5"}
-                        value={bmiInput}
-                        onChange={(e) => setBmiInput(e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
