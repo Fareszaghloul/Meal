@@ -40,6 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# ocr data
+*.traineddata
+
+
 # SQLite database (contains live user data)
 *.db
 *.db-journal

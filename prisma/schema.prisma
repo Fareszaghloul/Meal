@@ -31,6 +31,8 @@ model User {
   passwordResetTokens   PasswordResetToken[]
   verificationTokens    VerificationToken[]
   customFoods           Food[]
+  foodLogEntries        FoodLogEntry[]
+  waterLogEntries       WaterLogEntry[]
 }
 
 model VerificationToken {
@@ -87,6 +89,7 @@ model Food {
   servingWeightGrams Float              @default(100)
   recipeIngredients  RecipeIngredient[]
   pantryItems        PantryItem[]
+  foodLogEntries     FoodLogEntry[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -120,6 +123,7 @@ model Recipe {
   instructions          RecipeStep[]
   tags                  RecipeTag[]
   meals                 Meal[]
+  foodLogEntries        FoodLogEntry[]
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
@@ -299,5 +303,47 @@ model UserSettings {
   // External Nutrition Database Settings
   usdaApiKey                 String?
   
+  // Hydration Settings
+  dailyWaterGoalMl           Int      @default(2500)
+  
   updatedAt                  DateTime @updatedAt
 }
+
+model FoodLogEntry {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         String    // ISO date "YYYY-MM-DD" e.g. "2026-09-13"
+  mealCategory String    // "breakfast", "lunch", "dinner", "snack"
+  name         String    // e.g. "Big Mac® (No Chedder Cheese)", "Grilled Chicken Bowl"
+  servings     Float     @default(1.0)
+  servingUnit  String    @default("serving") // "serving", "g", "item"
+  calories     Float     @default(0)
+  protein      Float     @default(0)
+  carbs        Float     @default(0)
+  fat          Float     @default(0)
+  fiber        Float     @default(0)
+  
+  recipeId     String?
+  recipe       Recipe?   @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  foodId       String?
+  food         Food?     @relation(fields: [foodId], references: [id], onDelete: SetNull)
+
+  loggedAt     DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId, date])
+}
+
+model WaterLogEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   // ISO date "YYYY-MM-DD"
+  amountMl  Int      // e.g. 250, 500
+  loggedAt  DateTime @default(now())
+
+  @@index([userId, date])
+}
+
