@@ -22,6 +22,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const PUBLIC_AUTH_PATHS = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,13 +39,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user);
       } else {
         setUser(null);
+        if (typeof window !== "undefined") {
+          const pathname = window.location.pathname;
+          const isPublic = PUBLIC_AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+          if (!isPublic) {
+            router.push("/login");
+          }
+        }
       }
     } catch {
       setUser(null);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     refreshUser();
@@ -51,7 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback((loggedInUser: AuthUser) => {
     setUser(loggedInUser);
-  }, []);
+    router.push("/");
+    router.refresh();
+  }, [router]);
 
   const logout = useCallback(async () => {
     try {

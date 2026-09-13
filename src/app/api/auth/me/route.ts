@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getCurrentUser, clearSessionCookie } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser(request);
     if (!user) {
-      return NextResponse.json({ user: null, error: "Unauthenticated" }, { status: 401 });
+      const response = NextResponse.json({ user: null, error: "Unauthenticated" }, { status: 401 });
+      clearSessionCookie(response);
+      return response;
     }
 
     const settings = await prisma.userSettings.findUnique({
