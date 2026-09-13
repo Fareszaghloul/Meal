@@ -90,6 +90,8 @@ export async function PUT(request: Request) {
       heightCm,
       currentWeightKg,
       currentBodyFatPct,
+      currentSmmKg,
+      currentBmi,
       goalType,
       goalWeeklyRateKg,
       goalWeightKg,
@@ -135,6 +137,12 @@ export async function PUT(request: Request) {
     if (currentWeightKg !== undefined) dataToUpdate.currentWeightKg = Number(currentWeightKg);
     if (currentBodyFatPct !== undefined) {
       dataToUpdate.currentBodyFatPct = currentBodyFatPct !== null && currentBodyFatPct !== "" ? Number(currentBodyFatPct) : null;
+    }
+    if (currentSmmKg !== undefined) {
+      dataToUpdate.currentSmmKg = currentSmmKg !== null && currentSmmKg !== "" ? Number(currentSmmKg) : null;
+    }
+    if (currentBmi !== undefined) {
+      dataToUpdate.currentBmi = currentBmi !== null && currentBmi !== "" ? Number(currentBmi) : null;
     }
     if (goalType !== undefined) dataToUpdate.goalType = goalType;
     if (goalWeeklyRateKg !== undefined) dataToUpdate.goalWeeklyRateKg = Number(goalWeeklyRateKg);

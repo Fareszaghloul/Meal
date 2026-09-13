@@ -11,6 +11,7 @@ interface LogWeightModalProps {
   onSuccess: () => void;
   initialEntry?: RawWeightEntry | null;
   measurementSystem?: string;
+  userHeightCm?: number | null;
 }
 
 export function LogWeightModal({
@@ -19,6 +20,7 @@ export function LogWeightModal({
   onSuccess,
   initialEntry,
   measurementSystem = "metric",
+  userHeightCm,
 }: LogWeightModalProps) {
   const isImperial = measurementSystem === "imperial";
   const unitLabel = isImperial ? "lbs" : "kg";
@@ -28,6 +30,8 @@ export function LogWeightModal({
   const [date, setDate] = useState<string>(getTodayDateStr());
   const [weightInput, setWeightInput] = useState<string>("");
   const [bodyFatInput, setBodyFatInput] = useState<string>("");
+  const [smmInput, setSmmInput] = useState<string>("");
+  const [bmiInput, setBmiInput] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -43,15 +47,38 @@ export function LogWeightModal({
           : Math.round(initialEntry.weightKg * 10) / 10;
         setWeightInput(String(displayWeight));
         setBodyFatInput(initialEntry.bodyFatPct !== undefined && initialEntry.bodyFatPct !== null ? String(initialEntry.bodyFatPct) : "");
+
+        if (initialEntry.smmKg !== undefined && initialEntry.smmKg !== null) {
+          const displaySmm = isImperial
+            ? Math.round(initialEntry.smmKg * 2.20462 * 10) / 10
+            : Math.round(initialEntry.smmKg * 10) / 10;
+          setSmmInput(String(displaySmm));
+        } else {
+          setSmmInput("");
+        }
+
+        setBmiInput(initialEntry.bmi !== undefined && initialEntry.bmi !== null ? String(initialEntry.bmi) : "");
         setNotes(initialEntry.notes || "");
       } else {
         setDate(getTodayDateStr());
         setWeightInput("");
         setBodyFatInput("");
+        setSmmInput("");
+        setBmiInput("");
         setNotes("");
       }
     }
   }, [isOpen, initialEntry, isImperial]);
+
+  // Derived auto-calculated BMI if height and weight are present
+  const calculatedBmi = React.useMemo(() => {
+    const numericVal = parseFloat(weightInput);
+    if (isNaN(numericVal) || numericVal <= 0 || !userHeightCm || userHeightCm <= 0) return null;
+    const weightKg = isImperial ? numericVal / 2.20462 : numericVal;
+    const heightM = userHeightCm / 100;
+    const bmiVal = weightKg / (heightM * heightM);
+    return Math.round(bmiVal * 10) / 10;
+  }, [weightInput, isImperial, userHeightCm]);
 
   if (!isOpen) return null;
 
@@ -72,6 +99,14 @@ export function LogWeightModal({
 
     const parsedBodyFat = bodyFatInput ? parseFloat(bodyFatInput) : null;
 
+    const parsedSmm = smmInput ? parseFloat(smmInput) : null;
+    const smmKg = parsedSmm !== null && !isNaN(parsedSmm)
+      ? (isImperial ? Math.round((parsedSmm / 2.20462) * 100) / 100 : parsedSmm)
+      : null;
+
+    const parsedBmi = bmiInput ? parseFloat(bmiInput) : (calculatedBmi ?? null);
+    const bmi = parsedBmi !== null && !isNaN(parsedBmi) ? parsedBmi : null;
+
     setIsSubmitting(true);
     try {
       if (initialEntry?.id) {
@@ -84,6 +119,8 @@ export function LogWeightModal({
             date,
             weightKg,
             bodyFatPct: parsedBodyFat,
+            smmKg,
+            bmi,
             notes: notes.trim() || null,
           }),
         });
@@ -97,6 +134,8 @@ export function LogWeightModal({
             date,
             weightKg,
             bodyFatPct: parsedBodyFat,
+            smmKg,
+            bmi,
             notes: notes.trim() || null,
           }),
         });
@@ -147,10 +186,10 @@ export function LogWeightModal({
             </div>
             <div>
               <h3 className="font-semibold text-sm text-[var(--text-primary)]">
-                {initialEntry ? "Edit weight entry" : "Log weight"}
+                {initialEntry ? "Edit weight entry" : "Log weight & InBody"}
               </h3>
               <p className="text-[11px] text-[var(--text-secondary)]">
-                Record your body weight to update your 7-day average
+                Record your body weight, SMM, and BMI from scale or InBody
               </p>
             </div>
           </div>
@@ -212,25 +251,86 @@ export function LogWeightModal({
             </div>
           </div>
 
-          {/* Body Fat Input */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Body Fat % <span className="font-normal text-[var(--text-secondary)]">(optional, e.g. InBody scan)</span>
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                step="0.1"
-                min="3"
-                max="60"
-                placeholder="e.g. 15.4"
-                value={bodyFatInput}
-                onChange={(e) => setBodyFatInput(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-sm font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
-              />
-              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--text-secondary)]">
-                %
+          {/* Monthly InBody Metrics Section */}
+          <div className="pt-2 pb-1 border-t border-[var(--border)] space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                Monthly InBody Report (Optional)
               </span>
+              {calculatedBmi && (
+                <button
+                  type="button"
+                  onClick={() => setBmiInput(String(calculatedBmi))}
+                  className="text-[11px] text-[var(--accent)] hover:underline font-medium cursor-pointer"
+                >
+                  Auto-fill BMI ({calculatedBmi})
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {/* Body Fat % */}
+              <div>
+                <label className="block text-[11px] font-medium text-[var(--text-primary)] mb-1">
+                  Body Fat %
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="3"
+                    max="60"
+                    placeholder="e.g. 15.4"
+                    value={bodyFatInput}
+                    onChange={(e) => setBodyFatInput(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[var(--text-secondary)]">
+                    %
+                  </span>
+                </div>
+              </div>
+
+              {/* SMM (Skeletal Muscle Mass) */}
+              <div>
+                <label className="block text-[11px] font-medium text-[var(--text-primary)] mb-1">
+                  SMM ({unitLabel})
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="5"
+                    max="200"
+                    placeholder={isImperial ? "e.g. 76.5" : "e.g. 34.8"}
+                    value={smmInput}
+                    onChange={(e) => setSmmInput(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[var(--text-secondary)]">
+                    {unitLabel}
+                  </span>
+                </div>
+              </div>
+
+              {/* BMI */}
+              <div>
+                <label className="block text-[11px] font-medium text-[var(--text-primary)] mb-1">
+                  BMI
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="10"
+                    max="60"
+                    placeholder={calculatedBmi ? String(calculatedBmi) : "e.g. 23.5"}
+                    value={bmiInput}
+                    onChange={(e) => setBmiInput(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)] transition"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

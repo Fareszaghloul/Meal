@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { date, weightKg, bodyFatPct, notes } = body;
+    const { date, weightKg, bodyFatPct, smmKg, bmi, notes } = body;
 
     if (!weightKg || Number(weightKg) <= 0) {
       return NextResponse.json(
@@ -61,6 +61,8 @@ export async function POST(request: Request) {
     const targetDate = date || todayStr;
     const safeWeight = Number(weightKg);
     const safeBodyFat = bodyFatPct !== undefined && bodyFatPct !== null && bodyFatPct !== "" ? Number(bodyFatPct) : null;
+    const safeSmm = smmKg !== undefined && smmKg !== null && smmKg !== "" ? Number(smmKg) : null;
+    const safeBmi = bmi !== undefined && bmi !== null && bmi !== "" ? Number(bmi) : null;
 
     // Upsert weight entry for the date for this user
     const entry = await prisma.weightEntry.upsert({
@@ -73,6 +75,8 @@ export async function POST(request: Request) {
       update: {
         weightKg: safeWeight,
         bodyFatPct: safeBodyFat !== null ? safeBodyFat : undefined,
+        smmKg: safeSmm !== null ? safeSmm : undefined,
+        bmi: safeBmi !== null ? safeBmi : undefined,
         notes: notes !== undefined ? notes : undefined,
       },
       create: {
@@ -80,6 +84,8 @@ export async function POST(request: Request) {
         date: targetDate,
         weightKg: safeWeight,
         bodyFatPct: safeBodyFat,
+        smmKg: safeSmm,
+        bmi: safeBmi,
         notes: notes || null,
       },
     });
@@ -88,6 +94,12 @@ export async function POST(request: Request) {
     const settingsUpdate: Record<string, any> = { currentWeightKg: safeWeight };
     if (safeBodyFat !== null) {
       settingsUpdate.currentBodyFatPct = safeBodyFat;
+    }
+    if (safeSmm !== null) {
+      settingsUpdate.currentSmmKg = safeSmm;
+    }
+    if (safeBmi !== null) {
+      settingsUpdate.currentBmi = safeBmi;
     }
     await prisma.userSettings.updateMany({
       where: { userId: user.id },
@@ -111,7 +123,7 @@ export async function PUT(request: Request) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { id, weightKg, bodyFatPct, date, notes } = body;
+    const { id, weightKg, bodyFatPct, smmKg, bmi, date, notes } = body;
 
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
@@ -126,21 +138,31 @@ export async function PUT(request: Request) {
     }
 
     const safeBodyFat = bodyFatPct !== undefined ? (bodyFatPct !== null && bodyFatPct !== "" ? Number(bodyFatPct) : null) : undefined;
+    const safeSmm = smmKg !== undefined ? (smmKg !== null && smmKg !== "" ? Number(smmKg) : null) : undefined;
+    const safeBmi = bmi !== undefined ? (bmi !== null && bmi !== "" ? Number(bmi) : null) : undefined;
 
     const updated = await prisma.weightEntry.update({
       where: { id },
       data: {
         weightKg: weightKg !== undefined ? Number(weightKg) : undefined,
         bodyFatPct: safeBodyFat,
+        smmKg: safeSmm,
+        bmi: safeBmi,
         date: date || undefined,
         notes: notes !== undefined ? notes : undefined,
       },
     });
 
-    if (safeBodyFat !== undefined && safeBodyFat !== null) {
+    const settingsUpdate: Record<string, any> = {};
+    if (weightKg !== undefined) settingsUpdate.currentWeightKg = Number(weightKg);
+    if (safeBodyFat !== undefined && safeBodyFat !== null) settingsUpdate.currentBodyFatPct = safeBodyFat;
+    if (safeSmm !== undefined && safeSmm !== null) settingsUpdate.currentSmmKg = safeSmm;
+    if (safeBmi !== undefined && safeBmi !== null) settingsUpdate.currentBmi = safeBmi;
+
+    if (Object.keys(settingsUpdate).length > 0) {
       await prisma.userSettings.updateMany({
         where: { userId: user.id },
-        data: { currentBodyFatPct: safeBodyFat },
+        data: settingsUpdate,
       });
     }
 

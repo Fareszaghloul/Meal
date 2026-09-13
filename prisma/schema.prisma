@@ -235,6 +235,8 @@ model WeightEntry {
   date        String   // ISO date "YYYY-MM-DD"
   weightKg    Float    // Weight in kg
   bodyFatPct  Float?   // Body Fat % (e.g. from monthly InBody scan)
+  smmKg       Float?   // Skeletal Muscle Mass in kg (from InBody)
+  bmi         Float?   // Body Mass Index (from InBody or calculated)
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -278,6 +280,8 @@ model UserSettings {
   heightCm                   Float    @default(178)
   currentWeightKg            Float    @default(78)
   currentBodyFatPct          Float?                      // Monthly InBody percentage
+  currentSmmKg               Float?                      // Skeletal Muscle Mass in kg (from InBody)
+  currentBmi                 Float?                      // Body Mass Index (from InBody or calculated)
   goalType                   String   @default("lose")   // "lose" | "maintain" | "gain"
   goalWeeklyRateKg           Float    @default(0.5)      // e.g. 0.25, 0.5, 0.75, 1.0 kg/week
   goalWeightKg               Float?   @default(72)

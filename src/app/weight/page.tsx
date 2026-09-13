@@ -85,6 +85,9 @@ export default function WeightTrackingPage() {
       id: point.id,
       date: point.date,
       weightKg: point.weightKg,
+      bodyFatPct: point.bodyFatPct,
+      smmKg: point.smmKg,
+      bmi: point.bmi,
       notes: point.notes,
     });
     setIsModalOpen(true);
@@ -439,6 +442,7 @@ export default function WeightTrackingPage() {
                     <th className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 whitespace-nowrap">Date</th>
                     <th className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 whitespace-nowrap">Raw weight</th>
                     <th className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 whitespace-nowrap">7-day rolling avg</th>
+                    <th className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 whitespace-nowrap">InBody (BF / SMM / BMI)</th>
                     <th className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 whitespace-nowrap">Notes</th>
                     <th className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 text-right whitespace-nowrap">Actions</th>
                   </tr>
@@ -463,6 +467,29 @@ export default function WeightTrackingPage() {
                           <span className="font-semibold text-[var(--accent)] font-tabular">
                             {avgDisp} {unitLabel}
                           </span>
+                        </td>
+                        <td className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 whitespace-nowrap">
+                          {point.bodyFatPct || point.smmKg || point.bmi ? (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {point.bodyFatPct && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-sky-500/10 text-sky-500 font-semibold font-tabular text-[11px]">
+                                  {point.bodyFatPct}% BF
+                                </span>
+                              )}
+                              {point.smmKg && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 font-semibold font-tabular text-[11px]">
+                                  {isImperial ? Math.round(point.smmKg * 2.20462 * 10) / 10 : point.smmKg} {unitLabel} SMM
+                                </span>
+                              )}
+                              {point.bmi && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-500 font-semibold font-tabular text-[11px]">
+                                  {point.bmi} BMI
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[var(--text-muted)] text-[11px]">--</span>
+                          )}
                         </td>
                         <td className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 text-[var(--text-secondary)] max-w-xs truncate">
                           {point.notes || "--"}
