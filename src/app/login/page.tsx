@@ -189,12 +189,7 @@ function LoginForm() {
         </Link>
       </div>
 
-      {/* Demo Seed Accounts Hint */}
-      <div className="mt-6 pt-5 border-t border-[var(--border)] text-[11px] text-[var(--text-muted)] space-y-1 bg-[var(--background)]/60 p-3 rounded-xl">
-        <div className="font-semibold text-[var(--text-secondary)]">Demo Accounts:</div>
-        <div>Admin: <code className="text-[var(--accent)]">admin@mealprep.local</code> / <code className="text-[var(--accent)]">AdminPassword123!</code></div>
-        <div>User: <code className="text-[var(--accent)]">user@mealprep.local</code> / <code className="text-[var(--accent)]">UserPassword123!</code></div>
-      </div>
+
     </div>
   );
 }
