@@ -66,10 +66,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: emailRes.success
-        ? "Verification email sent! Please check your inbox."
-        : "Verification link generated (email delivery was simulated or skipped).",
-      devVerifyUrl: process.env.NODE_ENV !== "production" ? `/verify-email?token=${rawToken}` : undefined,
+      message: "Verification email sent! Please check your inbox.",
     });
   } catch (error: any) {
     if (error.name === "AuthError") {

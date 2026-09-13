@@ -131,16 +131,11 @@ export function Sidebar() {
                     {user.displayName || user.email}
                   </div>
                   <div className="flex items-center space-x-1">
-                    <span
-                      className={cn(
-                        "text-[10px] uppercase font-semibold px-1 py-0.2 rounded",
-                        user.role === "admin"
-                          ? "bg-amber-500/10 text-amber-500"
-                          : "text-[var(--text-muted)]"
-                      )}
-                    >
-                      {user.role}
-                    </span>
+                    {user.role === "admin" && (
+                      <span className="text-[10px] uppercase font-semibold px-1 py-0.2 rounded bg-amber-500/10 text-amber-500">
+                        Admin
+                      </span>
+                    )}
                   </div>
                 </div>
               </Link>

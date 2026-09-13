@@ -231,16 +231,11 @@ export function MobileNav() {
                       <div className="text-xs font-semibold text-[var(--text-primary)] truncate">
                         {user.displayName || user.email}
                       </div>
-                      <span
-                        className={cn(
-                          "text-[9px] uppercase font-bold px-1 py-0.2 rounded",
-                          user.role === "admin"
-                            ? "bg-amber-500/15 text-amber-500"
-                            : "text-[var(--text-muted)]"
-                        )}
-                      >
-                        {user.role}
-                      </span>
+                      {user.role === "admin" && (
+                        <span className="text-[9px] uppercase font-bold px-1 py-0.2 rounded bg-amber-500/15 text-amber-500">
+                          Admin
+                        </span>
+                      )}
                     </div>
                   </Link>
 

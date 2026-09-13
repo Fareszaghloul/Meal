@@ -73,7 +73,6 @@ export async function POST(request: Request) {
     });
 
     // Generate email verification token and send via Resend
-    let devVerifyUrl: string | undefined = undefined;
     try {
       const crypto = await import("crypto");
       const { hashToken } = await import("@/lib/auth/session");
@@ -91,14 +90,16 @@ export async function POST(request: Request) {
         },
       });
 
-      // Send verification email via Resend
-      sendVerificationEmail(user.email, user.displayName, verifyRawToken).catch((err) => {
-        console.error("Failed to send welcome verification email:", err);
-      });
-
-      devVerifyUrl = `/verify-email?token=${verifyRawToken}`;
+      // Send verification email — required, not optional
+      await sendVerificationEmail(user.email, user.displayName, verifyRawToken);
     } catch (emailErr) {
-      console.error("Error setting up verification token on registration:", emailErr);
+      console.error("Error sending verification email on registration:", emailErr);
+      // Clean up the user so they can try again
+      await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+      return NextResponse.json(
+        { error: "Failed to send verification email. Please check your email address and try again." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(
@@ -107,7 +108,6 @@ export async function POST(request: Request) {
         requiresVerification: true,
         email: user.email,
         message: "Account created! Please check your email and verify your account before logging in.",
-        devVerifyUrl: process.env.NODE_ENV !== "production" ? devVerifyUrl : undefined,
       },
       { status: 201 }
     );

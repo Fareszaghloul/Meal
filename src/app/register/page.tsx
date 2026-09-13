@@ -15,7 +15,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
-  const [devVerifyUrl, setDevVerifyUrl] = useState<string | null>(null);
   const [resendStatus, setResendStatus] = useState<{ loading: boolean; msg: string | null }>({ loading: false, msg: null });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -56,9 +55,6 @@ export default function RegisterPage() {
       }
 
       setRegisteredEmail(data.email || email.trim());
-      if (data.devVerifyUrl) {
-        setDevVerifyUrl(data.devVerifyUrl);
-      }
       setLoading(false);
     } catch {
       setError("An unexpected network error occurred. Please try again.");
@@ -77,9 +73,6 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       setResendStatus({ loading: false, msg: data.message || "Verification link sent!" });
-      if (data.devVerifyUrl) {
-        setDevVerifyUrl(data.devVerifyUrl);
-      }
     } catch {
       setResendStatus({ loading: false, msg: "Failed to resend verification email" });
     }
@@ -101,20 +94,6 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {devVerifyUrl && (
-          <div className="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl text-left text-xs space-y-2">
-            <span className="font-semibold text-[var(--text-secondary)] block text-[11px] uppercase tracking-wide">
-              Quick Verify Link (Dev Environment):
-            </span>
-            <Link
-              href={devVerifyUrl}
-              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-[var(--accent)] hover:underline"
-            >
-              <span>Click to Verify Email</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        )}
 
         <div className="pt-2 space-y-3">
           <Link
