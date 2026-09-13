@@ -39,7 +39,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, isDark } = useTheme();
   const { user, logout } = useAuth();
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
@@ -115,81 +115,82 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* User Card & Theme footer */}
-        <div className="p-3 border-t border-[var(--border)] space-y-2">
-          {user && (
-            <div className="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-between">
+        {/* Combined User Profile, 1-Click Theme Toggle & Logout */}
+        <div className="p-3 border-t border-[var(--border)]">
+          {user ? (
+            <div className="p-2 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-between gap-2 shadow-xs">
               <Link
                 href="/profile"
-                className="flex items-center space-x-2.5 min-w-0 flex-1 hover:opacity-80 transition"
+                className="flex items-center space-x-2.5 min-w-0 flex-1 hover:opacity-85 transition group"
+                title="Profile & Settings"
               >
-                <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-white flex items-center justify-center text-xs font-bold shrink-0 uppercase">
+                <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-white flex items-center justify-center text-xs font-bold shrink-0 uppercase shadow-xs">
                   {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-[var(--text-primary)] truncate">
-                    {user.displayName || user.email}
+                  <div className="text-xs font-semibold text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition">
+                    {user.displayName || user.email?.split("@")[0]}
                   </div>
                   <div className="flex items-center space-x-1">
-                    {user.role === "admin" && (
-                      <span className="text-[10px] uppercase font-semibold px-1 py-0.2 rounded bg-amber-500/10 text-amber-500">
+                    {user.role === "admin" ? (
+                      <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500">
                         Admin
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-[var(--text-muted)] truncate">
+                        {user.email}
                       </span>
                     )}
                   </div>
                 </div>
               </Link>
 
-              <button
-                onClick={() => logout()}
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer"
-                title="Sign out"
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setTheme(isDark ? "light" : "dark")}
+                  className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition cursor-pointer"
+                  title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {isDark ? (
+                    <Sun className="w-4 h-4 text-amber-400" />
+                  ) : (
+                    <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer"
+                  title="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-2 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-between gap-2 shadow-xs">
+              <Link
+                href="/login"
+                className="text-xs font-medium text-[var(--text-primary)] hover:text-[var(--accent)] transition px-1"
               >
-                <LogOut className="w-4 h-4" />
+                Sign In
+              </Link>
+              <button
+                type="button"
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition cursor-pointer"
+                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDark ? (
+                  <Sun className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
+                )}
               </button>
             </div>
           )}
-
-          <div className="flex items-center justify-between p-1 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-secondary)]">
-            <button
-              onClick={() => setTheme("light")}
-              className={cn(
-                "flex-1 flex items-center justify-center py-1.5 rounded-lg transition cursor-pointer",
-                theme === "light"
-                  ? "bg-[var(--surface)] text-[var(--text-primary)] font-medium border border-[var(--border)]"
-                  : "hover:text-[var(--text-primary)]"
-              )}
-              title="Light mode"
-            >
-              <Sun className="w-3.5 h-3.5 mr-1" />
-              <span>Light</span>
-            </button>
-            <button
-              onClick={() => setTheme("dark")}
-              className={cn(
-                "flex-1 flex items-center justify-center py-1.5 rounded-lg transition cursor-pointer",
-                theme === "dark"
-                  ? "bg-[var(--surface)] text-[var(--text-primary)] font-medium border border-[var(--border)]"
-                  : "hover:text-[var(--text-primary)]"
-              )}
-              title="Dark mode"
-            >
-              <Moon className="w-3.5 h-3.5 mr-1" />
-              <span>Dark</span>
-            </button>
-            <button
-              onClick={() => setTheme("system")}
-              className={cn(
-                "flex-1 flex items-center justify-center py-1.5 rounded-lg transition cursor-pointer",
-                theme === "system"
-                  ? "bg-[var(--surface)] text-[var(--text-primary)] font-medium border border-[var(--border)]"
-                  : "hover:text-[var(--text-primary)]"
-              )}
-              title="System preference"
-            >
-              <Monitor className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
       </aside>
 

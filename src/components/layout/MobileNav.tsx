@@ -40,7 +40,7 @@ const NAV_ITEMS = [
 
 export function MobileNav() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, isDark } = useTheme();
   const { user, logout } = useAuth();
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -215,89 +215,87 @@ export function MobileNav() {
               })}
             </nav>
 
-            {/* User Profile Card & Theme in Drawer Footer */}
-            <div className="p-3 border-t border-[var(--border)] bg-[var(--background)]/40 space-y-2.5">
-              {user && (
-                <div className="p-2 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
+            {/* User Profile Card & 1-Click Theme in Drawer Footer */}
+            <div className="p-3 border-t border-[var(--border)] bg-[var(--background)]/40">
+              {user ? (
+                <div className="p-2 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between gap-2 shadow-xs">
                   <Link
                     href="/profile"
                     onClick={() => setIsDrawerOpen(false)}
-                    className="flex items-center space-x-2.5 min-w-0 flex-1"
+                    className="flex items-center space-x-2.5 min-w-0 flex-1 hover:opacity-85 transition"
+                    title="View Profile"
                   >
-                    <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-white flex items-center justify-center text-xs font-bold shrink-0 uppercase">
+                    <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-white flex items-center justify-center text-xs font-bold shrink-0 uppercase shadow-xs">
                       {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-semibold text-[var(--text-primary)] truncate">
-                        {user.displayName || user.email}
+                        {user.displayName || user.email?.split("@")[0]}
                       </div>
-                      {user.role === "admin" && (
-                        <span className="text-[9px] uppercase font-bold px-1 py-0.2 rounded bg-amber-500/15 text-amber-500">
-                          Admin
-                        </span>
-                      )}
+                      <div className="flex items-center space-x-1">
+                        {user.role === "admin" ? (
+                          <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500">
+                            Admin
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-[var(--text-muted)] truncate">
+                            {user.email}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </Link>
 
-                  <button
-                    onClick={() => {
-                      setIsDrawerOpen(false);
-                      logout();
-                    }}
-                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer"
-                    title="Sign out"
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setTheme(isDark ? "light" : "dark")}
+                      className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                    >
+                      {isDark ? (
+                        <Sun className="w-4 h-4 text-amber-400" />
+                      ) : (
+                        <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDrawerOpen(false);
+                        logout();
+                      }}
+                      className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer"
+                      title="Sign out"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between gap-2 shadow-xs">
+                  <Link
+                    href="/login"
+                    onClick={() => setIsDrawerOpen(false)}
+                    className="text-xs font-medium text-[var(--text-primary)] hover:text-[var(--accent)] transition px-1"
                   >
-                    <LogOut className="w-4 h-4" />
+                    Sign In
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setTheme(isDark ? "light" : "dark")}
+                    className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                    title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                  >
+                    {isDark ? (
+                      <Sun className="w-4 h-4 text-amber-400" />
+                    ) : (
+                      <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
+                    )}
                   </button>
                 </div>
               )}
-
-              <div>
-                <div className="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-secondary)] mb-1.5 px-1">
-                  Appearance
-                </div>
-                <div className="flex items-center justify-between p-1 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
-                  <button
-                    onClick={() => setTheme("light")}
-                    className={cn(
-                      "flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition",
-                      theme === "light"
-                        ? "bg-[var(--background)] text-[var(--text-primary)] shadow-xs"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                    )}
-                    title="Light mode"
-                  >
-                    <Sun className="w-3.5 h-3.5 mr-1" />
-                    <span>Light</span>
-                  </button>
-                  <button
-                    onClick={() => setTheme("dark")}
-                    className={cn(
-                      "flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition",
-                      theme === "dark"
-                        ? "bg-[var(--background)] text-[var(--text-primary)] shadow-xs"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                    )}
-                    title="Dark mode"
-                  >
-                    <Moon className="w-3.5 h-3.5 mr-1" />
-                    <span>Dark</span>
-                  </button>
-                  <button
-                    onClick={() => setTheme("system")}
-                    className={cn(
-                      "flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition",
-                      theme === "system"
-                        ? "bg-[var(--background)] text-[var(--text-primary)] shadow-xs"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                    )}
-                    title="System preference"
-                  >
-                    <Monitor className="w-3.5 h-3.5 mr-1" />
-                    <span>Auto</span>
-                  </button>
-                </div>
-              </div>
             </div>
           </aside>
         </div>

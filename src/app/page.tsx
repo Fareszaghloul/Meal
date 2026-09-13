@@ -22,6 +22,7 @@ import { MacroBadge } from "@/components/ui/MacroBadge";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { WeightTrendWidget } from "@/components/dashboard/WeightTrendWidget";
 import { WeightAnalyticsSummary } from "@/lib/nutrition/weight-analytics";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 const DAY_NAMES = [
@@ -35,6 +36,7 @@ const DAY_NAMES = [
 ];
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState<any[]>([]);
   const [mealPlan, setMealPlan] = useState<any>(null);
   const [settings, setSettings] = useState<any>({
@@ -73,7 +75,8 @@ export default function DashboardPage() {
       }
       if (meRes.ok) {
         const meData = await meRes.json();
-        setUsername(meData.displayName || meData.email?.split("@")[0] || "");
+        const u = meData.user || meData;
+        setUsername(u.displayName || u.email?.split("@")[0] || "");
       }
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
@@ -129,7 +132,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Good day, {username ? username.charAt(0).toUpperCase() + username.slice(1) : "Chef"}.
+            Good day{user?.displayName || username ? `, ${user?.displayName || username}` : ""}.
           </h1>
           <p className="text-xs text-[var(--text-secondary)]">
             Here is your daily nutrition, meal prep schedule, and quick actions for {todayCapitalized}.
