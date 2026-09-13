@@ -18,6 +18,7 @@ import {
   Monitor,
   Scale,
   ShieldCheck,
+  Users,
   LogOut,
   User as UserIcon,
 } from "lucide-react";
@@ -46,7 +47,7 @@ export function Sidebar() {
   const navItems = [
     ...NAV_ITEMS,
     ...(user?.role === "admin"
-      ? [{ label: "Admin Console", href: "/admin", icon: ShieldCheck }]
+      ? [{ label: "Users & Accounts", href: "/admin", icon: Users }]
       : []),
   ];
 

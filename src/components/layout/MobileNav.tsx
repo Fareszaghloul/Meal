@@ -20,6 +20,7 @@ import {
   Moon,
   Monitor,
   ShieldCheck,
+  Users,
   LogOut,
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
@@ -48,7 +49,7 @@ export function MobileNav() {
   const drawerNavItems = [
     ...NAV_ITEMS,
     ...(user?.role === "admin"
-      ? [{ label: "Admin Console", href: "/admin", icon: ShieldCheck }]
+      ? [{ label: "Users & Accounts", href: "/admin", icon: Users }]
       : []),
   ];
 

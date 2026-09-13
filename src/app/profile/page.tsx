@@ -22,6 +22,7 @@ import {
   TrendingDown,
   TrendingUp,
   Plus,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WeightTrendChart } from "@/components/weight/WeightTrendChart";
@@ -435,6 +436,19 @@ export default function ProfilePage() {
                 </span>
               )}
             </div>
+
+            {user?.role === "admin" && (
+              <div className="mt-2.5">
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-semibold transition shadow-2xs"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>User Management & Add Accounts</span>
+                  <ArrowRight className="w-3 h-3 ml-0.5" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 

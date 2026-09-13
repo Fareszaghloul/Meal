@@ -1,0 +1,336 @@
+"use client";
+
+import React, { useState } from "react";
+import {
+  X,
+  UserPlus,
+  Mail,
+  User as UserIcon,
+  Lock,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Shield,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Copy,
+  Check,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface CreateUserModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export function CreateUserModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: CreateUserModalProps) {
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"user" | "admin">("user");
+  const [emailVerified, setEmailVerified] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    email: string;
+    password: string;
+    displayName: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleGeneratePassword = () => {
+    const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%";
+    let pwd = "";
+    for (let i = 0; i < 12; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setPassword(pwd);
+  };
+
+  const handleCopyCredentials = () => {
+    if (!createdCredentials) return;
+    const text = `MealPrep Account Created:\nEmail: ${createdCredentials.email}\nPassword: ${createdCredentials.password}\nLogin URL: ${window.location.origin}/login`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          displayName: displayName.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          role,
+          emailVerified,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMsg(data.error || "Failed to create user");
+      } else {
+        setCreatedCredentials({
+          email: email.trim().toLowerCase(),
+          password,
+          displayName: displayName.trim(),
+        });
+        onSuccess();
+      }
+    } catch {
+      setErrorMsg("A network error occurred while creating the user.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetAndClose = () => {
+    setDisplayName("");
+    setEmail("");
+    setPassword("");
+    setRole("user");
+    setEmailVerified(true);
+    setCreatedCredentials(null);
+    setErrorMsg(null);
+    onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+      onClick={handleResetAndClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
+              <UserPlus className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+                Create User Account
+              </h3>
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                Creates an isolated user account with their own private data
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleResetAndClose}
+            className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Success Modal View */}
+        {createdCredentials ? (
+          <div className="p-6 space-y-4">
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 space-y-1">
+              <div className="flex items-center space-x-2 font-semibold text-xs">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>Account Created Successfully!</span>
+              </div>
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                The account has been created with its own isolated database profile, recipes, and meal plans.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2 text-xs">
+              <div>
+                <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold">
+                  Display Name
+                </span>
+                <p className="font-medium text-[var(--text-primary)]">{createdCredentials.displayName}</p>
+              </div>
+              <div>
+                <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold">
+                  Email
+                </span>
+                <p className="font-medium text-[var(--text-primary)] font-mono">{createdCredentials.email}</p>
+              </div>
+              <div>
+                <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold">
+                  Password
+                </span>
+                <p className="font-medium text-[var(--text-primary)] font-mono">{createdCredentials.password}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={handleCopyCredentials}
+                className="flex-1 inline-flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-xs font-semibold text-[var(--text-primary)] rounded-xl transition cursor-pointer"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? "Copied to Clipboard" : "Copy Login Details"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleResetAndClose}
+                className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold rounded-xl transition cursor-pointer shadow-xs"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Form Body */
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {/* Display Name */}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1">
+                Full Name / Display Name
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Alex Miller"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-semibold text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)] transition"
+                />
+                <UserIcon className="w-3.5 h-3.5 text-[var(--text-secondary)] absolute left-3 top-1/2 -translate-y-1/2" />
+              </div>
+            </div>
+
+            {/* Email Address */}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1">
+                Email Address
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  placeholder="user@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-semibold text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)] transition"
+                />
+                <Mail className="w-3.5 h-3.5 text-[var(--text-secondary)] absolute left-3 top-1/2 -translate-y-1/2" />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-[var(--text-primary)]">
+                  Temporary Password
+                </label>
+                <button
+                  type="button"
+                  onClick={handleGeneratePassword}
+                  className="text-[11px] text-[var(--accent)] hover:underline inline-flex items-center space-x-1 cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Generate strong password</span>
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={8}
+                  placeholder="Min. 8 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-9 pr-10 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-mono font-semibold text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)] transition"
+                />
+                <Lock className="w-3.5 h-3.5 text-[var(--text-secondary)] absolute left-3 top-1/2 -translate-y-1/2" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Role and Verified Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Role */}
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text-primary)] mb-1">
+                  Account Role
+                </label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as "user" | "admin")}
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-semibold text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                >
+                  <option value="user">Standard User</option>
+                  <option value="admin">Administrator</option>
+                </select>
+              </div>
+
+              {/* Email Verified Toggle */}
+              <div className="flex flex-col justify-end">
+                <label className="flex items-center space-x-2 text-xs text-[var(--text-primary)] cursor-pointer py-2">
+                  <input
+                    type="checkbox"
+                    checked={emailVerified}
+                    onChange={(e) => setEmailVerified(e.target.checked)}
+                    className="w-4 h-4 rounded-md border-[var(--border)] text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
+                  />
+                  <span className="text-[11px] font-medium">Pre-verify account (Instant login)</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="pt-3 flex items-center justify-end space-x-2 border-t border-[var(--border)]">
+              <button
+                type="button"
+                onClick={handleResetAndClose}
+                className="px-4 py-2 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition cursor-pointer disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                <span>Create User Account</span>
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
