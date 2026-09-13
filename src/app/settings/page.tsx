@@ -30,6 +30,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useTheme } from "@/components/layout/ThemeProvider";
+import { useAuth } from "@/context/AuthContext";
 import {
   MET_TABLE,
   STEP_RANGES,
@@ -41,6 +42,8 @@ import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   // 1. Daily Nutrition Targets State
   const [dailyCalories, setDailyCalories] = useState<number | string>(2300);
@@ -1106,242 +1109,246 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* 4. AI & Ollama Configuration */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Cpu className="w-4 h-4 text-[var(--accent)]" />
-            <h2 className="font-semibold text-sm text-[var(--text-primary)]">
-              Local AI Engine (Ollama)
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={handleTestOllama}
-            disabled={isTestingOllama}
-            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--background)] transition"
-          >
-            {isTestingOllama ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5 mr-1 text-[var(--accent)]" />
-            )}
-            <span>Test Connection</span>
-          </button>
-        </div>
-
-        <p className="text-xs text-[var(--text-secondary)]">
-          All recipe text parsing runs 100% locally via Ollama CPU inference. No cloud API keys needed for core operation.
-        </p>
-
-        {/* Ollama Test Result Banner */}
-        {ollamaTestResult && (
-          <div
-            className={cn(
-              "p-4 rounded-xl text-xs space-y-1.5",
-              ollamaTestResult.isRunning
-                ? "bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)]"
-                : "bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)]"
-            )}
-          >
-            <div className="flex items-center space-x-2 font-semibold">
-              {ollamaTestResult.isRunning ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-[var(--ui-success)]" />
-                  <span>Ollama is online and connected!</span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="w-4 h-4 text-[var(--ui-error)]" />
-                  <span>Could not reach Ollama server</span>
-                </>
-              )}
+      {/* 4. AI & Ollama Configuration (Admin Only) */}
+      {isAdmin && (
+        <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Cpu className="w-4 h-4 text-[var(--accent)]" />
+              <h2 className="font-semibold text-sm text-[var(--text-primary)]">
+                Local AI Engine (Ollama)
+              </h2>
             </div>
-            {ollamaTestResult.isRunning ? (
-              <p>
-                Available models:{" "}
-                <span className="font-mono font-semibold">
-                  {ollamaTestResult.models.length > 0
-                    ? ollamaTestResult.models.join(", ")
-                    : "None pulled yet (run 'ollama run qwen2.5:7b')"}
-                </span>
-              </p>
-            ) : (
-              <p>{ollamaTestResult.error}</p>
-            )}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-              Ollama Base URL
-            </label>
-            <input
-              type="text"
-              required
-              value={ollamaUrl}
-              onChange={(e) => setOllamaUrl(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-              placeholder="http://localhost:11434"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-              Model Name for Text Parsing
-            </label>
-            <input
-              type="text"
-              required
-              value={ollamaModel}
-              onChange={(e) => setOllamaModel(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-              placeholder="qwen2.5:7b"
-            />
-          </div>
-        </div>
-
-        {/* Screenshot Parsing Pipeline */}
-        <div className="pt-2 border-t border-[var(--border)] space-y-3">
-          <label className="block text-xs font-semibold text-[var(--text-primary)]">
-            Screenshot Parsing Pipeline
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
             <button
               type="button"
-              onClick={() => setScreenshotMethod("ocr_local")}
-              className={cn(
-                "p-3 rounded-xl border text-left transition",
-                screenshotMethod === "ocr_local"
-                  ? "border-[var(--accent)] bg-[var(--accent-subtle)] font-medium text-[var(--accent)]"
-                  : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              )}
+              onClick={handleTestOllama}
+              disabled={isTestingOllama}
+              className="flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--background)] transition"
             >
-              <div className="font-semibold">OCR + Local Model (Default)</div>
-              <div className="text-[11px] text-[var(--text-secondary)] font-normal mt-0.5">
-                Tesseract OCR extracts text, then local LLM structures it. 100% offline.
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setScreenshotMethod("vision_local")}
-              className={cn(
-                "p-3 rounded-xl border text-left transition",
-                screenshotMethod === "vision_local"
-                  ? "border-[var(--accent)] bg-[var(--accent-subtle)] font-medium text-[var(--accent)]"
-                  : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              {isTestingOllama ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5 mr-1 text-[var(--accent)]" />
               )}
-            >
-              <div className="font-semibold">Local Vision Model</div>
-              <div className="text-[11px] text-[var(--text-secondary)] font-normal mt-0.5">
-                Direct multimodal inference via Ollama (e.g. Qwen2-VL or LLaVA).
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setScreenshotMethod("cloud_vision")}
-              className={cn(
-                "p-3 rounded-xl border text-left transition",
-                screenshotMethod === "cloud_vision"
-                  ? "border-[var(--accent)] bg-[var(--accent-subtle)] font-medium text-[var(--accent)]"
-                  : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              )}
-            >
-              <div className="font-semibold">Cloud Fallback</div>
-              <div className="text-[11px] text-[var(--text-secondary)] font-normal mt-0.5">
-                Optional cloud API for screenshot OCR fallback only.
-              </div>
+              <span>Test Connection</span>
             </button>
           </div>
 
-          {screenshotMethod === "cloud_vision" && (
-            <div className="pt-2">
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-                Cloud Vision API Key (Optional fallback)
-              </label>
-              <input
-                type="password"
-                placeholder={
-                  hasCloudApiKey
-                    ? "•••••••• (Key saved, type new key to replace)"
-                    : "Enter API key"
-                }
-                value={cloudApiKey}
-                onChange={(e) => setCloudApiKey(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-              />
+          <p className="text-xs text-[var(--text-secondary)]">
+            All recipe text parsing runs 100% locally via Ollama CPU inference. No cloud API keys needed for core operation.
+          </p>
+
+          {/* Ollama Test Result Banner */}
+          {ollamaTestResult && (
+            <div
+              className={cn(
+                "p-4 rounded-xl text-xs space-y-1.5",
+                ollamaTestResult.isRunning
+                  ? "bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)]"
+                  : "bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)]"
+              )}
+            >
+              <div className="flex items-center space-x-2 font-semibold">
+                {ollamaTestResult.isRunning ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-[var(--ui-success)]" />
+                    <span>Ollama is online and connected!</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-[var(--ui-error)]" />
+                    <span>Could not reach Ollama server</span>
+                  </>
+                )}
+              </div>
+              {ollamaTestResult.isRunning ? (
+                <p>
+                  Available models:{" "}
+                  <span className="font-mono font-semibold">
+                    {ollamaTestResult.models.length > 0
+                      ? ollamaTestResult.models.join(", ")
+                      : "None pulled yet (run 'ollama run qwen2.5:7b')"}
+                  </span>
+                </p>
+              ) : (
+                <p>{ollamaTestResult.error}</p>
+              )}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* 5. External Nutrition Data Sources (Section 39) */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
-        <div className="flex items-center space-x-2">
-          <Database className="w-4 h-4 text-[var(--accent)]" />
-          <h2 className="font-semibold text-sm text-[var(--text-primary)]">
-            External Nutrition Data Sources (Section 39)
-          </h2>
-        </div>
-
-        <p className="text-xs text-[var(--text-secondary)]">
-          The app searches two free, legitimate food sources to cover both whole ingredients and branded items without requiring private APIs. Lookups are saved permanently to your local database for 100% offline access.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)]/50 space-y-1">
-            <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
-              <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
-              <span>Primary: USDA FoodData Central</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
+                Ollama Base URL
+              </label>
+              <input
+                type="text"
+                required
+                value={ollamaUrl}
+                onChange={(e) => setOllamaUrl(e.target.value)}
+                className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                placeholder="http://localhost:11434"
+              />
             </div>
-            <p className="text-[11px] text-[var(--text-secondary)]">
-              Official U.S. government database for whole ingredients (meats, grains, produce, dairy) with distinct raw vs. cooked profiles.
-            </p>
+
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
+                Model Name for Text Parsing
+              </label>
+              <input
+                type="text"
+                required
+                value={ollamaModel}
+                onChange={(e) => setOllamaModel(e.target.value)}
+                className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                placeholder="qwen2.5:7b"
+              />
+            </div>
           </div>
 
-          <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)]/50 space-y-1">
-            <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
-              <span className="w-2 h-2 rounded-full bg-[#4C6E8C]" />
-              <span>Secondary: Open Food Facts</span>
+          {/* Screenshot Parsing Pipeline */}
+          <div className="pt-2 border-t border-[var(--border)] space-y-3">
+            <label className="block text-xs font-semibold text-[var(--text-primary)]">
+              Screenshot Parsing Pipeline
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setScreenshotMethod("ocr_local")}
+                className={cn(
+                  "p-3 rounded-xl border text-left transition",
+                  screenshotMethod === "ocr_local"
+                    ? "border-[var(--accent)] bg-[var(--accent-subtle)] font-medium text-[var(--accent)]"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <div className="font-semibold">OCR + Local Model (Default)</div>
+                <div className="text-[11px] text-[var(--text-secondary)] font-normal mt-0.5">
+                  Tesseract OCR extracts text, then local LLM structures it. 100% offline.
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setScreenshotMethod("vision_local")}
+                className={cn(
+                  "p-3 rounded-xl border text-left transition",
+                  screenshotMethod === "vision_local"
+                    ? "border-[var(--accent)] bg-[var(--accent-subtle)] font-medium text-[var(--accent)]"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <div className="font-semibold">Local Vision Model</div>
+                <div className="text-[11px] text-[var(--text-secondary)] font-normal mt-0.5">
+                  Direct multimodal inference via Ollama (e.g. Qwen2-VL or LLaVA).
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setScreenshotMethod("cloud_vision")}
+                className={cn(
+                  "p-3 rounded-xl border text-left transition",
+                  screenshotMethod === "cloud_vision"
+                    ? "border-[var(--accent)] bg-[var(--accent-subtle)] font-medium text-[var(--accent)]"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <div className="font-semibold">Cloud Fallback</div>
+                <div className="text-[11px] text-[var(--text-secondary)] font-normal mt-0.5">
+                  Optional cloud API for screenshot OCR fallback only.
+                </div>
+              </button>
             </div>
-            <p className="text-[11px] text-[var(--text-secondary)]">
-              Crowdsourced open database for commercial packaged goods, protein powders, snacks, and barcode (UPC/EAN) lookups.
-            </p>
+
+            {screenshotMethod === "cloud_vision" && (
+              <div className="pt-2">
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
+                  Cloud Vision API Key (Optional fallback)
+                </label>
+                <input
+                  type="password"
+                  placeholder={
+                    hasCloudApiKey
+                      ? "•••••••• (Key saved, type new key to replace)"
+                      : "Enter API key"
+                  }
+                  value={cloudApiKey}
+                  onChange={(e) => setCloudApiKey(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                />
+              </div>
+            )}
           </div>
         </div>
+      )}
 
-        <div className="pt-2 border-t border-[var(--border)] space-y-2">
-          <label className="block text-xs font-medium text-[var(--text-primary)]">
-            USDA FoodData Central API Key <span className="font-normal text-[var(--text-secondary)]">(Optional personal key)</span>
-          </label>
-          <input
-            type="password"
-            placeholder={
-              hasUsdaApiKey
-                ? "•••••••• (Custom USDA Key saved, type to replace)"
-                : "DEMO_KEY active by default (30 req/hr). Enter personal key for 1,000 req/hr."
-            }
-            value={usdaApiKey}
-            onChange={(e) => setUsdaApiKey(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-          />
-          <p className="text-[11px] text-[var(--text-secondary)]">
-            Free instant signup at{" "}
-            <a
-              href="https://fdc.nal.usda.gov/api-key-signup.html"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[var(--accent)] hover:underline"
-            >
-              fdc.nal.usda.gov/api-key-signup.html
-            </a>
-            . Open Food Facts requires no key.
+      {/* 5. External Nutrition Data Sources (Section 39) (Admin Only) */}
+      {isAdmin && (
+        <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
+          <div className="flex items-center space-x-2">
+            <Database className="w-4 h-4 text-[var(--accent)]" />
+            <h2 className="font-semibold text-sm text-[var(--text-primary)]">
+              External Nutrition Data Sources (Section 39)
+            </h2>
+          </div>
+
+          <p className="text-xs text-[var(--text-secondary)]">
+            The app searches two free, legitimate food sources to cover both whole ingredients and branded items without requiring private APIs. Lookups are saved permanently to your local database for 100% offline access.
           </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)]/50 space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+                <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+                <span>Primary: USDA FoodData Central</span>
+              </div>
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                Official U.S. government database for whole ingredients (meats, grains, produce, dairy) with distinct raw vs. cooked profiles.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)]/50 space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+                <span className="w-2 h-2 rounded-full bg-[#4C6E8C]" />
+                <span>Secondary: Open Food Facts</span>
+              </div>
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                Crowdsourced open database for commercial packaged goods, protein powders, snacks, and barcode (UPC/EAN) lookups.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-[var(--border)] space-y-2">
+            <label className="block text-xs font-medium text-[var(--text-primary)]">
+              USDA FoodData Central API Key <span className="font-normal text-[var(--text-secondary)]">(Optional personal key)</span>
+            </label>
+            <input
+              type="password"
+              placeholder={
+                hasUsdaApiKey
+                  ? "•••••••• (Custom USDA Key saved, type to replace)"
+                  : "DEMO_KEY active by default (30 req/hr). Enter personal key for 1,000 req/hr."
+              }
+              value={usdaApiKey}
+              onChange={(e) => setUsdaApiKey(e.target.value)}
+              className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+            />
+            <p className="text-[11px] text-[var(--text-secondary)]">
+              Free instant signup at{" "}
+              <a
+                href="https://fdc.nal.usda.gov/api-key-signup.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--accent)] hover:underline"
+              >
+                fdc.nal.usda.gov/api-key-signup.html
+              </a>
+              . Open Food Facts requires no key.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </form>
   );
 }

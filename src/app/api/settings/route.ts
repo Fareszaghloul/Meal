@@ -145,14 +145,17 @@ export async function PUT(request: Request) {
     if (useThermicEffectAdjustment !== undefined)
       dataToUpdate.useThermicEffectAdjustment = Boolean(useThermicEffectAdjustment);
 
-    if (ollamaUrl !== undefined) dataToUpdate.ollamaUrl = String(ollamaUrl).trim();
-    if (ollamaModel !== undefined) dataToUpdate.ollamaModel = String(ollamaModel).trim();
-    if (screenshotMethod !== undefined) dataToUpdate.screenshotMethod = screenshotMethod;
-    if (cloudApiKey !== undefined && cloudApiKey !== null) {
-      dataToUpdate.cloudApiKey = String(cloudApiKey).trim() || null;
-    }
-    if (usdaApiKey !== undefined && usdaApiKey !== null) {
-      dataToUpdate.usdaApiKey = String(usdaApiKey).trim() || null;
+    const isAdmin = user.role === "admin";
+    if (isAdmin) {
+      if (ollamaUrl !== undefined) dataToUpdate.ollamaUrl = String(ollamaUrl).trim();
+      if (ollamaModel !== undefined) dataToUpdate.ollamaModel = String(ollamaModel).trim();
+      if (screenshotMethod !== undefined) dataToUpdate.screenshotMethod = screenshotMethod;
+      if (cloudApiKey !== undefined && cloudApiKey !== null) {
+        dataToUpdate.cloudApiKey = String(cloudApiKey).trim() || null;
+      }
+      if (usdaApiKey !== undefined && usdaApiKey !== null) {
+        dataToUpdate.usdaApiKey = String(usdaApiKey).trim() || null;
+      }
     }
 
     const updated = await prisma.userSettings.upsert({
