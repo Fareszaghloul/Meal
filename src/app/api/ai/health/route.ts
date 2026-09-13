@@ -10,7 +10,8 @@ export async function GET(request: NextRequest) {
     const settings = await prisma.userSettings.findUnique({
       where: { userId: user.id },
     });
-    const baseUrl = settings?.ollamaUrl || "http://localhost:11434";
+    const defaultUrl = process.env.OLLAMA_BASE_URL || (process.env.VERCEL ? "https://ollama.1234567.website" : "http://localhost:11434");
+    const baseUrl = settings?.ollamaUrl && settings.ollamaUrl !== "http://localhost:11434" ? settings.ollamaUrl : (settings?.ollamaUrl || defaultUrl);
     const health = await aiProvider.checkHealth(baseUrl);
     return NextResponse.json({
       ...health,

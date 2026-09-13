@@ -22,7 +22,8 @@ export async function POST(request: Request) {
     }
 
     const settings = await prisma.userSettings.findUnique({ where: { userId: user.id } });
-    const baseUrl = settings?.ollamaUrl || "http://localhost:11434";
+    const defaultUrl = process.env.OLLAMA_BASE_URL || (process.env.VERCEL ? "https://ollama.1234567.website" : "http://localhost:11434");
+    const baseUrl = settings?.ollamaUrl && settings.ollamaUrl !== "http://localhost:11434" ? settings.ollamaUrl : (settings?.ollamaUrl || defaultUrl);
     const model = settings?.ollamaModel || "qwen2.5:7b";
 
     let result;
