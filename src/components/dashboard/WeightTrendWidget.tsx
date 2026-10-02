@@ -52,7 +52,7 @@ export function WeightTrendWidget({
     <>
       <div
         className={cn(
-          "p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs flex flex-col justify-between space-y-4",
+          "p-6 md:p-8 rounded-3xl bg-[var(--surface)] flex flex-col justify-between space-y-4",
           className
         )}
       >
@@ -89,9 +89,9 @@ export function WeightTrendWidget({
             <button
               type="button"
               onClick={() => setIsLogModalOpen(true)}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs shadow-xs transition"
+              className="inline-flex items-center space-x-2 px-5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>Log your first weight</span>
             </button>
           </div>

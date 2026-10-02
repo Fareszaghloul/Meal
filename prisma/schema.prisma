@@ -77,7 +77,7 @@ model Food {
   id                 String             @id @default(cuid())
   userId             String?            // null = standard global food; non-null = user's private custom food
   user               User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name               String             @unique
+  name               String
   category           String             // "Meat", "Dairy", "Grains", "Produce", "Pantry", etc.
   rawOrCooked        String             @default("unspecified") // "raw", "cooked", "dry", "unspecified"
   caloriesPer100g    Float
@@ -109,6 +109,11 @@ model Food {
   saturatedFatPerServing Float?
   transFatPerServing    Float?
   sodiumPerServing      Float?             // in mg per serving
+  barcode               String?
+  externalId            String?            // e.g. "usda-171077", "off-737628064502", "fatsecret-35712"
+  sourceUrl             String?
+  importedAt            DateTime?
+  lastSyncedAt          DateTime?
   recipeIngredients  RecipeIngredient[]
   pantryItems        PantryItem[]
   foodLogEntries     FoodLogEntry[]
@@ -117,6 +122,8 @@ model Food {
 
   @@unique([userId, name])
   @@index([userId])
+  @@index([barcode])
+  @@index([externalId])
 }
 
 model Recipe {
@@ -229,6 +236,8 @@ model Meal {
   sodium       Float?
   isCompleted  Boolean   @default(false)
   sortOrder    Int       @default(0)
+
+  @@index([mealPlanId])
 }
 
 model ShoppingListItem {
@@ -248,6 +257,7 @@ model ShoppingListItem {
   updatedAt  DateTime @updatedAt
 
   @@index([userId])
+  @@index([userId, isChecked])
 }
 
 model PantryItem {
@@ -374,6 +384,7 @@ model FoodLogEntry {
   updatedAt    DateTime  @updatedAt
 
   @@index([userId, date])
+  @@index([userId, date, mealCategory])
 }
 
 model WaterLogEntry {

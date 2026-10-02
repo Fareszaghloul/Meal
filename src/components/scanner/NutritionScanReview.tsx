@@ -269,7 +269,7 @@ export function NutritionScanReview({
             <button
               type="button"
               onClick={() => handleSave(true)}
-              className="px-2.5 py-1 rounded-lg bg-[var(--accent)] text-white text-[11px] font-medium hover:bg-[var(--accent-hover)] transition cursor-pointer"
+              className="px-3.5 py-1.5 rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold hover:bg-[var(--accent-hover)] transition cursor-pointer"
             >
               Save as new food
             </button>
@@ -644,7 +644,7 @@ export function NutritionScanReview({
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-2 rounded-xl border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
+            className="px-5 min-h-[44px] rounded-full bg-[var(--background)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
           >
             Cancel
           </button>
@@ -653,7 +653,7 @@ export function NutritionScanReview({
             type="button"
             disabled={isSubmitting}
             onClick={() => handleSave(false)}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

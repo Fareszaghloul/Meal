@@ -11,17 +11,17 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: "system",
+  theme: "dark",
   setTheme: () => {},
-  isDark: false,
+  isDark: true,
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [isDark, setIsDark] = useState<boolean>(false);
+  const [theme, setThemeState] = useState<Theme>("dark");
+  const [isDark, setIsDark] = useState<boolean>(true);
 
   useEffect(() => {
-    const saved = (localStorage.getItem("mealprep-theme") as Theme) || "system";
+    const saved = (localStorage.getItem("mealprep-theme") as Theme) || "dark";
     setThemeState(saved);
   }, []);
 
@@ -30,20 +30,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     const applyTheme = () => {
-      let dark = false;
+      let dark = true;
       if (theme === "dark") {
         dark = true;
       } else if (theme === "light") {
         dark = false;
       } else {
+        // System preference, default to dark if not explicitly specified
         dark = mediaQuery.matches;
       }
 
       setIsDark(dark);
       if (dark) {
         root.classList.add("dark");
+        root.classList.remove("light");
       } else {
         root.classList.remove("dark");
+        root.classList.add("light");
       }
     };
 

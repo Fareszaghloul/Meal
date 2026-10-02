@@ -38,8 +38,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F6F7F4" },
-    { media: "(prefers-color-scheme: dark)", color: "#141917" },
+    { media: "(prefers-color-scheme: dark)", color: "#0E0F11" },
+    { media: "(prefers-color-scheme: light)", color: "#F3F3EF" },
   ],
 };
 
@@ -51,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${generalSans.variable} font-sans h-full antialiased`}
+      className={`${generalSans.variable} font-sans h-full antialiased dark`}
       suppressHydrationWarning
     >
       <body className="min-h-full bg-[var(--background)] text-[var(--text-primary)] flex flex-col md:flex-row">

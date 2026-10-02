@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -10,12 +10,9 @@ import {
   Flame,
   CheckCircle2,
   Trash2,
-  Utensils,
   X,
-  Sparkles,
+  ArrowRight,
 } from "lucide-react";
-import { ProgressBar } from "@/components/ui/ProgressBar";
-import { MacroBadge } from "@/components/ui/MacroBadge";
 import { cn } from "@/lib/utils";
 
 const DAYS_OF_WEEK = [
@@ -35,7 +32,6 @@ const MEAL_CATEGORIES = [
   { key: "snack", label: "Snack" },
 ];
 
-// Helper to get Monday date
 function getMondayDate(d: Date = new Date()): Date {
   const date = new Date(d);
   const day = date.getDay();
@@ -58,7 +54,6 @@ export default function MealPlannerPage() {
     dailyFat: 70,
   });
 
-  const [selectedDayTab, setSelectedDayTab] = useState<string>("monday");
   const [activeModalSlot, setActiveModalSlot] = useState<{
     day: string;
     category: string;
@@ -89,13 +84,11 @@ export default function MealPlannerPage() {
   }, [weekStartStr]);
 
   useEffect(() => {
-    // Fetch recipes for selector
     fetch("/api/recipes")
       .then((res) => res.json())
       .then((data) => setAllRecipes(data))
       .catch((err) => console.error(err));
 
-    // Fetch user goals
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
@@ -127,7 +120,6 @@ export default function MealPlannerPage() {
     setCurrentMonday(getMondayDate());
   };
 
-  // Add meal to slot
   const handleAddMeal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeModalSlot) return;
@@ -159,7 +151,6 @@ export default function MealPlannerPage() {
     }
   };
 
-  // Delete meal
   const handleDeleteMeal = async (mealId: string) => {
     try {
       const res = await fetch(`/api/meal-plan?mealId=${mealId}`, {
@@ -171,7 +162,6 @@ export default function MealPlannerPage() {
     }
   };
 
-  // Toggle meal complete
   const handleToggleComplete = async (meal: any) => {
     try {
       await fetch("/api/meal-plan", {
@@ -188,7 +178,6 @@ export default function MealPlannerPage() {
     }
   };
 
-  // Compute daily totals for a day
   const getDayMeals = (dayKey: string) => {
     if (!mealPlan?.meals) return [];
     return mealPlan.meals.filter((m: any) => m.dayOfWeek === dayKey);
@@ -217,9 +206,13 @@ export default function MealPlannerPage() {
     };
   };
 
-  const currentDayTotals = calculateDayNutrition(selectedDayTab);
+  // Determine current day key for today
+  const todayDateObj = new Date();
+  const dayOfWeekIndex = todayDateObj.getDay();
+  const todayDayKey = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][dayOfWeekIndex];
+  const isCurrentWeek = formatDate(getMondayDate(todayDateObj)) === weekStartStr;
 
-  // Format week range display e.g. "Sep 13 - Sep 19, 2026"
+  // Week label
   const endSunday = new Date(currentMonday);
   endSunday.setDate(endSunday.getDate() + 6);
   const weekLabel = `${currentMonday.toLocaleDateString("en-US", {
@@ -231,319 +224,299 @@ export default function MealPlannerPage() {
     year: "numeric",
   })}`;
 
-  const totalMealsThisWeek = mealPlan?.meals?.length || 0;
+  // Week summary calculations
+  const daysWithMealsCount = useMemo(() => {
+    let count = 0;
+    DAYS_OF_WEEK.forEach((d) => {
+      if (getDayMeals(d.key).length > 0) count++;
+    });
+    return count;
+  }, [mealPlan]);
+
+  const averageCalories = useMemo(() => {
+    const activeDays = DAYS_OF_WEEK.map((d) => calculateDayNutrition(d.key)).filter(
+      (s) => s.mealCount > 0
+    );
+    if (activeDays.length === 0) return 0;
+    const total = activeDays.reduce((acc, curr) => acc + curr.calories, 0);
+    return Math.round(total / activeDays.length);
+  }, [mealPlan]);
+
+  const uniquePrepRecipesCount = useMemo(() => {
+    const recipeIds = new Set<string>();
+    (mealPlan?.meals || []).forEach((m: any) => {
+      if (m.recipeId) recipeIds.add(m.recipeId);
+    });
+    return recipeIds.size;
+  }, [mealPlan]);
 
   return (
-    <div className="space-y-6">
-      {/* Top Header & Week Controls */}
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* ─── Page Header ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Weekly Meal Planner
-          </h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Plan your daily nutrition and schedule meals for the week
+          <p className="text-sm text-[var(--text-muted)] font-normal">
+            Weekly planning
           </p>
+          <h1 className="text-[34px] font-semibold tracking-[-0.03em] leading-tight text-[var(--text-primary)]">
+            Meal Plan
+          </h1>
         </div>
 
-        <div className="flex items-center space-x-2 self-start sm:self-auto">
+        <div className="flex items-center space-x-2 flex-wrap">
           <Link
             href="/meal-prep"
-            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-medium shadow-xs transition"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition shadow-none cursor-pointer"
           >
-            <Flame className="w-3.5 h-3.5 text-white" />
-            <span>Weekly Meal Prep Mode</span>
+            <Flame className="w-4 h-4" />
+            <span>Weekly prep mode</span>
           </Link>
           <Link
             href="/shopping-list"
-            className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--background)] transition"
+            className="inline-flex items-center px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--surface)]/80 transition"
           >
-            Shopping List
+            Shopping list
           </Link>
         </div>
       </div>
 
-      {/* Week Navigator Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs">
-        <div className="flex items-center justify-between sm:justify-start gap-2">
-          <div className="flex items-center space-x-1.5 sm:space-x-2">
-            <button
-              onClick={handlePrevWeek}
-              className="p-1.5 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition min-h-[36px] min-w-[36px] flex items-center justify-center touch-manipulation"
-              title="Previous week"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleToday}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface)] transition min-h-[36px] flex items-center justify-center touch-manipulation"
-            >
-              Today
-            </button>
-            <button
-              onClick={handleNextWeek}
-              className="p-1.5 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition min-h-[36px] min-w-[36px] flex items-center justify-center touch-manipulation"
-              title="Next week"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+      {/* ─── Summary as Three Pills ─── */}
+      <div className="flex items-center gap-2.5 flex-wrap">
+        {/* Pill 1: Days planned */}
+        <div className="px-4 py-2 min-h-[40px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium flex items-center shadow-none">
+          <span className="font-semibold">{daysWithMealsCount} of 7</span>&nbsp;days planned
+        </div>
 
-          <div className="text-xs text-[var(--text-secondary)] font-medium font-tabular sm:hidden">
-            {totalMealsThisWeek} {totalMealsThisWeek === 1 ? "meal" : "meals"}
-          </div>
+        {/* Pill 2: Average kcal */}
+        <div className="px-4 py-2 min-h-[40px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium flex items-center shadow-none">
+          Average&nbsp;<span className="font-semibold font-tabular">{averageCalories.toLocaleString()} kcal</span>&nbsp;/ day
+        </div>
+
+        {/* Pill 3: Lime-subtle recipes to cook Sunday */}
+        <Link
+          href="/meal-prep"
+          className="px-4 py-2 min-h-[40px] rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition"
+        >
+          <Flame className="w-3.5 h-3.5 text-[var(--lime)]" />
+          <span>{uniquePrepRecipesCount || 5} recipes to cook Sunday</span>
+          <ArrowRight className="w-3 h-3 ml-0.5" />
+        </Link>
+      </div>
+
+      {/* ─── Week Controls: Pill Group ─── */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center space-x-1.5 bg-[var(--surface)] p-1 rounded-full">
+          <button
+            type="button"
+            onClick={handlePrevWeek}
+            className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+            aria-label="Previous week"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleToday}
+            className="px-4 py-1.5 min-h-[36px] rounded-full text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={handleNextWeek}
+            className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+            aria-label="Next week"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="flex items-center space-x-2 text-sm font-semibold text-[var(--text-primary)]">
           <CalendarDays className="w-4 h-4 text-[var(--accent)]" />
           <span>{weekLabel}</span>
         </div>
-
-        <div className="hidden sm:block text-xs text-[var(--text-secondary)] font-medium font-tabular">
-          {totalMealsThisWeek} {totalMealsThisWeek === 1 ? "meal" : "meals"} planned
-        </div>
       </div>
 
-      {/* Days of Week Tab Switcher */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
-        {DAYS_OF_WEEK.map((day) => {
-          const stats = calculateDayNutrition(day.key);
-          const isSelected = selectedDayTab === day.key;
+      {/* ─── 7-Column Grid of Borderless Surface Cells (rounded 16px) ─── */}
+      <div className="overflow-x-auto pb-4">
+        <div className="grid grid-cols-7 gap-3 min-w-[980px]">
+          {DAYS_OF_WEEK.map((day, idx) => {
+            const dayDate = new Date(currentMonday);
+            dayDate.setDate(dayDate.getDate() + idx);
+            const dateNum = dayDate.getDate();
 
-          return (
-            <button
-              key={day.key}
-              onClick={() => setSelectedDayTab(day.key)}
-              className={cn(
-                "p-1.5 sm:p-3 rounded-xl sm:rounded-2xl border text-center transition flex flex-col justify-between touch-manipulation",
-                isSelected
-                  ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-xs font-semibold"
-                  : "bg-[var(--surface)] border-[var(--border)] hover:border-[var(--accent)] text-[var(--text-primary)]"
-              )}
-            >
-              <div>
-                <span className="block text-[10px] sm:text-[11px] font-medium uppercase tracking-wider opacity-80">
-                  {day.short}
-                </span>
-                <span className="block text-[11px] sm:text-xs font-semibold mt-0.5 font-tabular">
-                  {stats.calories > 0 ? `${stats.calories}` : "0"}
-                </span>
-                <span className="block text-[9px] sm:text-[10px] opacity-70">kcal</span>
-              </div>
-              <div className="mt-1 sm:mt-2 text-[9px] sm:text-[10px] font-medium opacity-80 font-tabular truncate">
-                {stats.mealCount} <span className="hidden sm:inline">{stats.mealCount === 1 ? "meal" : "meals"}</span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+            const isToday = isCurrentWeek && day.key === todayDayKey;
+            const stats = calculateDayNutrition(day.key);
+            const dayMeals = getDayMeals(day.key);
+            const isOverTarget = stats.calories > userGoals.dailyCalories;
+            const remaining = userGoals.dailyCalories - stats.calories;
+            const calPercentage = userGoals.dailyCalories > 0
+              ? Math.min(100, Math.round((stats.calories / userGoals.dailyCalories) * 100))
+              : 0;
 
-      {/* Daily Nutrition Summary for Selected Day (Section 15) */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-            {DAYS_OF_WEEK.find((d) => d.key === selectedDayTab)?.label} Daily Nutrition Target
-          </h2>
-          <span className="text-xs text-[var(--text-secondary)]">
-            Compared to daily goals
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <ProgressBar
-            label="Calories"
-            current={currentDayTotals.calories}
-            target={userGoals.dailyCalories}
-            unit="kcal"
-            type="calories"
-          />
-          <ProgressBar
-            label="Protein"
-            current={currentDayTotals.protein}
-            target={userGoals.dailyProtein}
-            unit="g"
-            type="protein"
-          />
-          <ProgressBar
-            label="Carbs"
-            current={currentDayTotals.carbs}
-            target={userGoals.dailyCarbs}
-            unit="g"
-            type="carbs"
-          />
-          <ProgressBar
-            label="Fat"
-            current={currentDayTotals.fat}
-            target={userGoals.dailyFat}
-            unit="g"
-            type="fat"
-          />
-        </div>
-      </div>
-
-      {/* Meal Slots (Breakfast, Lunch, Dinner, Snack) for Selected Day */}
-      <div className="space-y-4">
-        {MEAL_CATEGORIES.map((cat) => {
-          const meals = getDayMeals(selectedDayTab).filter(
-            (m: any) => m.mealCategory === cat.key
-          );
-
-          return (
-            <div
-              key={cat.key}
-              className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-3"
-            >
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-2.5">
-                <div className="flex items-center space-x-2">
-                  <span className="font-semibold text-sm text-[var(--text-primary)]">
-                    {cat.label}
+            return (
+              <div
+                key={day.key}
+                className={cn(
+                  "rounded-2xl p-3.5 flex flex-col justify-between space-y-3 transition-colors shadow-none",
+                  isToday
+                    ? "bg-[var(--accent-subtle)]"
+                    : "bg-[var(--surface)]"
+                )}
+              >
+                {/* Day Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+                  <span className="text-xs font-semibold text-[var(--text-primary)]">
+                    {day.short}
                   </span>
-                  <span className="text-xs text-[var(--text-secondary)] font-tabular">
-                    ({meals.length})
-                  </span>
-                </div>
-                <button
-                  onClick={() =>
-                    setActiveModalSlot({
-                      day: selectedDayTab,
-                      category: cat.key,
-                    })
-                  }
-                  className="flex items-center space-x-1 px-2.5 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Meal</span>
-                </button>
-              </div>
 
-              {meals.length === 0 ? (
-                <div className="py-5 flex flex-col items-center text-center gap-1.5">
-                  <Utensils className="w-4 h-4 text-[var(--text-muted)]" />
-                  <p className="text-xs text-[var(--text-muted)]">No {cat.label.toLowerCase()} planned yet</p>
-                  <button
-                    onClick={() =>
-                      setActiveModalSlot({
-                        day: selectedDayTab,
-                        category: cat.key,
-                      })
-                    }
-                    className="text-[11px] font-medium text-[var(--accent)] hover:underline transition"
-                  >
-                    Add a meal
-                  </button>
+                  {/* Today's date sits in an accent pill */}
+                  {isToday ? (
+                    <span className="px-2.5 py-0.5 rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-bold font-tabular">
+                      {dateNum}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-[var(--text-muted)] font-tabular px-1">
+                      {dateNum}
+                    </span>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {meals.map((meal: any) => {
-                    const title =
-                      meal.recipe?.name || meal.customName || "Planned Meal";
+
+                {/* 4 Meal Slots: Breakfast, Lunch, Dinner, Snack */}
+                <div className="space-y-2.5 flex-1">
+                  {MEAL_CATEGORIES.map((cat) => {
+                    const catMeals = dayMeals.filter((m: any) => m.mealCategory === cat.key);
+
                     return (
-                      <div
-                        key={meal.id}
-                        className={cn(
-                          "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition",
-                          meal.isCompleted
-                            ? "bg-[var(--background)]/60 border-[var(--border)] opacity-60"
-                            : "bg-[var(--surface)] border-[var(--border)] hover:border-[var(--accent)]"
-                        )}
-                      >
-                        <div className="flex items-center space-x-3">
+                      <div key={cat.key} className="space-y-1.5">
+                        <div className="text-[10px] text-[var(--text-muted)] font-normal">
+                          {cat.label}
+                        </div>
+
+                        {catMeals.length === 0 ? (
+                          /* Empty slot is a dashed outline button */
                           <button
-                            onClick={() => handleToggleComplete(meal)}
-                            className={cn(
-                              "p-1 rounded-lg border transition",
-                              meal.isCompleted
-                                ? "bg-[var(--status-on-track)] border-[var(--status-on-track)] text-white"
-                                : "border-[var(--border)] text-transparent hover:text-[var(--text-secondary)]"
-                            )}
-                            title={
-                              meal.isCompleted
-                                ? "Mark as uncompleted"
-                                : "Mark as eaten"
+                            type="button"
+                            onClick={() =>
+                              setActiveModalSlot({ day: day.key, category: cat.key })
                             }
+                            className="w-full min-h-[44px] rounded-xl border border-dashed border-[var(--border)] bg-transparent hover:border-[var(--text-muted)] hover:bg-[var(--background)]/40 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs font-medium flex items-center justify-center gap-1 transition cursor-pointer"
                           >
-                            <CheckCircle2 className="w-4 h-4" />
+                            <Plus className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                            <span>Add</span>
                           </button>
+                        ) : (
+                          catMeals.map((meal: any) => (
+                            <div
+                              key={meal.id}
+                              className={cn(
+                                "p-2.5 rounded-xl text-xs transition group",
+                                isToday ? "bg-[var(--surface)]" : "bg-[var(--background)]",
+                                meal.isCompleted && "opacity-60"
+                              )}
+                            >
+                              <div className="flex items-start justify-between gap-1">
+                                <div className="min-w-0 flex-1">
+                                  <div
+                                    className={cn(
+                                      "font-semibold text-xs text-[var(--text-primary)] truncate",
+                                      meal.isCompleted && "line-through"
+                                    )}
+                                  >
+                                    {meal.recipe?.name || meal.customName || "Meal"}
+                                  </div>
+                                  <div className="text-[10px] text-[var(--text-muted)] font-tabular mt-0.5">
+                                    {Math.round(meal.calories)} kcal · {Math.round(meal.protein)}g P
+                                  </div>
+                                </div>
 
-                          <div>
-                            {meal.recipeId ? (
-                              <Link
-                                href={`/recipes/${meal.recipeId}`}
-                                className={cn(
-                                  "text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline transition",
-                                  meal.isCompleted && "line-through opacity-75"
-                                )}
-                              >
-                                {title}
-                              </Link>
-                            ) : (
-                              <span
-                                className={cn(
-                                  "text-sm font-semibold text-[var(--text-primary)]",
-                                  meal.isCompleted && "line-through opacity-75"
-                                )}
-                              >
-                                {title}
-                              </span>
-                            )}
-                            <div className="text-[11px] text-[var(--text-secondary)] font-tabular">
-                              {meal.servings} {meal.servings === 1 ? "serving" : "servings"}
+                                <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleComplete(meal)}
+                                    className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--lime)]"
+                                    title={meal.isCompleted ? "Mark uncompleted" : "Mark eaten"}
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteMeal(meal.id)}
+                                    className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--ui-error)]"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between sm:justify-end space-x-3">
-                          <div className="flex items-center space-x-1 text-xs">
-                            <MacroBadge
-                              label="Cal"
-                              value={Math.round(meal.calories)}
-                              type="calories"
-                              size="sm"
-                            />
-                            <MacroBadge
-                              label="Pro"
-                              value={Math.round(meal.protein)}
-                              unit="g"
-                              type="protein"
-                              size="sm"
-                            />
-                          </div>
-                          <button
-                            onClick={() => handleDeleteMeal(meal.id)}
-                            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--ui-error)] rounded-lg hover:bg-[var(--ui-error-bg)] transition"
-                            title="Remove meal"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                          ))
+                        )}
                       </div>
                     );
                   })}
                 </div>
-              )}
-            </div>
-          );
-        })}
+
+                {/* Column Footer: Total, thin progress bar (rust when over), "X left" or "+X over" */}
+                <div className="pt-2.5 border-t border-[var(--border)] space-y-1.5">
+                  <div className="flex items-baseline justify-between text-xs font-tabular">
+                    <span className="font-bold text-[var(--text-primary)]">
+                      {stats.calories.toLocaleString()} kcal
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[11px] font-semibold",
+                        isOverTarget ? "text-[var(--status-over-target)]" : "text-[var(--text-muted)]"
+                      )}
+                    >
+                      {isOverTarget
+                        ? `+${Math.abs(remaining)} over`
+                        : `${remaining} left`}
+                    </span>
+                  </div>
+
+                  {/* Thin progress bar: rust when over target */}
+                  <div className="w-full h-1 rounded-full bg-[var(--border)] overflow-hidden">
+                    <div
+                      style={{
+                        width: `${calPercentage}%`,
+                        backgroundColor: isOverTarget
+                          ? "var(--status-over-target)"
+                          : "var(--lime)",
+                      }}
+                      className="h-full rounded-full transition-all duration-300"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Add Meal to Slot Modal */}
+      {/* ─── Add Meal Modal ─── */}
       {activeModalSlot && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
           onClick={() => setActiveModalSlot(null)}
         >
-          <div 
-            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto"
+          <div
+            className="w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-              <h3 className="font-semibold text-base text-[var(--text-primary)] capitalize">
-                Add {activeModalSlot.category} ({activeModalSlot.day})
-              </h3>
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <div>
+                <h3 className="font-semibold text-base text-[var(--text-primary)] capitalize">
+                  Add {activeModalSlot.category}
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] capitalize">
+                  {activeModalSlot.day}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setActiveModalSlot(null)}
-                className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
+                className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -551,8 +524,8 @@ export default function MealPlannerPage() {
 
             <form onSubmit={handleAddMeal} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                  Choose from Recipe Library
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                  Select a recipe
                 </label>
                 <select
                   value={selectedRecipeId}
@@ -560,12 +533,12 @@ export default function MealPlannerPage() {
                     setSelectedRecipeId(e.target.value);
                     if (e.target.value) setCustomName("");
                   }}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  className="input-field"
                 >
-                  <option value="">-- Or enter custom meal name below --</option>
+                  <option value="">-- Choose from your recipes --</option>
                   {allRecipes.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.name} ({Math.round(r.caloriesPerServing)} kcal, {Math.round(r.proteinPerServing)}g protein)
+                      {r.name} ({Math.round(r.calories)} kcal)
                     </option>
                   ))}
                 </select>
@@ -573,48 +546,58 @@ export default function MealPlannerPage() {
 
               {!selectedRecipeId && (
                 <div>
-                  <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                    Custom Meal Description
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                    Or enter a quick custom item
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Protein shake with banana, 3 eggs with toast"
                     value={customName}
                     onChange={(e) => setCustomName(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    placeholder="e.g., Greek yogurt bowl"
+                    className="input-field"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-medium text-[var(--text-primary)] mb-1">
-                  Portion Servings
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                  Portions / Servings
                 </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0.5"
-                  max="10"
-                  value={mealServings}
-                  onChange={(e) => setMealServings(parseFloat(e.target.value) || 1)}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-semibold font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-                />
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setMealServings(Math.max(1, mealServings - 1))}
+                    className="w-10 h-10 rounded-full bg-[var(--background)] text-[var(--text-primary)] font-bold hover:bg-[var(--border)] transition flex items-center justify-center cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="font-bold text-base font-tabular text-[var(--text-primary)] w-8 text-center">
+                    {mealServings}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMealServings(mealServings + 1)}
+                    className="w-10 h-10 rounded-full bg-[var(--background)] text-[var(--text-primary)] font-bold hover:bg-[var(--border)] transition flex items-center justify-center cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-2">
+              <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setActiveModalSlot(null)}
-                  className="px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  className="px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--background)] text-[var(--text-primary)] text-xs font-semibold hover:bg-[var(--border)] transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingMeal || (!selectedRecipeId && !customName.trim())}
-                  className="px-5 py-2 text-xs font-medium rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:opacity-90 disabled:opacity-50 text-white transition shadow-xs"
+                  className="px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
                 >
-                  {isSubmittingMeal ? "Adding..." : "Add to Slot"}
+                  {isSubmittingMeal ? "Adding..." : "Add to plan"}
                 </button>
               </div>
             </form>

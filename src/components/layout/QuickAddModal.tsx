@@ -462,7 +462,7 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
         onClick={handleClose}
       >
         <div
-          className="relative w-full max-w-2xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          className="relative w-full max-w-2xl rounded-3xl bg-[var(--surface)] overflow-hidden flex flex-col max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Bar: Title, Destination Switcher, Close */}
@@ -532,8 +532,8 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
                   className={cn(
                     "px-2.5 py-1 rounded-lg capitalize font-medium transition cursor-pointer",
                     mealCategory === cat
-                      ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
-                      : "bg-[var(--surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold rounded-full"
+                      : "bg-[var(--surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full"
                   )}
                 >
                   {cat}
@@ -730,7 +730,7 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
                     type="button"
                     disabled={isSubmitting || !scaledPortion}
                     onClick={handleConfirmLogItem}
-                    className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center space-x-1.5 px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -836,7 +836,7 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
                             setActiveTab("online");
                             handleSearchOnline();
                           }}
-                          className="px-3 py-1.5 rounded-xl bg-[var(--accent)] text-white font-medium text-xs shadow-xs"
+                          className="px-4 min-h-[44px] rounded-full bg-[var(--accent)] text-[var(--on-accent)] font-semibold text-xs"
                         >
                           Search Online DBs for &quot;{foodSearch || "food"}&quot; →
                         </button>
@@ -870,7 +870,7 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
                             </div>
                             <button
                               type="button"
-                              className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition"
+                              className="px-4 py-2 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-[var(--on-accent)] transition"
                             >
                               Scale &amp; Log →
                             </button>
@@ -931,7 +931,7 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
                           </div>
                           <button
                             type="button"
-                            className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition shrink-0"
+                            className="px-4 py-2 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-[var(--on-accent)] transition shrink-0"
                           >
                             Scale &amp; Log →
                           </button>
@@ -959,7 +959,7 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
                       <button
                         type="submit"
                         disabled={isSearchingOnline || !onlineQuery.trim()}
-                        className="px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                        className="px-5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                       >
                         {isSearchingOnline ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1021,7 +1021,7 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
                             </div>
                             <button
                               type="button"
-                              className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition shrink-0"
+                              className="px-4 py-2 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-[var(--on-accent)] transition shrink-0"
                             >
                               Scale &amp; Log →
                             </button>
@@ -1123,7 +1123,7 @@ export function QuickAddModal({ isOpen, onClose, onAddMealSuccess }: QuickAddMod
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="px-5 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                        className="px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
                       >
                         {isSubmitting ? (
                           <Loader2 className="w-4 h-4 animate-spin" />

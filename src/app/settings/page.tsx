@@ -354,1001 +354,1024 @@ export default function SettingsPage() {
   };
 
   return (
-    <form onSubmit={handleSaveSettings} className="max-w-4xl mx-auto space-y-6 pb-16">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <form onSubmit={handleSaveSettings} className="max-w-6xl mx-auto space-y-8 pb-16 px-4 sm:px-6">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Settings &amp; Goals
-          </h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Customize your body stats, component-based TDEE, nutrition targets, and local AI configuration
+          <p className="text-sm text-[var(--text-muted)] font-normal mb-1">
+            Nutrition &amp; body parameters
           </p>
+          <h1 className="text-[34px] font-semibold tracking-[-0.03em] text-[var(--text-primary)] leading-tight">
+            Settings
+          </h1>
         </div>
 
         <button
           type="submit"
           disabled={isSaving}
-          className="px-5 py-2.5 sm:py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:opacity-90 text-white font-medium text-xs shadow-xs transition self-start sm:self-auto min-h-[38px] flex items-center justify-center touch-manipulation"
+          className="inline-flex items-center justify-center space-x-2 px-6 py-2.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-sm transition touch-manipulation cursor-pointer min-h-[44px]"
         >
-          {isSaving ? "Saving..." : "Save Settings"}
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <span>Save Settings</span>
+          )}
         </button>
       </div>
 
       {saveSuccess && (
-        <div className="p-3.5 rounded-xl bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)] text-xs flex items-center space-x-2 animate-in fade-in">
+        <div className="p-4 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] text-sm flex items-center space-x-2 animate-in fade-in">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>Settings saved successfully!</span>
         </div>
       )}
 
       {appliedSuggestedMessage && (
-        <div className="p-3.5 rounded-xl bg-[var(--accent-subtle)] border border-[var(--accent)] text-[var(--accent)] text-xs flex items-center space-x-2 animate-in fade-in">
+        <div className="p-4 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] text-sm flex items-center space-x-2 animate-in fade-in">
           <Sparkles className="w-4 h-4 shrink-0" />
           <span>{appliedSuggestedMessage}</span>
         </div>
       )}
 
-      {/* 1. Body & Goals (Section 38a & 38b) */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-4">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-              <User className="w-4 h-4" />
+      {/* Main 2-Column Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Grouped Surface Cards */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Card 1: Body and goal */}
+          <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-4">
+              <div>
+                <h2 className="font-semibold text-base text-[var(--text-primary)]">
+                  Body and goal
+                </h2>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  Parameters used for Mifflin-St Jeor BMR and target deficit calculations
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Link
+                  href="/profile"
+                  className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 bg-[var(--accent-subtle)] px-3 py-1.5 rounded-full"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Profile</span>
+                </Link>
+                <Link
+                  href="/weight"
+                  className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center px-2 py-1.5"
+                >
+                  <Scale className="w-3.5 h-3.5 mr-1" />
+                  <span>Weight log</span>
+                </Link>
+              </div>
             </div>
-            <div>
-              <h2 className="font-semibold text-sm text-[var(--text-primary)]">
-                Body Profile &amp; Calorie Deficit Calculator
-              </h2>
-              <p className="text-[11px] text-[var(--text-secondary)]">
-                Component-based TDEE using Mifflin-St Jeor BMR, NEAT steps, and MET structured workouts
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center space-x-3">
-            <Link
-              href="/profile"
-              className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 bg-[var(--accent-subtle)] px-2.5 py-1.5 rounded-lg"
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>Edit in User Profile</span>
-            </Link>
-            <Link
-              href="/weight"
-              className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center"
-            >
-              <Scale className="w-3.5 h-3.5 mr-1" />
-              <span>Weight Log</span>
-            </Link>
-          </div>
-        </div>
+            {/* Profile Inputs: Sex, Age, Height, Weight */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              {/* Sex */}
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Biological sex
+                </label>
+                <select
+                  value={sex}
+                  onChange={(e) => setSex(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs font-medium rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
 
-        {/* Profile Inputs: Sex, Age, Height, Weight */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {/* Sex */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Biological Sex
-            </label>
-            <select
-              value={sex}
-              onChange={(e) => setSex(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-            >
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-            </select>
-          </div>
-
-          {/* Age */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Age (years)
-            </label>
-            <input
-              type="number"
-              min={15}
-              max={100}
-              required
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)] font-tabular"
-            />
-          </div>
-
-          {/* Height */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Height ({heightUnit})
-            </label>
-            {isImperial ? (
-              <div className="flex items-center space-x-1.5">
+              {/* Age */}
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Age (years)
+                </label>
                 <input
                   type="number"
-                  min={3}
-                  max={7}
-                  value={heightFeet}
-                  onChange={(e) => setHeightFeet(e.target.value)}
-                  className="w-1/2 px-2 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-                  placeholder="ft"
+                  min={15}
+                  max={100}
+                  required
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] font-tabular transition"
                 />
-                <span className="text-xs text-[var(--text-secondary)]">ft</span>
+              </div>
+
+              {/* Height */}
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Height ({heightUnit})
+                </label>
+                {isImperial ? (
+                  <div className="flex items-center space-x-1.5">
+                    <input
+                      type="number"
+                      min={3}
+                      max={7}
+                      value={heightFeet}
+                      onChange={(e) => setHeightFeet(e.target.value)}
+                      className="w-1/2 px-3 py-2.5 text-xs font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                      placeholder="ft"
+                    />
+                    <span className="text-xs text-[var(--text-muted)]">ft</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={11}
+                      value={heightInches}
+                      onChange={(e) => setHeightInches(e.target.value)}
+                      className="w-1/2 px-3 py-2.5 text-xs font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                      placeholder="in"
+                    />
+                    <span className="text-xs text-[var(--text-muted)]">in</span>
+                  </div>
+                ) : (
+                  <input
+                    type="number"
+                    min={100}
+                    max={250}
+                    required
+                    value={heightInput}
+                    onChange={(e) => setHeightInput(e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                  />
+                )}
+              </div>
+
+              {/* Current Weight */}
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Current weight ({weightUnit})
+                </label>
                 <input
                   type="number"
-                  min={0}
-                  max={11}
-                  value={heightInches}
-                  onChange={(e) => setHeightInches(e.target.value)}
-                  className="w-1/2 px-2 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-                  placeholder="in"
+                  step="0.1"
+                  min={30}
+                  max={400}
+                  required
+                  value={currentWeightInput}
+                  onChange={(e) => setCurrentWeightInput(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
                 />
-                <span className="text-xs text-[var(--text-secondary)]">in</span>
+              </div>
+            </div>
+
+            {/* Goal Type & Target Rate & Goal Weight */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-[var(--border)]">
+              {/* Goal Type */}
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Goal type
+                </label>
+                <select
+                  value={goalType}
+                  onChange={(e) => setGoalType(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs font-medium rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                >
+                  <option value="lose">Lose weight (Deficit)</option>
+                  <option value="maintain">Maintain current weight</option>
+                  <option value="gain">Gain weight / muscle (Surplus)</option>
+                </select>
+              </div>
+
+              {/* Target Weekly Rate */}
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Target weekly pace
+                </label>
+                <select
+                  disabled={goalType === "maintain"}
+                  value={goalWeeklyRateKg}
+                  onChange={(e) => setGoalWeeklyRateKg(Number(e.target.value))}
+                  className={cn(
+                    "w-full px-4 py-2.5 text-xs font-medium rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition",
+                    goalType === "maintain" && "opacity-40 cursor-not-allowed"
+                  )}
+                >
+                  {isImperial ? (
+                    <>
+                      <option value={0.23}>0.5 lb / week (Mild &amp; sustainable)</option>
+                      <option value={0.45}>1.0 lb / week (Standard recommended)</option>
+                      <option value={0.68}>1.5 lb / week (Aggressive)</option>
+                      <option value={0.91}>2.0 lb / week (Maximum)</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value={0.25}>0.25 kg / week (Mild &amp; sustainable)</option>
+                      <option value={0.5}>0.50 kg / week (Standard recommended)</option>
+                      <option value={0.75}>0.75 kg / week (Aggressive)</option>
+                      <option value={1.0}>1.00 kg / week (Maximum)</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {/* Optional Goal Weight */}
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Goal target weight ({weightUnit})
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder={`e.g. ${isImperial ? "160" : "72"}`}
+                  value={goalWeightInput}
+                  onChange={(e) => setGoalWeightInput(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Activity with workout rows */}
+          <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
+              <div>
+                <h2 className="font-semibold text-base text-[var(--text-primary)]">
+                  Activity and workout routine
+                </h2>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  Steps and structured exercise to calculate accurate daily expenditure
+                </p>
+              </div>
+
+              {/* Mode switch pill */}
+              <div className="flex items-center p-1 rounded-full bg-[var(--background)] text-xs">
+                <button
+                  type="button"
+                  onClick={() => setUseSimpleActivityMode(false)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-full font-medium transition cursor-pointer min-h-[32px]",
+                    !useSimpleActivityMode
+                      ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  )}
+                >
+                  Component-based
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUseSimpleActivityMode(true)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-full font-medium transition cursor-pointer min-h-[32px]",
+                    useSimpleActivityMode
+                      ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  )}
+                >
+                  Flat multiplier
+                </button>
+              </div>
+            </div>
+
+            {!useSimpleActivityMode ? (
+              <div className="space-y-5">
+                {/* Daily Steps Quick-Pick */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-normal text-[var(--text-secondary)]">
+                      Average daily steps (NEAT movement)
+                    </span>
+                    <span className="text-xs font-tabular font-semibold text-[var(--accent)]">
+                      {Number(avgDailySteps).toLocaleString()} steps (~{tdeeBreakdown.stepCalories} kcal/day)
+                    </span>
+                  </div>
+
+                  {/* Quick-Pick Pills */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {STEP_RANGES.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => setAvgDailySteps(item.steps)}
+                        className={cn(
+                          "py-2 px-3 rounded-full text-center text-xs font-medium transition font-tabular cursor-pointer min-h-[36px]",
+                          avgDailySteps === item.steps
+                            ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                            : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-1">
+                    <span className="text-xs text-[var(--text-muted)]">Exact steps:</span>
+                    <input
+                      type="number"
+                      step="250"
+                      min="1000"
+                      max="50000"
+                      value={avgDailySteps}
+                      onChange={(e) => setAvgDailySteps(Number(e.target.value) || 0)}
+                      className="w-36 px-3 py-1.5 text-xs font-tabular rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[36px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                    />
+                  </div>
+                </div>
+
+                {/* Weekly Structured Workouts List */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-medium text-[var(--text-primary)] block">
+                        Weekly workout routines
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)]">
+                        ~{tdeeBreakdown.dailyExerciseCalories} kcal/day averaged across the week
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAddWorkoutRow}
+                      className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[var(--background)] text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] transition cursor-pointer min-h-[36px]"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-[var(--accent)]" />
+                      <span>Add workout</span>
+                    </button>
+                  </div>
+
+                  {workouts.length === 0 ? (
+                    <div className="p-6 rounded-2xl bg-[var(--background)] text-center text-xs text-[var(--text-secondary)] space-y-1">
+                      <p>No structured workouts added yet.</p>
+                      <button
+                        type="button"
+                        onClick={handleAddWorkoutRow}
+                        className="text-[var(--accent)] hover:underline font-medium cursor-pointer"
+                      >
+                        + Add weightlifting, running, cycling, HIIT, etc.
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {workouts.map((w, idx) => {
+                        const met = MET_TABLE[w.workoutType]?.met || 5.0;
+                        const sessionKcal = Math.round(
+                          met * calculatedWeightKg * (w.durationMinutes / 60)
+                        );
+                        const weeklyKcal = sessionKcal * (w.sessionsPerWeek || 0);
+
+                        return (
+                          <div
+                            key={w.id || idx}
+                            className="p-4 rounded-2xl bg-[var(--background)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+                              {/* Workout Type */}
+                              <div>
+                                <label className="text-[11px] text-[var(--text-muted)] block font-normal mb-1">
+                                  Activity type
+                                </label>
+                                <select
+                                  value={w.workoutType}
+                                  onChange={(e) =>
+                                    handleUpdateWorkoutRow(
+                                      idx,
+                                      "workoutType",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 rounded-xl bg-[var(--surface)] text-[var(--text-primary)] text-xs min-h-[40px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                                >
+                                  {Object.entries(MET_TABLE).map(([key, info]) => (
+                                    <option key={key} value={key}>
+                                      {info.label} (MET {info.met})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Duration */}
+                              <div>
+                                <label className="text-[11px] text-[var(--text-muted)] block font-normal mb-1">
+                                  Duration (mins)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="5"
+                                  min="10"
+                                  max="300"
+                                  value={w.durationMinutes}
+                                  onChange={(e) =>
+                                    handleUpdateWorkoutRow(
+                                      idx,
+                                      "durationMinutes",
+                                      Number(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 rounded-xl bg-[var(--surface)] text-[var(--text-primary)] text-xs font-tabular min-h-[40px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                                />
+                              </div>
+
+                              {/* Sessions Per Week */}
+                              <div>
+                                <label className="text-[11px] text-[var(--text-muted)] block font-normal mb-1">
+                                  Sessions / week
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="14"
+                                  value={w.sessionsPerWeek}
+                                  onChange={(e) =>
+                                    handleUpdateWorkoutRow(
+                                      idx,
+                                      "sessionsPerWeek",
+                                      Number(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 rounded-xl bg-[var(--surface)] text-[var(--text-primary)] text-xs font-tabular min-h-[40px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Calculated Stats & Remove */}
+                            <div className="flex items-center justify-between sm:justify-end space-x-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border)]">
+                              <div className="text-right font-tabular">
+                                <span className="block font-semibold text-[var(--text-primary)]">
+                                  ~{sessionKcal} kcal/ses
+                                </span>
+                                <span className="text-xs text-[var(--text-muted)]">
+                                  {weeklyKcal} kcal/wk
+                                </span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveWorkoutRow(idx)}
+                                className="p-2 text-[var(--text-secondary)] hover:text-[var(--status-over-target)] rounded-full hover:bg-[var(--status-over-target)]/10 transition cursor-pointer"
+                                title="Remove workout"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Thermic Effect of Food (TEF) Toggle */}
+                <div className="pt-2 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-normal text-[var(--text-secondary)] block">
+                      Thermic effect of food (TEF) adjustment (+8%)
+                    </span>
+                    <span className="text-xs text-[var(--text-muted)]">
+                      Accounts for energy expended during digestion and nutrient processing
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={useThermicEffectAdjustment}
+                    onChange={(e) => setUseThermicEffectAdjustment(e.target.checked)}
+                    className="w-4 h-4 rounded text-[var(--accent)] focus:ring-[var(--accent)] accent-[var(--accent)] cursor-pointer"
+                  />
+                </div>
               </div>
             ) : (
-              <input
-                type="number"
-                min={100}
-                max={250}
-                required
-                value={heightInput}
-                onChange={(e) => setHeightInput(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-              />
+              /* Simple Mode Dropdown */
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Flat activity multiplier
+                </label>
+                <select
+                  value={simpleActivityLevel}
+                  onChange={(e) => setSimpleActivityLevel(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs font-medium rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                >
+                  <option value="sedentary">Sedentary (BMR × 1.2 — desk job, little to no exercise)</option>
+                  <option value="light">Lightly Active (BMR × 1.375 — light exercise 1-3 days/wk)</option>
+                  <option value="moderate">Moderately Active (BMR × 1.55 — moderate exercise 3-5 days/wk)</option>
+                  <option value="very">Very Active (BMR × 1.725 — hard exercise 6-7 days/wk)</option>
+                  <option value="extra">Extremely Active (BMR × 1.9 — hard daily training / physical job)</option>
+                </select>
+              </div>
             )}
           </div>
 
-          {/* Current Weight */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Current Weight ({weightUnit})
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              min={30}
-              max={400}
-              required
-              value={currentWeightInput}
-              onChange={(e) => setCurrentWeightInput(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-            />
-          </div>
-        </div>
-
-        {/* Goal Type & Target Rate & Goal Weight */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-[var(--border)]">
-          {/* Goal Type */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Goal Type
-            </label>
-            <select
-              value={goalType}
-              onChange={(e) => setGoalType(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-            >
-              <option value="lose">Lose Weight (Calorie Deficit)</option>
-              <option value="maintain">Maintain Current Weight</option>
-              <option value="gain">Gain Weight / Muscle (Surplus)</option>
-            </select>
-          </div>
-
-          {/* Target Weekly Rate */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Target Weekly Rate
-            </label>
-            <select
-              disabled={goalType === "maintain"}
-              value={goalWeeklyRateKg}
-              onChange={(e) => setGoalWeeklyRateKg(Number(e.target.value))}
-              className={cn(
-                "w-full px-3 py-2 text-xs font-medium rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]",
-                goalType === "maintain" && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              {isImperial ? (
-                <>
-                  <option value={0.23}>0.5 lb / week (Mild &amp; sustainable)</option>
-                  <option value={0.45}>1.0 lb / week (Standard recommended)</option>
-                  <option value={0.68}>1.5 lb / week (Aggressive)</option>
-                  <option value={0.91}>2.0 lb / week (Maximum)</option>
-                </>
-              ) : (
-                <>
-                  <option value={0.25}>0.25 kg / week (Mild &amp; sustainable)</option>
-                  <option value={0.5}>0.50 kg / week (Standard recommended)</option>
-                  <option value={0.75}>0.75 kg / week (Aggressive)</option>
-                  <option value={1.0}>1.00 kg / week (Maximum)</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          {/* Optional Goal Weight */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-              Goal Target Weight ({weightUnit}) <span className="font-normal text-[var(--text-secondary)]">(optional)</span>
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              placeholder={`e.g. ${isImperial ? "160" : "72"}`}
-              value={goalWeightInput}
-              onChange={(e) => setGoalWeightInput(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-            />
-          </div>
-        </div>
-
-        {/* Activity Mode Toggle: Component-based vs Flat Multiplier */}
-        <div className="pt-2 border-t border-[var(--border)] space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="text-xs font-medium text-[var(--text-primary)] block">
-                Activity Estimation Mode
-              </span>
-              <span className="text-[11px] text-[var(--text-secondary)]">
-                Component-based breaks expenditure into BMR, steps, and specific workouts for higher accuracy
+          {/* Card 3: Daily targets with dot labels */}
+          <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <div>
+                <h2 className="font-semibold text-base text-[var(--text-primary)]">
+                  Daily targets
+                </h2>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  Used across Dashboard, Meal Planner, and batch recipes
+                </p>
+              </div>
+              <span className="text-xs text-[var(--text-muted)] font-normal">
+                Manual override
               </span>
             </div>
-            <div className="flex items-center space-x-1 p-1 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs overflow-x-auto scrollbar-none self-start sm:self-auto shrink-0">
-              <button
-                type="button"
-                onClick={() => setUseSimpleActivityMode(false)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg transition shrink-0 whitespace-nowrap touch-manipulation",
-                  !useSimpleActivityMode
-                    ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                )}
-              >
-                Component-Based (Default)
-              </button>
-              <button
-                type="button"
-                onClick={() => setUseSimpleActivityMode(true)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg transition shrink-0 whitespace-nowrap touch-manipulation",
-                  useSimpleActivityMode
-                    ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                )}
-              >
-                Simple Flat Multiplier
-              </button>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Calories (kcal)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={dailyCalories}
+                  onChange={(e) => setDailyCalories(e.target.value)}
+                  className="w-full px-4 py-2.5 text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5 flex items-center">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[var(--macro-protein)] mr-1.5" />
+                  Protein (g)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  required
+                  value={dailyProtein}
+                  onChange={(e) => setDailyProtein(e.target.value)}
+                  className="w-full px-4 py-2.5 text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5 flex items-center">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[var(--macro-carbs)] mr-1.5" />
+                  Carbs (g)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  required
+                  value={dailyCarbs}
+                  onChange={(e) => setDailyCarbs(e.target.value)}
+                  className="w-full px-4 py-2.5 text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5 flex items-center">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[var(--macro-fat)] mr-1.5" />
+                  Fat (g)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  required
+                  value={dailyFat}
+                  onChange={(e) => setDailyFat(e.target.value)}
+                  className="w-full px-4 py-2.5 text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                />
+              </div>
             </div>
           </div>
 
-          {!useSimpleActivityMode ? (
-            <div className="space-y-4 pt-2">
-              {/* Daily Steps Quick-Pick (Section 38b Step 2) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-[var(--text-primary)] flex items-center space-x-1.5">
-                    <Footprints className="w-3.5 h-3.5 text-[var(--accent)]" />
-                    <span>Average daily steps (NEAT movement)</span>
+          {/* Card 4: Preferences & Units */}
+          <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-5">
+            <div className="border-b border-[var(--border)] pb-3">
+              <h2 className="font-semibold text-base text-[var(--text-primary)]">
+                Units and appearance
+              </h2>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                Display preferences for measurements, portioning, and theme
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Default recipe servings
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={defaultServings}
+                  onChange={(e) => setDefaultServings(Number(e.target.value) || 4)}
+                  className="w-full px-4 py-2.5 text-xs font-medium rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Measurement system
+                </label>
+                <div className="flex items-center p-1 rounded-full bg-[var(--background)] text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setMeasurementSystem("metric")}
+                    className={cn(
+                      "flex-1 py-2 rounded-full transition text-center cursor-pointer min-h-[36px]",
+                      measurementSystem === "metric"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    )}
+                  >
+                    Metric (kg/cm)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMeasurementSystem("imperial")}
+                    className={cn(
+                      "flex-1 py-2 rounded-full transition text-center cursor-pointer min-h-[36px]",
+                      measurementSystem === "imperial"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    )}
+                  >
+                    Imperial (lb/in)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                  Appearance
+                </label>
+                <div className="flex items-center p-1 rounded-full bg-[var(--background)] text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setTheme("dark")}
+                    className={cn(
+                      "flex-1 py-2 rounded-full transition text-center cursor-pointer min-h-[36px]",
+                      theme === "dark"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    )}
+                  >
+                    Dark
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTheme("light")}
+                    className={cn(
+                      "flex-1 py-2 rounded-full transition text-center cursor-pointer min-h-[36px]",
+                      theme === "light"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    )}
+                  >
+                    Light
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTheme("system")}
+                    className={cn(
+                      "flex-1 py-2 rounded-full transition text-center cursor-pointer min-h-[36px]",
+                      theme === "system"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    )}
+                  >
+                    Auto
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 5: Local AI Engine (Admin only) */}
+          {isAdmin && (
+            <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-5">
+              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+                <div className="flex items-center space-x-2">
+                  <h2 className="font-semibold text-base text-[var(--text-primary)]">
+                    Local AI engine (Ollama)
+                  </h2>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  {ollamaTestResult?.isRunning ? (
+                    <span className="px-3 py-1 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] text-xs font-semibold flex items-center space-x-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+                      <span>Connected</span>
+                    </span>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    onClick={handleTestOllama}
+                    disabled={isTestingOllama}
+                    className="flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[var(--background)] text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] transition cursor-pointer min-h-[36px]"
+                  >
+                    {isTestingOllama ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    )}
+                    <span>Test connection</span>
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-[var(--text-secondary)]">
+                Recipe parsing runs 100% locally via Ollama inference. No cloud API keys needed for core operation.
+              </p>
+
+              {/* Ollama Test Result Banner */}
+              {ollamaTestResult && (
+                <div
+                  className={cn(
+                    "p-4 rounded-2xl text-xs space-y-1.5",
+                    ollamaTestResult.isRunning
+                      ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                      : "bg-[var(--status-over-target)]/10 text-[var(--status-over-target)]"
+                  )}
+                >
+                  <div className="flex items-center space-x-2 font-semibold">
+                    {ollamaTestResult.isRunning ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Ollama is online and connected!</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-4 h-4" />
+                        <span>Could not reach Ollama server</span>
+                      </>
+                    )}
+                  </div>
+                  {ollamaTestResult.isRunning ? (
+                    <p>
+                      Available models:{" "}
+                      <span className="font-mono font-semibold">
+                        {ollamaTestResult.models.length > 0
+                          ? ollamaTestResult.models.join(", ")
+                          : "None pulled yet (run 'ollama run qwen2.5:7b')"}
+                      </span>
+                    </p>
+                  ) : (
+                    <p>{ollamaTestResult.error}</p>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                    Ollama base URL
                   </label>
-                  <span className="text-xs font-tabular font-semibold text-[var(--accent)]">
-                    {Number(avgDailySteps).toLocaleString()} steps (~{tdeeBreakdown.stepCalories} kcal/day)
-                  </span>
-                </div>
-
-                {/* Quick-Pick Buttons */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {STEP_RANGES.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => setAvgDailySteps(item.steps)}
-                      className={cn(
-                        "py-1.5 px-2 rounded-xl border text-center text-xs font-medium transition font-tabular",
-                        avgDailySteps === item.steps
-                          ? "border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold"
-                          : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                      )}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center space-x-2 pt-1">
-                  <span className="text-xs text-[var(--text-secondary)]">Or exact steps:</span>
                   <input
-                    type="number"
-                    step="250"
-                    min="1000"
-                    max="50000"
-                    value={avgDailySteps}
-                    onChange={(e) => setAvgDailySteps(Number(e.target.value) || 0)}
-                    className="w-32 px-2.5 py-1 text-xs font-tabular rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    type="text"
+                    required
+                    value={ollamaUrl}
+                    onChange={(e) => setOllamaUrl(e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs font-mono rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                    placeholder="http://localhost:11434"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                    Model name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={ollamaModel}
+                    onChange={(e) => setOllamaModel(e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs font-mono rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                    placeholder="qwen2.5:7b"
                   />
                 </div>
               </div>
 
-              {/* Weekly Structured Workouts List (Section 38b Step 3) */}
-              <div className="space-y-3 pt-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <label className="text-xs font-medium text-[var(--text-primary)] flex items-center space-x-1.5">
-                      <Dumbbell className="w-3.5 h-3.5 text-[var(--macro-protein)]" />
-                      <span>Weekly workout routine</span>
-                    </label>
-                    <span className="text-xs text-[var(--text-secondary)]">
-                      MET energy expenditure averaged across 7 days (~{tdeeBreakdown.dailyExerciseCalories} kcal/day)
-                    </span>
-                  </div>
+              {/* Screenshot Parsing Pipeline */}
+              <div className="pt-2 border-t border-[var(--border)] space-y-3">
+                <span className="text-xs font-medium text-[var(--text-primary)] block">
+                  Screenshot parsing pipeline
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setScreenshotMethod("ocr_local")}
+                    className={cn(
+                      "p-3.5 rounded-2xl text-left transition cursor-pointer",
+                      screenshotMethod === "ocr_local"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                        : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    )}
+                  >
+                    <div className="font-semibold">OCR + Local model</div>
+                    <div className={cn(
+                      "text-[11px] font-normal mt-0.5",
+                      screenshotMethod === "ocr_local" ? "text-[var(--on-accent)]/80" : "text-[var(--text-muted)]"
+                    )}>
+                      100% offline text extraction &amp; structuring.
+                    </div>
+                  </button>
 
                   <button
                     type="button"
-                    onClick={handleAddWorkoutRow}
-                    className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--background)] transition self-start sm:self-auto touch-manipulation"
+                    onClick={() => setScreenshotMethod("vision_local")}
+                    className={cn(
+                      "p-3.5 rounded-2xl text-left transition cursor-pointer",
+                      screenshotMethod === "vision_local"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                        : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    )}
                   >
-                    <Plus className="w-3.5 h-3.5 text-[var(--accent)]" />
-                    <span>Add Workout Type</span>
+                    <div className="font-semibold">Local vision model</div>
+                    <div className={cn(
+                      "text-[11px] font-normal mt-0.5",
+                      screenshotMethod === "vision_local" ? "text-[var(--on-accent)]/80" : "text-[var(--text-muted)]"
+                    )}>
+                      Direct multimodal via Ollama (Qwen2-VL).
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setScreenshotMethod("cloud_vision")}
+                    className={cn(
+                      "p-3.5 rounded-2xl text-left transition cursor-pointer",
+                      screenshotMethod === "cloud_vision"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
+                        : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    )}
+                  >
+                    <div className="font-semibold">Cloud fallback</div>
+                    <div className={cn(
+                      "text-[11px] font-normal mt-0.5",
+                      screenshotMethod === "cloud_vision" ? "text-[var(--on-accent)]/80" : "text-[var(--text-muted)]"
+                    )}>
+                      Optional cloud API for OCR fallback.
+                    </div>
                   </button>
                 </div>
 
-                {workouts.length === 0 ? (
-                  <div className="p-4 rounded-xl border border-dashed border-[var(--border)] text-center text-xs text-[var(--text-secondary)] space-y-1">
-                    <p>No structured workouts added yet (sedentary/step-only).</p>
-                    <button
-                      type="button"
-                      onClick={handleAddWorkoutRow}
-                      className="text-[var(--accent)] hover:underline font-medium"
-                    >
-                      + Add weightlifting, running, cycling, HIIT, etc.
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {workouts.map((w, idx) => {
-                      const met = MET_TABLE[w.workoutType]?.met || 5.0;
-                      const sessionKcal = Math.round(
-                        met * calculatedWeightKg * (w.durationMinutes / 60)
-                      );
-                      const weeklyKcal = sessionKcal * (w.sessionsPerWeek || 0);
-
-                      return (
-                        <div
-                          key={w.id || idx}
-                          className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                        >
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
-                            {/* Workout Type */}
-                            <div>
-                              <label className="text-[10px] text-[var(--text-secondary)] block font-medium mb-0.5">
-                                Activity Type
-                              </label>
-                              <select
-                                value={w.workoutType}
-                                onChange={(e) =>
-                                  handleUpdateWorkoutRow(
-                                    idx,
-                                    "workoutType",
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs focus:outline-hidden focus:border-[var(--accent)]"
-                              >
-                                {Object.entries(MET_TABLE).map(([key, info]) => (
-                                  <option key={key} value={key}>
-                                    {info.label} (MET {info.met})
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            {/* Duration */}
-                            <div>
-                              <label className="text-[10px] text-[var(--text-secondary)] block font-medium mb-0.5">
-                                Duration (mins/session)
-                              </label>
-                              <input
-                                type="number"
-                                step="5"
-                                min="10"
-                                max="300"
-                                value={w.durationMinutes}
-                                onChange={(e) =>
-                                  handleUpdateWorkoutRow(
-                                    idx,
-                                    "durationMinutes",
-                                    Number(e.target.value) || 0
-                                  )
-                                }
-                                className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-                              />
-                            </div>
-
-                            {/* Sessions Per Week */}
-                            <div>
-                              <label className="text-xs text-[var(--text-secondary)] block font-normal mb-0.5">
-                                Sessions / week
-                              </label>
-                              <input
-                                type="number"
-                                min="1"
-                                max="14"
-                                value={w.sessionsPerWeek}
-                                onChange={(e) =>
-                                  handleUpdateWorkoutRow(
-                                    idx,
-                                    "sessionsPerWeek",
-                                    Number(e.target.value) || 0
-                                  )
-                                }
-                                className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] text-xs font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Calculated Stats & Remove */}
-                          <div className="flex items-center justify-between sm:justify-end space-x-3 pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--border)]">
-                            <div className="text-right font-tabular">
-                              <span className="block font-semibold text-[var(--text-primary)]">
-                                ~{sessionKcal} kcal/ses
-                              </span>
-                              <span className="text-xs text-[var(--text-secondary)]">
-                                {weeklyKcal} kcal/wk
-                              </span>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveWorkoutRow(idx)}
-                              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--ui-error)] rounded-lg hover:bg-[var(--ui-error-bg)] transition"
-                              title="Remove workout"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                {screenshotMethod === "cloud_vision" && (
+                  <div className="pt-2">
+                    <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">
+                      Cloud vision API key
+                    </label>
+                    <input
+                      type="password"
+                      placeholder={
+                        hasCloudApiKey
+                          ? "•••••••• (Key saved, type new key to replace)"
+                          : "Enter API key"
+                      }
+                      value={cloudApiKey}
+                      onChange={(e) => setCloudApiKey(e.target.value)}
+                      className="w-full px-4 py-2.5 text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                    />
                   </div>
                 )}
               </div>
-
-              {/* Thermic Effect of Food (TEF) Toggle */}
-              <div className="pt-2 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-medium text-[var(--text-primary)] block">
-                    Thermic Effect of Food (TEF) Adjustment (+8%)
-                  </span>
-                  <span className="text-[11px] text-[var(--text-secondary)]">
-                    Accounts for energy expended during digestion and nutrient processing
-                  </span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={useThermicEffectAdjustment}
-                  onChange={(e) => setUseThermicEffectAdjustment(e.target.checked)}
-                  className="w-4 h-4 rounded text-[var(--accent)] focus:ring-[var(--accent)] accent-[var(--accent)]"
-                />
-              </div>
-            </div>
-          ) : (
-            /* Simple Mode Dropdown */
-            <div className="pt-2">
-              <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
-                Flat Activity Level Multiplier
-              </label>
-              <select
-                value={simpleActivityLevel}
-                onChange={(e) => setSimpleActivityLevel(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-              >
-                <option value="sedentary">Sedentary (BMR × 1.2 — desk job, little to no exercise)</option>
-                <option value="light">Lightly Active (BMR × 1.375 — light exercise 1-3 days/wk)</option>
-                <option value="moderate">Moderately Active (BMR × 1.55 — moderate exercise 3-5 days/wk)</option>
-                <option value="very">Very Active (BMR × 1.725 — hard exercise 6-7 days/wk)</option>
-                <option value="extra">Extremely Active (BMR × 1.9 — hard daily training / physical job)</option>
-              </select>
             </div>
           )}
-        </div>
 
-        {/* Live TDEE & Calorie Target Calculation Breakdown Card (Section 38b & 38g) */}
-        <div className="p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
-            <div className="flex items-center space-x-2">
-              <Zap className="w-4 h-4 text-[var(--accent)]" />
-              <h3 className="font-semibold text-xs text-[var(--text-primary)]">
-                Calculated energy expenditure breakdown
-              </h3>
-            </div>
-            <span className="text-xs text-[var(--text-secondary)] bg-[var(--background)] border border-[var(--border)] px-2 py-0.5 rounded">
-              Mifflin-St Jeor + MET components
-            </span>
-          </div>
-
-          {/* Breakdown Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div className="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)]">
-              <span className="text-xs text-[var(--text-secondary)] block font-normal">Basal metabolic rate (BMR)</span>
-              <span className="text-base font-semibold font-tabular text-[var(--text-primary)]">
-                {tdeeBreakdown.bmr} <span className="text-xs text-[var(--text-secondary)] font-normal">kcal</span>
-              </span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)]">
-              <span className="text-xs text-[var(--text-secondary)] block font-normal">Steps NEAT</span>
-              <span className="text-base font-semibold font-tabular text-[var(--text-primary)]">
-                +{tdeeBreakdown.stepCalories} <span className="text-xs text-[var(--text-secondary)] font-normal">kcal</span>
-              </span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)]">
-              <span className="text-xs text-[var(--text-secondary)] block font-normal">Exercise workouts</span>
-              <span className="text-base font-semibold font-tabular text-[var(--text-primary)]">
-                +{tdeeBreakdown.dailyExerciseCalories} <span className="text-xs text-[var(--text-secondary)] font-normal">kcal</span>
-              </span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)]">
-              <span className="text-xs text-[var(--text-secondary)] block font-normal">Total TDEE (Maintenance)</span>
-              <span className="text-base font-semibold font-tabular text-[var(--accent)]">
-                {tdeeBreakdown.tdee} <span className="text-xs text-[var(--text-secondary)] font-normal">kcal</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Goal Deficit / Surplus banner & Suggested Target */}
-          <div className="p-4 rounded-xl bg-[var(--background)] border border-[var(--border)] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <span className="text-xs text-[var(--text-secondary)] font-medium">
-                  Suggested target ({goalType === "lose" ? "Deficit" : goalType === "gain" ? "Surplus" : "Maintenance"}):
-                </span>
-                <span className="text-2xl font-semibold font-tabular text-[var(--accent)]">
-                  {tdeeBreakdown.targetCalories} kcal/day
-                </span>
-                {tdeeBreakdown.deficitOrSurplus !== 0 && (
-                  <span className="text-xs font-tabular text-[var(--text-secondary)]">
-                    ({tdeeBreakdown.deficitOrSurplus > 0 ? "+" : ""}
-                    {tdeeBreakdown.deficitOrSurplus} kcal)
-                  </span>
-                )}
-              </div>
-
-              <div className="text-xs text-[var(--text-secondary)] flex flex-wrap items-center gap-x-3 gap-y-1 font-tabular">
-                <span>
-                  Suggested macros:{" "}
-                  <strong className="text-[var(--macro-protein)] font-semibold">
-                    {tdeeBreakdown.suggestedMacros.protein}g P
-                  </strong>{" "}
-                  (2.0g/kg) •{" "}
-                  <strong className="text-[var(--macro-carbs)] font-semibold">
-                    {tdeeBreakdown.suggestedMacros.carbs}g C
-                  </strong>{" "}
-                  •{" "}
-                  <strong className="text-[var(--macro-fat)] font-semibold">
-                    {tdeeBreakdown.suggestedMacros.fat}g F
-                  </strong>{" "}
-                  (25%)
-                </span>
-              </div>
-            </div>
-
-            {/* 1-Click Apply Button */}
-            <button
-              type="button"
-              onClick={handleApplySuggestedTarget}
-              className="inline-flex items-center justify-center space-x-1.5 px-4 py-2.5 sm:py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:opacity-90 text-white font-medium text-xs shadow-xs shrink-0 transition self-start lg:self-auto touch-manipulation"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Apply suggested target</span>
-            </button>
-          </div>
-
-          <div className="text-xs text-[var(--text-secondary)] flex items-center space-x-1.5">
-            <Info className="w-3.5 h-3.5 shrink-0" />
-            <span>
-              Section 38g Note: Personal estimation tool, not medical advice. Mifflin-St Jeor, MET values, and step-calorie formulas provide evidence-based estimates.
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Daily Nutrition Targets */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Target className="w-4 h-4 text-[var(--accent)]" />
-            <h2 className="font-semibold text-sm text-[var(--text-primary)]">
-              Daily nutrition targets
-            </h2>
-          </div>
-          <span className="text-xs text-[var(--text-secondary)] font-normal">
-            Manual override allowed
-          </span>
-        </div>
-        <p className="text-xs text-[var(--text-secondary)]">
-          Used across your Dashboard, Meal Planner, and batch recipes. Click &quot;Apply suggested target&quot; above to auto-populate from your profile.
-        </p>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-              Calories (kcal)
-            </label>
-            <input
-              type="number"
-              required
-              value={dailyCalories}
-              onChange={(e) => setDailyCalories(e.target.value)}
-              className="w-full px-3 py-2 text-sm font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-[var(--macro-protein)] mb-1">
-              Protein (g)
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              required
-              value={dailyProtein}
-              onChange={(e) => setDailyProtein(e.target.value)}
-              className="w-full px-3 py-2 text-sm font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-[var(--macro-carbs)] mb-1">
-              Carbs (g)
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              required
-              value={dailyCarbs}
-              onChange={(e) => setDailyCarbs(e.target.value)}
-              className="w-full px-3 py-2 text-sm font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-[var(--macro-fat)] mb-1">
-              Fat (g)
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              required
-              value={dailyFat}
-              onChange={(e) => setDailyFat(e.target.value)}
-              className="w-full px-3 py-2 text-sm font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Preferences */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
-        <div className="flex items-center space-x-2">
-          <Sliders className="w-4 h-4 text-[var(--accent)]" />
-          <h2 className="font-semibold text-sm text-[var(--text-primary)]">
-            Preferences &amp; Units
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-              Default Servings
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={12}
-              value={defaultServings}
-              onChange={(e) => setDefaultServings(Number(e.target.value) || 4)}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-              Measurement System
-            </label>
-            <select
-              value={measurementSystem}
-              onChange={(e) => setMeasurementSystem(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-            >
-              <option value="metric">Metric (grams, ml, kg, cm)</option>
-              <option value="imperial">Imperial (oz, lb, cups, ft/in)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-              Appearance
-            </label>
-            <div className="flex items-center space-x-1 p-1 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs">
-              <button
-                type="button"
-                onClick={() => setTheme("light")}
-                className={cn(
-                  "flex-1 py-1 rounded-lg transition text-center",
-                  theme === "light"
-                    ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                    : "text-[var(--text-secondary)]"
-                )}
-              >
-                Light
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme("dark")}
-                className={cn(
-                  "flex-1 py-1 rounded-lg transition text-center",
-                  theme === "dark"
-                    ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                    : "text-[var(--text-secondary)]"
-                )}
-              >
-                Dark
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme("system")}
-                className={cn(
-                  "flex-1 py-1 rounded-lg transition text-center",
-                  theme === "system"
-                    ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
-                    : "text-[var(--text-secondary)]"
-                )}
-              >
-                Auto
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. AI & Ollama Configuration (Admin Only) */}
-      {isAdmin && (
-        <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Cpu className="w-4 h-4 text-[var(--accent)]" />
-              <h2 className="font-semibold text-sm text-[var(--text-primary)]">
-                Local AI Engine (Ollama)
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={handleTestOllama}
-              disabled={isTestingOllama}
-              className="flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--background)] transition"
-            >
-              {isTestingOllama ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-              ) : (
-                <RefreshCw className="w-3.5 h-3.5 mr-1 text-[var(--accent)]" />
-              )}
-              <span>Test Connection</span>
-            </button>
-          </div>
-
-          <p className="text-xs text-[var(--text-secondary)]">
-            All recipe text parsing runs 100% locally via Ollama CPU inference. No cloud API keys needed for core operation.
-          </p>
-
-          {/* Ollama Test Result Banner */}
-          {ollamaTestResult && (
-            <div
-              className={cn(
-                "p-4 rounded-xl text-xs space-y-1.5",
-                ollamaTestResult.isRunning
-                  ? "bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)]"
-                  : "bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)]"
-              )}
-            >
-              <div className="flex items-center space-x-2 font-semibold">
-                {ollamaTestResult.isRunning ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-[var(--ui-success)]" />
-                    <span>Ollama is online and connected!</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-4 h-4 text-[var(--ui-error)]" />
-                    <span>Could not reach Ollama server</span>
-                  </>
-                )}
-              </div>
-              {ollamaTestResult.isRunning ? (
-                <p>
-                  Available models:{" "}
-                  <span className="font-mono font-semibold">
-                    {ollamaTestResult.models.length > 0
-                      ? ollamaTestResult.models.join(", ")
-                      : "None pulled yet (run 'ollama run qwen2.5:7b')"}
-                  </span>
+          {/* Card 6: External Nutrition Sources (Admin only) */}
+          {isAdmin && (
+            <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-4">
+              <div className="border-b border-[var(--border)] pb-3">
+                <h2 className="font-semibold text-base text-[var(--text-primary)]">
+                  External nutrition data sources
+                </h2>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  Free food sources for whole ingredients and branded UPC items. Cached permanently offline.
                 </p>
-              ) : (
-                <p>{ollamaTestResult.error}</p>
-              )}
-            </div>
-          )}
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-                Ollama Base URL
-              </label>
-              <input
-                type="text"
-                required
-                value={ollamaUrl}
-                onChange={(e) => setOllamaUrl(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                placeholder="http://localhost:11434"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-                Model Name for Text Parsing
-              </label>
-              <input
-                type="text"
-                required
-                value={ollamaModel}
-                onChange={(e) => setOllamaModel(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                placeholder="qwen2.5:7b"
-              />
-            </div>
-          </div>
-
-          {/* Screenshot Parsing Pipeline */}
-          <div className="pt-2 border-t border-[var(--border)] space-y-3">
-            <label className="block text-xs font-semibold text-[var(--text-primary)]">
-              Screenshot Parsing Pipeline
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => setScreenshotMethod("ocr_local")}
-                className={cn(
-                  "p-3 rounded-xl border text-left transition",
-                  screenshotMethod === "ocr_local"
-                    ? "border-[var(--accent)] bg-[var(--accent-subtle)] font-medium text-[var(--accent)]"
-                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                )}
-              >
-                <div className="font-semibold">OCR + Local Model (Default)</div>
-                <div className="text-[11px] text-[var(--text-secondary)] font-normal mt-0.5">
-                  Tesseract OCR extracts text, then local LLM structures it. 100% offline.
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-4 rounded-2xl bg-[var(--background)] space-y-1">
+                  <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+                    <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+                    <span>USDA FoodData Central</span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Whole ingredients (meats, grains, produce, dairy) with distinct raw vs. cooked profiles.
+                  </p>
                 </div>
-              </button>
 
-              <button
-                type="button"
-                onClick={() => setScreenshotMethod("vision_local")}
-                className={cn(
-                  "p-3 rounded-xl border text-left transition",
-                  screenshotMethod === "vision_local"
-                    ? "border-[var(--accent)] bg-[var(--accent-subtle)] font-medium text-[var(--accent)]"
-                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                )}
-              >
-                <div className="font-semibold">Local Vision Model</div>
-                <div className="text-[11px] text-[var(--text-secondary)] font-normal mt-0.5">
-                  Direct multimodal inference via Ollama (e.g. Qwen2-VL or LLaVA).
+                <div className="p-4 rounded-2xl bg-[var(--background)] space-y-1">
+                  <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+                    <span className="w-2 h-2 rounded-full bg-[var(--macro-protein)]" />
+                    <span>Open Food Facts</span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Commercial packaged goods, protein powders, snacks, and barcode lookups.
+                  </p>
                 </div>
-              </button>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setScreenshotMethod("cloud_vision")}
-                className={cn(
-                  "p-3 rounded-xl border text-left transition",
-                  screenshotMethod === "cloud_vision"
-                    ? "border-[var(--accent)] bg-[var(--accent-subtle)] font-medium text-[var(--accent)]"
-                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                )}
-              >
-                <div className="font-semibold">Cloud Fallback</div>
-                <div className="text-[11px] text-[var(--text-secondary)] font-normal mt-0.5">
-                  Optional cloud API for screenshot OCR fallback only.
-                </div>
-              </button>
-            </div>
-
-            {screenshotMethod === "cloud_vision" && (
-              <div className="pt-2">
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-                  Cloud Vision API Key (Optional fallback)
+              <div className="pt-2 border-t border-[var(--border)] space-y-2">
+                <label className="block text-xs font-normal text-[var(--text-secondary)]">
+                  USDA FoodData Central API key <span className="text-[var(--text-muted)]">(Optional)</span>
                 </label>
                 <input
                   type="password"
                   placeholder={
-                    hasCloudApiKey
-                      ? "•••••••• (Key saved, type new key to replace)"
-                      : "Enter API key"
+                    hasUsdaApiKey
+                      ? "•••••••• (Custom USDA Key saved, type to replace)"
+                      : "DEMO_KEY active by default. Enter personal key for higher limits."
                   }
-                  value={cloudApiKey}
-                  onChange={(e) => setCloudApiKey(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  value={usdaApiKey}
+                  onChange={(e) => setUsdaApiKey(e.target.value)}
+                  className="w-full px-4 py-2.5 text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
                 />
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* 5. External Nutrition Data Sources (Section 39) (Admin Only) */}
-      {isAdmin && (
-        <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4">
-          <div className="flex items-center space-x-2">
-            <Database className="w-4 h-4 text-[var(--accent)]" />
-            <h2 className="font-semibold text-sm text-[var(--text-primary)]">
-              External Nutrition Data Sources (Section 39)
-            </h2>
-          </div>
-
-          <p className="text-xs text-[var(--text-secondary)]">
-            The app searches two free, legitimate food sources to cover both whole ingredients and branded items without requiring private APIs. Lookups are saved permanently to your local database for 100% offline access.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)]/50 space-y-1">
-              <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
-                <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
-                <span>Primary: USDA FoodData Central</span>
-              </div>
-              <p className="text-[11px] text-[var(--text-secondary)]">
-                Official U.S. government database for whole ingredients (meats, grains, produce, dairy) with distinct raw vs. cooked profiles.
-              </p>
+        {/* Right Column: Sticky Hero Panel */}
+        <div className="lg:col-span-4">
+          <div className="sticky top-6 rounded-[28px] bg-[var(--hero)] text-[var(--hero-text)] p-6 space-y-6">
+            <div>
+              <p className="text-xs text-[var(--hero-muted)] font-normal">Component-based TDEE</p>
+              <h3 className="text-lg font-semibold text-[var(--hero-text)] mt-0.5">
+                Energy Breakdown
+              </h3>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)]/50 space-y-1">
-              <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
-                <span className="w-2 h-2 rounded-full bg-[#4C6E8C]" />
-                <span>Secondary: Open Food Facts</span>
+            {/* Suggested Target Big Number */}
+            <div className="space-y-1">
+              <span className="text-xs text-[var(--hero-muted)] block">Suggested daily intake</span>
+              <div className="flex items-baseline space-x-2">
+                <span className="text-4xl font-bold tracking-tight text-[var(--hero-text)] font-tabular">
+                  {tdeeBreakdown.targetCalories.toLocaleString()}
+                </span>
+                <span className="text-sm text-[var(--hero-muted)]">kcal/day</span>
               </div>
-              <p className="text-[11px] text-[var(--text-secondary)]">
-                Crowdsourced open database for commercial packaged goods, protein powders, snacks, and barcode (UPC/EAN) lookups.
-              </p>
+              {tdeeBreakdown.deficitOrSurplus !== 0 && (
+                <div className="mt-1">
+                  <span className="inline-block text-xs px-2.5 py-0.5 rounded-full bg-[var(--hero-track)] text-[var(--hero-text)] font-tabular font-medium">
+                    {tdeeBreakdown.deficitOrSurplus > 0 ? "+" : ""}
+                    {tdeeBreakdown.deficitOrSurplus} kcal {goalType === "lose" ? "deficit" : goalType === "gain" ? "surplus" : "maintenance"}
+                  </span>
+                </div>
+              )}
             </div>
-          </div>
 
-          <div className="pt-2 border-t border-[var(--border)] space-y-2">
-            <label className="block text-xs font-medium text-[var(--text-primary)]">
-              USDA FoodData Central API Key <span className="font-normal text-[var(--text-secondary)]">(Optional personal key)</span>
-            </label>
-            <input
-              type="password"
-              placeholder={
-                hasUsdaApiKey
-                  ? "•••••••• (Custom USDA Key saved, type to replace)"
-                  : "DEMO_KEY active by default (30 req/hr). Enter personal key for 1,000 req/hr."
-              }
-              value={usdaApiKey}
-              onChange={(e) => setUsdaApiKey(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-            />
-            <p className="text-[11px] text-[var(--text-secondary)]">
-              Free instant signup at{" "}
-              <a
-                href="https://fdc.nal.usda.gov/api-key-signup.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--accent)] hover:underline"
-              >
-                fdc.nal.usda.gov/api-key-signup.html
-              </a>
-              . Open Food Facts requires no key.
-            </p>
+            {/* TDEE Component Breakdown */}
+            <div className="divide-y divide-[var(--hero-track)] text-xs font-tabular">
+              <div className="flex items-center justify-between py-2.5">
+                <span className="text-[var(--hero-muted)]">Basal metabolic rate (BMR)</span>
+                <span className="font-semibold text-[var(--hero-text)]">{tdeeBreakdown.bmr} kcal</span>
+              </div>
+              <div className="flex items-center justify-between py-2.5">
+                <span className="text-[var(--hero-muted)]">NEAT steps movement</span>
+                <span className="font-semibold text-[var(--hero-text)]">+{tdeeBreakdown.stepCalories} kcal</span>
+              </div>
+              <div className="flex items-center justify-between py-2.5">
+                <span className="text-[var(--hero-muted)]">Structured exercise workouts</span>
+                <span className="font-semibold text-[var(--hero-text)]">+{tdeeBreakdown.dailyExerciseCalories} kcal</span>
+              </div>
+              <div className="flex items-center justify-between py-2.5">
+                <span className="text-[var(--hero-muted)] font-medium">Maintenance TDEE</span>
+                <span className="font-bold text-[var(--lime)]">{tdeeBreakdown.tdee} kcal</span>
+              </div>
+              <div className="flex items-center justify-between py-2.5">
+                <span className="text-[var(--hero-muted)]">Goal adjustment</span>
+                <span className="font-semibold text-[var(--hero-text)]">
+                  {tdeeBreakdown.deficitOrSurplus > 0 ? "+" : ""}
+                  {tdeeBreakdown.deficitOrSurplus} kcal
+                </span>
+              </div>
+            </div>
+
+            {/* Macro Split Preview */}
+            <div className="pt-2 border-t border-[var(--hero-track)] space-y-2 text-xs">
+              <p className="text-[var(--hero-muted)] font-normal">Suggested macro split:</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 font-tabular text-xs">
+                <span className="flex items-center text-[var(--hero-text)]">
+                  <span className="w-2 h-2 rounded-full bg-[var(--macro-protein)] mr-1.5 shrink-0" />
+                  {tdeeBreakdown.suggestedMacros.protein}g Protein
+                </span>
+                <span className="flex items-center text-[var(--hero-text)]">
+                  <span className="w-2 h-2 rounded-full bg-[var(--macro-carbs)] mr-1.5 shrink-0" />
+                  {tdeeBreakdown.suggestedMacros.carbs}g Carbs
+                </span>
+                <span className="flex items-center text-[var(--hero-text)]">
+                  <span className="w-2 h-2 rounded-full bg-[var(--macro-fat)] mr-1.5 shrink-0" />
+                  {tdeeBreakdown.suggestedMacros.fat}g Fat
+                </span>
+              </div>
+            </div>
+
+            {/* Apply Suggested Target Lime Button */}
+            <button
+              type="button"
+              onClick={handleApplySuggestedTarget}
+              className="w-full py-3 px-4 rounded-full bg-[var(--lime)] hover:bg-[var(--accent-hover)] text-[var(--on-lime)] font-semibold text-sm transition cursor-pointer min-h-[44px] flex items-center justify-center space-x-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Apply suggested target</span>
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </form>
   );
 }

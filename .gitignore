@@ -50,3 +50,6 @@ next-env.d.ts
 *.db-wal
 *.db-shm
 prisma/*.db
+
+# Scratch directory
+scratch/

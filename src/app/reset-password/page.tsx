@@ -3,7 +3,8 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { UtensilsCrossed, Lock, KeyRound, AlertCircle, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Lock, KeyRound, AlertCircle, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -63,21 +64,16 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="w-full max-w-md p-6 sm:p-8 bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-xl">
-      <div className="flex flex-col items-center text-center mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center mb-3 shadow-md">
-          <UtensilsCrossed className="w-6 h-6" />
-        </div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm text-[var(--text-muted)] font-normal">Security</p>
+        <h1 className="text-[34px] leading-tight font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
           Reset Password
         </h1>
-        <p className="text-xs text-[var(--text-secondary)] mt-1">
-          Create a new secure password for your account
-        </p>
       </div>
 
       {error && (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs flex items-start space-x-2.5">
+        <div className="p-4 rounded-2xl bg-[var(--macro-fat-bg)] text-[var(--status-over-target)] text-xs flex items-start space-x-2.5">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -85,7 +81,7 @@ function ResetPasswordForm() {
 
       {success ? (
         <div className="space-y-4 text-center">
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs flex items-center justify-center space-x-2">
+          <div className="p-4 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] text-xs flex items-center justify-center space-x-2">
             <CheckCircle2 className="w-4 h-4" />
             <span>Password successfully reset! Redirecting to login...</span>
           </div>
@@ -102,12 +98,12 @@ function ResetPasswordForm() {
           <div>
             <label
               htmlFor="token"
-              className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5"
+              className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
             >
               Reset token
             </label>
             <div className="relative">
-              <KeyRound className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <KeyRound className="w-4 h-4 text-[var(--text-muted)] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 id="token"
                 name="token"
@@ -116,7 +112,7 @@ function ResetPasswordForm() {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="Paste token received"
-                className="w-full pl-10 pr-4 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-xl text-sm font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition"
+                className="w-full pl-11 pr-4 min-h-[44px] bg-[var(--surface)] rounded-2xl text-sm font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
               />
             </div>
           </div>
@@ -124,12 +120,12 @@ function ResetPasswordForm() {
           <div>
             <label
               htmlFor="password"
-              className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5"
+              className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
             >
               New password (min. 8 characters)
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Lock className="w-4 h-4 text-[var(--text-muted)] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 id="password"
                 name="password"
@@ -139,7 +135,7 @@ function ResetPasswordForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition"
+                className="w-full pl-11 pr-4 min-h-[44px] bg-[var(--surface)] rounded-2xl text-sm font-medium text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
               />
             </div>
           </div>
@@ -147,12 +143,12 @@ function ResetPasswordForm() {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5"
+              className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
             >
               Confirm new password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Lock className="w-4 h-4 text-[var(--text-muted)] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -162,7 +158,7 @@ function ResetPasswordForm() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition"
+                className="w-full pl-11 pr-4 min-h-[44px] bg-[var(--surface)] rounded-2xl text-sm font-medium text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
               />
             </div>
           </div>
@@ -170,13 +166,13 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 flex items-center justify-center space-x-2 py-2.5 px-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold rounded-xl shadow-md transition disabled:opacity-60 cursor-pointer"
+            className="w-full mt-2 flex items-center justify-center space-x-2 min-h-[44px] px-6 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-sm font-semibold rounded-full transition disabled:opacity-60 cursor-pointer"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                <span>Set New Password</span>
+                <span>Set new password</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -189,8 +185,10 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="text-sm text-[var(--text-muted)]">Loading...</div>}>
-      <ResetPasswordForm />
-    </Suspense>
+    <AuthLayout>
+      <Suspense fallback={<div className="text-sm text-[var(--text-muted)]">Loading...</div>}>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthLayout>
   );
 }

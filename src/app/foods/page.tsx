@@ -39,6 +39,7 @@ import { BarcodeScannerModal } from "@/components/scanner/BarcodeScannerModal";
 import { McDonaldsCalculator } from "@/components/foods/McDonaldsCalculator";
 import { EditFoodModal } from "@/components/foods/EditFoodModal";
 import { NutritionLabelScannerModal } from "@/components/scanner/NutritionLabelScannerModal";
+import { UnifiedFoodSearchModal } from "@/components/foods/UnifiedFoodSearchModal";
 
 type ActiveTab = "foods" | "pantry" | "what-can-i-make";
 
@@ -58,15 +59,8 @@ export default function FoodsAndPantryPage() {
   const [showMcdCalculator, setShowMcdCalculator] = useState(false);
   const [selectedFoodDetails, setSelectedFoodDetails] = useState<any | null>(null);
 
-  // External Search State (USDA & Open Food Facts)
+  // Unified Search Modal State
   const [isExternalModalOpen, setIsExternalModalOpen] = useState(false);
-  const [externalQuery, setExternalQuery] = useState("");
-  const [externalSourceFilter, setExternalSourceFilter] = useState<"all" | "usda" | "openfoodfacts">("all");
-  const [externalResults, setExternalResults] = useState<any[]>([]);
-  const [isSearchingExternal, setIsSearchingExternal] = useState(false);
-  const [importingId, setImportingId] = useState<string | null>(null);
-  const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
-  const [externalError, setExternalError] = useState<string | null>(null);
 
   // Barcode Scanner Modal State
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -151,54 +145,7 @@ export default function FoodsAndPantryPage() {
     fetchWhatCanIMake();
   }, []);
 
-  const handleSearchExternal = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const query = externalQuery.trim();
-    if (!query) return;
 
-    setIsSearchingExternal(true);
-    setExternalError(null);
-    try {
-      const res = await fetch(`/api/foods/external/search?q=${encodeURIComponent(query)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setExternalResults(data);
-        if (data.length === 0) {
-          setExternalError("No foods found matching your query in USDA or Open Food Facts.");
-        }
-      } else {
-        setExternalError("Failed to fetch external foods. Please check your network or try manual entry.");
-      }
-    } catch (err) {
-      console.error(err);
-      setExternalError("Network error while querying external food databases.");
-    } finally {
-      setIsSearchingExternal(false);
-    }
-  };
-
-  const handleImportCandidate = async (candidate: any) => {
-    setImportingId(candidate.id);
-    try {
-      const res = await fetch("/api/foods/external/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(candidate),
-      });
-
-      if (res.ok) {
-        setImportedIds((prev) => new Set([...prev, candidate.id]));
-        await fetchFoods();
-      } else {
-        alert("Failed to import food into local database.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error importing food.");
-    } finally {
-      setImportingId(null);
-    }
-  };
 
   const handleCreateFood = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -426,415 +373,376 @@ export default function FoodsAndPantryPage() {
     });
   }, [pantryItems, pantrySearch, pantryCategoryFilter, pantrySortBy]);
 
-  const filteredExternalResults = externalResults.filter((c) => {
-    if (externalSourceFilter === "usda") return c.source === "usda";
-    if (externalSourceFilter === "openfoodfacts") return c.source === "openfoodfacts";
-    return true;
-  });
+
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16 px-4 sm:px-6">
       {/* Header & Main Tabs */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-3">
-            <span>Foods &amp; Pantry</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold border border-[var(--border)]">
-              Jordan Menu Included
-            </span>
-          </h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-2xl leading-relaxed">
-            Detailed foods database, category sorting, pantry inventory tracker, recipe matcher, and the official McDonald&apos;s Jordan Nutrition Calculator.
+          <p className="text-sm text-[var(--text-muted)] font-normal">
+            Nutrition catalog & inventory
           </p>
+          <h1 className="text-[34px] font-semibold tracking-[-0.03em] leading-tight text-[var(--text-primary)]">
+            Foods &amp; Pantry
+          </h1>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex items-center p-1 rounded-2xl bg-[var(--background)] border border-[var(--border)] text-xs overflow-x-auto max-w-full scrollbar-none shrink-0 shadow-inner">
+        {/* Segmented Control (Pill group on var(--surface)) */}
+        <div className="flex items-center p-1 rounded-full bg-[var(--surface)] text-xs overflow-x-auto max-w-full scrollbar-none shrink-0 shadow-none">
           <button
+            type="button"
             onClick={() => setActiveTab("foods")}
             className={cn(
-              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
+              "px-4 py-2 min-h-[38px] rounded-full font-semibold transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer",
               activeTab === "foods"
-                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                ? "bg-[var(--accent)] text-[var(--on-accent)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            <Apple className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <Apple className="w-3.5 h-3.5" />
             <span>Foods ({foods.length})</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab("pantry")}
             className={cn(
-              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
+              "px-4 py-2 min-h-[38px] rounded-full font-semibold transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer",
               activeTab === "pantry"
-                ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                ? "bg-[var(--accent)] text-[var(--on-accent)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            <Package className="w-3.5 h-3.5 text-[var(--macro-protein)]" />
+            <Package className="w-3.5 h-3.5" />
             <span>Pantry ({pantryItems.length})</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab("what-can-i-make")}
             className={cn(
-              "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
+              "px-4 py-2 min-h-[38px] rounded-full font-semibold transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer",
               activeTab === "what-can-i-make"
-                ? "bg-[var(--surface)] text-[var(--accent)] font-semibold shadow-xs border border-[var(--border)]"
+                ? "bg-[var(--accent)] text-[var(--on-accent)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
-            <Sparkles className="w-3.5 h-3.5 text-[var(--macro-carbs)]" />
+            <Sparkles className="w-3.5 h-3.5" />
             <span>What Can I Make?</span>
           </button>
         </div>
       </div>
 
-      {/* TAB 1: Foods Database (Detailed with Category Sorting & McDonald's) */}
+      {/* TAB 1: Foods Database */}
       {activeTab === "foods" && (
-        <div className="space-y-5 animate-in fade-in duration-300">
-          {/* McDonald's Category Banner & Customizer Toggle */}
-          {foodCategoryFilter === "McDonald's" && (
-            <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center text-xl shrink-0">
-                  🍔
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
-                      McDonald&apos;s Jordan Menu &amp; Customizer
-                    </h3>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-bold border border-[var(--border)]">
-                      Official Jordan Catalog
-                    </span>
-                  </div>
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                    Browse menu items or open the interactive nutrition calculator to customize ingredients and subtract/add patties, cheese, and sauces.
-                  </p>
-                </div>
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Toolbar: Pill search, sort select, Scan label, Barcode, Online database, primary Custom food */}
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+            {/* Pill Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+              <input
+                type="text"
+                placeholder="Search foods by name or brand..."
+                value={foodSearch}
+                onChange={(e) => setFoodSearch(e.target.value)}
+                className="w-full pl-11 pr-4 py-2.5 min-h-[44px] text-xs sm:text-sm rounded-full bg-[var(--surface)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border-none outline-none focus:ring-1 focus:ring-[var(--text-primary)]"
+              />
+              {foodSearch && (
+                <button
+                  type="button"
+                  onClick={() => setFoodSearch("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Sort Select & Action Pills */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative">
+                <select
+                  value={foodSortBy}
+                  onChange={(e) => setFoodSortBy(e.target.value as any)}
+                  className="px-4 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium border-none outline-none focus:ring-1 focus:ring-[var(--text-primary)] cursor-pointer pr-8 appearance-none"
+                >
+                  <option value="category">Category</option>
+                  <option value="name-asc">Name (A → Z)</option>
+                  <option value="protein-desc">Protein (High → Low)</option>
+                  <option value="cal-desc">Calories (High → Low)</option>
+                  <option value="carbs-desc">Carbs (High → Low)</option>
+                  <option value="fat-desc">Fat (High → Low)</option>
+                </select>
+                <ArrowUpDown className="w-3.5 h-3.5 text-[var(--text-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
 
               <button
                 type="button"
-                onClick={() => setShowMcdCalculator(!showMcdCalculator)}
-                className="inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition shrink-0 cursor-pointer"
+                onClick={() => setIsNutritionScannerOpen(true)}
+                className="px-4 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] hover:bg-[var(--surface)]/80 text-[var(--text-primary)] text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
+                title="Scan nutrition label"
               >
-                <SlidersHorizontal className="w-4 h-4" />
-                <span>{showMcdCalculator ? "View Food Cards" : "Open Nutrition Calculator & Tray"}</span>
+                <Camera className="w-4 h-4 text-[var(--lime)]" />
+                <span>Scan label</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setScannerMode("food");
+                  setIsScannerOpen(true);
+                }}
+                className="px-4 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] hover:bg-[var(--surface)]/80 text-[var(--text-primary)] text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
+                title="Scan barcode"
+              >
+                <Barcode className="w-4 h-4 text-[var(--text-muted)]" />
+                <span>Barcode</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsExternalModalOpen(true)}
+                className="px-4 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] hover:bg-[var(--surface)]/80 text-[var(--text-primary)] text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
+                title="Online database search"
+              >
+                <Globe className="w-4 h-4 text-[var(--lime)]" />
+                <span>Online database</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsAddFoodModalOpen(true)}
+                className="px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-none"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Custom food</span>
               </button>
             </div>
-          )}
+          </div>
 
-          {/* Interactive McDonald's Calculator when toggled */}
-          {foodCategoryFilter === "McDonald's" && showMcdCalculator ? (
-            <div className="animate-in fade-in duration-300">
-              <McDonaldsCalculator
-                onImportSuccess={() => {
-                  fetchFoods();
-                  fetchPantry();
-                }}
-              />
-            </div>
-          ) : (
-            <>
-          {/* Controls Bar: Search, Category Pills, Sort Selector, Action Buttons */}
-          <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              {/* Search input */}
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
-                <input
-                  type="text"
-                  placeholder="Search foods by name or category..."
-                  value={foodSearch}
-                  onChange={(e) => setFoodSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-hidden focus:border-[var(--accent)] transition-colors"
-                />
-                {foodSearch && (
-                  <button
-                    onClick={() => setFoodSearch("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
+          {/* Category Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {foodCategories.map((cat) => {
+              const isSelected = foodCategoryFilter === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setFoodCategoryFilter(cat)}
+                  className={cn(
+                    "px-4 py-1.5 min-h-[36px] rounded-full text-xs font-medium transition cursor-pointer whitespace-nowrap",
+                    isSelected
+                      ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
+                      : "bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  )}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Two-Column Grid: Left Foods Table, Right Side Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left: Borderless Table inside Surface Card */}
+            <div className="lg:col-span-8 rounded-3xl bg-[var(--surface)] p-6 shadow-none overflow-hidden space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+                <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+                  Food items ({filteredFoods.length})
+                </h3>
+                <span className="text-xs text-[var(--text-muted)] font-tabular">
+                  Showing {filteredFoods.length} of {foods.length}
+                </span>
               </div>
 
-              {/* Sort by selector */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] w-full sm:w-auto">
-                  <ArrowUpDown className="w-3.5 h-3.5 text-[var(--text-secondary)] shrink-0" />
-                  <select
-                    value={foodSortBy}
-                    onChange={(e) => setFoodSortBy(e.target.value as any)}
-                    className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer w-full"
-                  >
-                    <option value="category">Sort: By Category</option>
-                    <option value="name-asc">Sort: Name (A → Z)</option>
-                    <option value="name-desc">Sort: Name (Z → A)</option>
-                    <option value="protein-desc">Sort: Protein (High → Low)</option>
-                    <option value="cal-desc">Sort: Calories (High → Low)</option>
-                    <option value="cal-asc">Sort: Calories (Low → High)</option>
-                    <option value="carbs-desc">Sort: Carbs (High → Low)</option>
-                    <option value="fat-desc">Sort: Fat (High → Low)</option>
-                  </select>
+              {filteredFoods.length === 0 ? (
+                <div className="py-12 text-center text-xs text-[var(--text-muted)] space-y-2">
+                  <Apple className="w-8 h-8 opacity-40 mx-auto" />
+                  <p>No food items match your filter.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="text-[var(--text-muted)] font-normal border-b border-[var(--border)]">
+                        <th className="py-2.5 pr-4 font-normal">Food</th>
+                        <th className="py-2.5 px-3 font-normal">Category</th>
+                        <th className="py-2.5 px-3 font-normal text-right">Calories</th>
+                        <th className="py-2.5 px-3 font-normal text-right">Protein</th>
+                        <th className="py-2.5 px-3 font-normal text-right">Carbs</th>
+                        <th className="py-2.5 px-3 font-normal text-right">Fat</th>
+                        <th className="py-2.5 pl-3 text-right font-normal">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border)]">
+                      {filteredFoods.map((f) => (
+                        <tr key={f.id} className="hover:bg-[var(--background)]/50 transition-colors group">
+                          <td className="py-3 pr-4 font-medium text-[var(--text-primary)]">
+                            <div className="font-semibold text-[var(--text-primary)]">{f.name}</div>
+                            {f.brand && <div className="text-[10px] text-[var(--text-muted)]">{f.brand}</div>}
+                          </td>
+                          <td className="py-3 px-3 text-[var(--text-secondary)] whitespace-nowrap">
+                            <span className="px-2 py-0.5 rounded-full bg-[var(--background)] text-[10px]">
+                              {f.category}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right font-bold text-[var(--text-primary)] font-tabular whitespace-nowrap">
+                            {f.caloriesPer100g}
+                          </td>
+                          <td className="py-3 px-3 text-right font-semibold text-[var(--text-primary)] font-tabular whitespace-nowrap">
+                            <span className="w-2 h-2 rounded-full inline-block mr-1.5 align-middle" style={{ backgroundColor: "var(--macro-protein)" }} />
+                            {f.proteinPer100g}g
+                          </td>
+                          <td className="py-3 px-3 text-right font-semibold text-[var(--text-primary)] font-tabular whitespace-nowrap">
+                            <span className="w-2 h-2 rounded-full inline-block mr-1.5 align-middle" style={{ backgroundColor: "var(--macro-carbs)" }} />
+                            {f.carbsPer100g}g
+                          </td>
+                          <td className="py-3 px-3 text-right font-semibold text-[var(--text-primary)] font-tabular whitespace-nowrap">
+                            <span className="w-2 h-2 rounded-full inline-block mr-1.5 align-middle" style={{ backgroundColor: "var(--macro-fat)" }} />
+                            {f.fatPer100g}g
+                          </td>
+                          <td className="py-3 pl-3 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFoodToEdit(f);
+                                  setIsEditFoodModalOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                                title="Edit"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedFoodDetails(f)}
+                                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                                title="Details"
+                              >
+                                <Info className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteFood(f.id)}
+                                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition cursor-pointer"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Per 100 g note under it */}
+              <div className="pt-3 border-t border-[var(--border)] text-xs text-[var(--text-muted)]">
+                Values shown per 100 g basis unless specified.
+              </div>
+            </div>
+
+            {/* Right: Side Cards ("You can make now" and "Running low") */}
+            <div className="lg:col-span-4 space-y-6">
+              {/* Card 1: You can make now */}
+              <div className="rounded-3xl bg-[var(--surface)] p-6 space-y-4 shadow-none">
+                <div className="flex items-center space-x-2.5 pb-2 border-b border-[var(--border)]">
+                  <div className="w-8 h-8 rounded-xl bg-[var(--accent-subtle)] text-[var(--lime)] flex items-center justify-center shrink-0">
+                    <ChefHat className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-[var(--text-primary)]">
+                      You can make now
+                    </h4>
+                    <p className="text-[11px] text-[var(--text-muted)]">
+                      Based on current pantry stock
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {recipeMatches.length === 0 ? (
+                    <div className="py-4 text-center text-xs text-[var(--text-muted)]">
+                      Add ingredients to your pantry to see recipe matches.
+                    </div>
+                  ) : (
+                    recipeMatches.slice(0, 4).map((m) => (
+                      <Link
+                        key={m.recipe.id}
+                        href={`/recipes/${m.recipe.id}`}
+                        className="p-3 rounded-2xl bg-[var(--background)] hover:bg-[var(--accent-subtle)] transition flex items-center justify-between gap-2 group block"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-xs text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition">
+                            {m.recipe.name}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-muted)] font-tabular mt-0.5">
+                            {Math.round(m.recipe.caloriesPerServing)} kcal · {m.matchPercentage}% available
+                          </div>
+                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:translate-x-0.5 transition" />
+                      </Link>
+                    ))
+                  )}
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setIsNutritionScannerOpen(true)}
-                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--surface)] hover:bg-[var(--background)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition cursor-pointer"
-                  title="Scan nutrition label from packaging"
-                >
-                  <Camera className="w-4 h-4 text-[var(--accent)]" />
-                  <span>Scan Label</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setScannerMode("food");
-                    setIsScannerOpen(true);
-                  }}
-                  className="flex items-center space-x-1.5 px-3 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition cursor-pointer"
-                  title="Barcode scanner"
-                >
-                  <Barcode className="w-4 h-4 text-[var(--text-secondary)]" />
-                  <span className="hidden md:inline">Barcode</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsExternalModalOpen(true);
-                    if (!externalQuery && foodSearch) setExternalQuery(foodSearch);
-                  }}
-                  className="flex items-center space-x-1.5 px-3 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition cursor-pointer"
-                >
-                  <Globe className="w-4 h-4 text-[var(--accent)]" />
-                  <span className="hidden sm:inline">Online DB</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAddFoodModalOpen(true)}
-                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Custom Food</span>
-                </button>
-              </div>
-            </div>
+              {/* Card 2: Running low */}
+              <div className="rounded-3xl bg-[var(--surface)] p-6 space-y-4 shadow-none">
+                <div className="flex items-center space-x-2.5 pb-2 border-b border-[var(--border)]">
+                  <div className="w-8 h-8 rounded-xl bg-[var(--macro-carbs-bg)] text-[var(--macro-carbs)] flex items-center justify-center shrink-0">
+                    <Package className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-[var(--text-primary)]">
+                      Running low
+                    </h4>
+                    <p className="text-[11px] text-[var(--text-muted)]">
+                      Pantry items needing replenishment
+                    </p>
+                  </div>
+                </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-[var(--border)]">
-              <span className="text-[11px] text-[var(--text-secondary)] font-medium mr-1 shrink-0 flex items-center gap-1">
-                <Filter className="w-3 h-3" />
-                Category:
-              </span>
-              {foodCategories.map((cat) => {
-                const isSelected = foodCategoryFilter === cat;
-                const count =
-                  cat === "All"
-                    ? foods.length
-                    : foods.filter((f) => f.category === cat).length;
-
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setFoodCategoryFilter(cat)}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0",
-                      isSelected
-                        ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
-                        : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
-                    )}
-                  >
-                    <span>{cat}</span>
-                    <span
-                      className={cn(
-                        "text-[10px] px-1.5 py-0.2 rounded-full",
-                        isSelected
-                          ? "bg-black/20 text-white"
-                          : "bg-[var(--surface)] text-[var(--text-secondary)]"
-                      )}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Foods Cards Grid / List */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] px-1">
-              <span>
-                Showing <strong>{filteredFoods.length}</strong> of {foods.length} foods
-              </span>
-              <span>All nutritional metrics shown per 100g</span>
-            </div>
-
-            {filteredFoods.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
-                <Apple className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
-                <h3 className="font-semibold text-sm text-[var(--text-primary)]">No foods found</h3>
-                <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
-                  Try adjusting your search query, selecting another category, or importing items from the McDonald&apos;s Jordan menu.
-                </p>
-                <button
-                  onClick={() => {
-                    setFoodSearch("");
-                    setFoodCategoryFilter("All");
-                  }}
-                  className="px-4 py-2 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--accent)] font-semibold"
-                >
-                  Reset Filters
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {filteredFoods.map((f) => {
-                  // Macro calorie percentages: protein (4 kcal/g), carbs (4 kcal/g), fat (9 kcal/g)
-                  const pCal = (f.proteinPer100g || 0) * 4;
-                  const cCal = (f.carbsPer100g || 0) * 4;
-                  const fCal = (f.fatPer100g || 0) * 9;
-                  const totalCalcCal = pCal + cCal + fCal || 1;
-                  const pPct = Math.round((pCal / totalCalcCal) * 100);
-                  const cPct = Math.round((cCal / totalCalcCal) * 100);
-                  const fPct = Math.max(0, 100 - pPct - cPct);
-
-                  // Protein density (grams per 100 calories)
-                  const pDensity =
-                    f.caloriesPer100g > 0
-                      ? Math.round(((f.proteinPer100g || 0) / f.caloriesPer100g) * 100 * 10) / 10
-                      : 0;
-
-                  return (
-                    <div
-                      key={f.id}
-                      className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/40 hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
-                    >
-                      <div>
-                        {/* Top: Category Tag, Raw/Cooked, Action Buttons */}
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--accent)]">
-                              {f.category}
-                            </span>
-                            {f.rawOrCooked && f.rawOrCooked !== "unspecified" && (
-                              <span className="text-[10px] font-medium uppercase px-1.5 py-0.5 rounded bg-[var(--background)] text-[var(--text-secondary)]">
-                                {f.rawOrCooked}
-                              </span>
-                            )}
-                            {pDensity >= 10 && (
-                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]">
-                                High Protein
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => {
-                                setFoodToEdit(f);
-                                setIsEditFoodModalOpen(true);
-                              }}
-                              title="Edit food"
-                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--background)] transition cursor-pointer"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setSelectedFoodDetails(f)}
-                              title="View detailed nutrition"
-                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
-                            >
-                              <Info className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteFood(f.id)}
-                              title="Delete food"
-                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Title & Serving info */}
-                        <h4 className="font-semibold text-sm text-[var(--text-primary)] leading-tight group-hover:text-[var(--accent)] transition-colors">
-                          {f.name}
-                        </h4>
-                        <div className="text-[11px] text-[var(--text-secondary)] mt-0.5 font-mono">
-                          Serving: {f.servingWeightGrams || 100}g {f.defaultUnit !== "g" ? `(${f.defaultUnit})` : ""}
-                        </div>
-                      </div>
-
-                      {/* Macro Badges Grid */}
-                      <div className="grid grid-cols-4 gap-1.5 text-center pt-2 border-t border-[var(--border)]">
-                        <div className="bg-[var(--background)] rounded-lg py-1 px-1">
-                          <div className="text-[10px] text-[var(--text-secondary)]">Calories</div>
-                          <div className="text-xs font-bold text-[var(--text-primary)] font-mono">
-                            {f.caloriesPer100g}
-                          </div>
-                        </div>
-                        <div className="bg-[var(--background)] rounded-lg py-1 px-1">
-                          <div className="text-[10px] text-[var(--text-secondary)]">Protein</div>
-                          <div className="text-xs font-bold text-[var(--macro-protein)] font-mono">
-                            {f.proteinPer100g}g
-                          </div>
-                        </div>
-                        <div className="bg-[var(--background)] rounded-lg py-1 px-1">
-                          <div className="text-[10px] text-[var(--text-secondary)]">Carbs</div>
-                          <div className="text-xs font-bold text-[var(--macro-carbs)] font-mono">
-                            {f.carbsPer100g}g
-                          </div>
-                        </div>
-                        <div className="bg-[var(--background)] rounded-lg py-1 px-1">
-                          <div className="text-[10px] text-[var(--text-secondary)]">Fat</div>
-                          <div className="text-xs font-bold text-[var(--macro-fat)] font-mono">
-                            {f.fatPer100g}g
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Macro Ratio Mini Progress Bar */}
-                      <div className="space-y-1 pt-1">
-                        <div className="h-1.5 w-full rounded-full bg-[var(--background)] overflow-hidden flex">
-                          <div
-                            style={{ width: `${pPct}%` }}
-                            className="bg-[var(--macro-protein)] h-full"
-                            title={`Protein: ${pPct}%`}
-                          />
-                          <div
-                            style={{ width: `${cPct}%` }}
-                            className="bg-[var(--macro-carbs)] h-full"
-                            title={`Carbs: ${cPct}%`}
-                          />
-                          <div
-                            style={{ width: `${fPct}%` }}
-                            className="bg-[var(--macro-fat)] h-full"
-                            title={`Fat: ${fPct}%`}
-                          />
-                        </div>
-                        <div className="flex justify-between text-[9px] text-[var(--text-secondary)] font-mono">
-                          <span className="text-[var(--macro-protein)]">{pPct}% P</span>
-                          <span className="text-[var(--macro-carbs)]">{cPct}% C</span>
-                          <span className="text-[var(--macro-fat)]">{fPct}% F</span>
-                        </div>
-                      </div>
+                <div className="space-y-2.5">
+                  {pantryItems.filter((p) => (Number(p.quantity) || 0) <= 300).length === 0 ? (
+                    <div className="py-4 text-center text-xs text-[var(--text-muted)]">
+                      All pantry items are well-stocked!
                     </div>
-                  );
-                })}
+                  ) : (
+                    pantryItems
+                      .filter((p) => (Number(p.quantity) || 0) <= 300)
+                      .slice(0, 5)
+                      .map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-3 rounded-2xl bg-[var(--background)] flex items-center justify-between text-xs"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <span className="font-medium text-[var(--text-primary)] truncate block">
+                              {item.name}
+                            </span>
+                            <span className="text-[10px] text-[var(--text-muted)]">
+                              Stock: {item.quantity} {item.unit}
+                            </span>
+                          </div>
+                          <Link
+                            href="/shopping-list"
+                            className="px-3 py-1 rounded-full bg-[var(--surface)] text-[var(--text-primary)] hover:bg-[var(--accent-subtle)] text-[10px] font-semibold transition"
+                          >
+                            + List
+                          </Link>
+                        </div>
+                      ))
+                  )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
-          </>
-          )}
         </div>
       )}
 
@@ -842,7 +750,7 @@ export default function FoodsAndPantryPage() {
       {activeTab === "pantry" && (
         <div className="space-y-5 animate-in fade-in duration-300">
           {/* Controls Bar: Search, Category Pills, Sort Selector, Action Buttons */}
-          <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs">
+          <div className="space-y-4 p-6 sm:p-8 rounded-3xl bg-[var(--surface)]">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               {/* Search */}
               <div className="relative flex-1 w-full">
@@ -852,7 +760,7 @@ export default function FoodsAndPantryPage() {
                   placeholder="Search pantry items..."
                   value={pantrySearch}
                   onChange={(e) => setPantrySearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-hidden focus:border-[var(--accent)] transition-colors"
+                  className="w-full pl-10 pr-4 py-3 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)] transition-colors"
                 />
                 {pantrySearch && (
                   <button
@@ -866,7 +774,7 @@ export default function FoodsAndPantryPage() {
 
               {/* Sort by */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--text-primary)] w-full sm:w-auto">
+                <div className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full bg-[var(--background)] text-xs text-[var(--text-primary)] w-full sm:w-auto">
                   <ArrowUpDown className="w-3.5 h-3.5 text-[var(--text-secondary)] shrink-0" />
                   <select
                     value={pantrySortBy}
@@ -889,7 +797,7 @@ export default function FoodsAndPantryPage() {
                     setScannerMode("pantry");
                     setIsScannerOpen(true);
                   }}
-                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] font-medium text-xs shadow-xs transition"
+                  className="flex items-center space-x-1.5 px-4 min-h-[44px] rounded-full bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-primary)] font-medium text-xs transition cursor-pointer"
                 >
                   <Barcode className="w-4 h-4 text-[var(--accent)]" />
                   <span>Scan</span>
@@ -897,7 +805,7 @@ export default function FoodsAndPantryPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddPantryModalOpen(true)}
-                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition"
+                  className="flex items-center space-x-1.5 px-5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add to Pantry</span>
@@ -925,8 +833,8 @@ export default function FoodsAndPantryPage() {
                     className={cn(
                       "px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0",
                       isSelected
-                        ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
-                        : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
+                        : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     )}
                   >
                     <span>{cat}</span>
@@ -934,7 +842,7 @@ export default function FoodsAndPantryPage() {
                       className={cn(
                         "text-[10px] px-1.5 py-0.2 rounded-full",
                         isSelected
-                          ? "bg-black/20 text-white"
+                          ? "bg-black/15 text-[var(--on-accent)]"
                           : "bg-[var(--surface)] text-[var(--text-secondary)]"
                       )}
                     >
@@ -956,7 +864,7 @@ export default function FoodsAndPantryPage() {
             </div>
 
             {filteredPantryItems.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
+              <div className="p-12 text-center rounded-3xl bg-[var(--surface)] space-y-3">
                 <Package className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
                 <h3 className="font-semibold text-sm text-[var(--text-primary)]">Pantry is empty</h3>
                 <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
@@ -964,7 +872,7 @@ export default function FoodsAndPantryPage() {
                 </p>
                 <button
                   onClick={() => setIsAddPantryModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold text-xs shadow-xs"
+                  className="px-5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer"
                 >
                   Add First Item
                 </button>
@@ -974,11 +882,11 @@ export default function FoodsAndPantryPage() {
                 {filteredPantryItems.map((item) => (
                   <div
                     key={item.id}
-                    className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/40 hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+                    className="p-5 rounded-3xl bg-[var(--surface)] hover:bg-[var(--surface)]/90 transition-all flex flex-col justify-between space-y-3"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--accent)]">
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[var(--background)] text-[var(--text-secondary)]">
                           {item.category || "Pantry"}
                         </span>
                         <button
@@ -1003,10 +911,10 @@ export default function FoodsAndPantryPage() {
                     {/* Quantity Adjustment Controls */}
                     <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between">
                       <div className="text-xs text-[var(--text-secondary)]">Stock:</div>
-                      <div className="flex items-center gap-2 bg-[var(--background)] border border-[var(--border)] rounded-xl p-1">
+                      <div className="flex items-center gap-2 bg-[var(--background)] rounded-full px-2 py-1">
                         <button
                           onClick={() => handleUpdatePantryQuantity(item, -1)}
-                          className="w-6 h-6 rounded-lg bg-[var(--surface)] hover:bg-[var(--border)] flex items-center justify-center text-[var(--text-primary)] transition"
+                          className="w-6 h-6 rounded-full bg-[var(--surface)] hover:bg-[var(--border)] flex items-center justify-center text-[var(--text-primary)] transition"
                           title="Decrease by 1"
                         >
                           <Minus className="w-3 h-3" />
@@ -1016,7 +924,7 @@ export default function FoodsAndPantryPage() {
                         </span>
                         <button
                           onClick={() => handleUpdatePantryQuantity(item, 1)}
-                          className="w-6 h-6 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] flex items-center justify-center text-white font-bold transition"
+                          className="w-6 h-6 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] flex items-center justify-center text-[var(--on-accent)] font-bold transition"
                           title="Increase by 1"
                         >
                           <Plus className="w-3 h-3" />
@@ -1034,7 +942,7 @@ export default function FoodsAndPantryPage() {
       {/* TAB 4: What Can I Make? */}
       {activeTab === "what-can-i-make" && (
         <div className="space-y-4 animate-in fade-in duration-300">
-          <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] text-xs text-[var(--text-primary)] flex items-center justify-between shadow-xs">
+          <div className="p-5 rounded-3xl bg-[var(--surface)] text-xs text-[var(--text-primary)] flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <ChefHat className="w-5 h-5 text-[var(--accent)] shrink-0" />
               <span>
@@ -1043,7 +951,7 @@ export default function FoodsAndPantryPage() {
             </div>
             <button
               onClick={fetchWhatCanIMake}
-              className="text-xs font-semibold text-[var(--accent)] hover:underline"
+              className="text-xs font-semibold text-[var(--accent)] hover:underline cursor-pointer"
             >
               Refresh
             </button>
@@ -1055,7 +963,7 @@ export default function FoodsAndPantryPage() {
               <p>Matching pantry against recipes...</p>
             </div>
           ) : recipeMatches.length === 0 ? (
-            <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-2">
+            <div className="p-12 text-center rounded-3xl bg-[var(--surface)] space-y-2">
               <Package className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
               <h3 className="font-semibold text-sm text-[var(--text-primary)]">No recipe matches found</h3>
               <p className="text-xs text-[var(--text-secondary)]">
@@ -1072,8 +980,8 @@ export default function FoodsAndPantryPage() {
                   <div
                     key={r.id}
                     className={cn(
-                      "p-5 rounded-2xl border bg-[var(--surface)] shadow-xs flex flex-col justify-between space-y-3 transition",
-                      is100 ? "border-[var(--accent)]" : "border-[var(--border)]"
+                      "p-6 rounded-3xl bg-[var(--surface)] flex flex-col justify-between space-y-3 transition",
+                      is100 ? "ring-2 ring-[var(--accent)]" : ""
                     )}
                   >
                     <div>
@@ -1088,10 +996,10 @@ export default function FoodsAndPantryPage() {
                           className={cn(
                             "px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 font-tabular",
                             is100
-                              ? "bg-[var(--accent)] text-white"
+                              ? "bg-[var(--accent)] text-[var(--on-accent)]"
                               : match.matchPercentage >= 70
                               ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
-                              : "bg-[var(--background)] text-[var(--text-secondary)] border border-[var(--border)]"
+                              : "bg-[var(--background)] text-[var(--text-secondary)]"
                           )}
                         >
                           {match.matchPercentage}% available
@@ -1163,22 +1071,22 @@ export default function FoodsAndPantryPage() {
           onClick={() => setSelectedFoodDetails(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--background)] text-[var(--accent)]">
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[var(--background)] text-[var(--accent)]">
                     {selectedFoodDetails.category}
                   </span>
                   {selectedFoodDetails.brand && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[var(--background)] text-[var(--text-secondary)]">
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[var(--background)] text-[var(--text-secondary)]">
                       {selectedFoodDetails.brand}
                     </span>
                   )}
                   {selectedFoodDetails.source === "SCANNED" && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400">
                       Scanned Label
                     </span>
                   )}
@@ -1189,13 +1097,13 @@ export default function FoodsAndPantryPage() {
               </div>
               <button
                 onClick={() => setSelectedFoodDetails(null)}
-                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                className="p-1.5 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-3 rounded-xl bg-[var(--background)] text-xs text-[var(--text-secondary)] space-y-1">
+            <div className="p-4 rounded-2xl bg-[var(--background)] text-xs text-[var(--text-secondary)] space-y-1">
               <div>
                 Serving:{" "}
                 <strong className="text-[var(--text-primary)]">
@@ -1209,9 +1117,9 @@ export default function FoodsAndPantryPage() {
             </div>
 
             {/* Hierarchical Nutrition Facts Table */}
-            <div className="border border-[var(--border)] rounded-xl p-4 bg-[var(--background)]/50 space-y-2.5">
+            <div className="rounded-2xl p-4 bg-[var(--background)] space-y-2.5">
               <div className="flex items-baseline justify-between border-b border-[var(--border)] pb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                <span className="text-xs font-semibold text-[var(--text-secondary)]">
                   Nutrition Facts
                 </span>
                 <span className="text-[11px] text-[var(--text-secondary)] font-medium">
@@ -1319,7 +1227,7 @@ export default function FoodsAndPantryPage() {
                   setFoodToEdit(target);
                   setIsEditFoodModalOpen(true);
                 }}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--surface)] text-xs font-semibold text-[var(--text-primary)] transition cursor-pointer"
+                className="inline-flex items-center space-x-1.5 px-4 min-h-[44px] rounded-full bg-[var(--background)] hover:bg-[var(--border)] text-xs font-semibold text-[var(--text-primary)] transition cursor-pointer"
               >
                 <Edit2 className="w-3.5 h-3.5 text-[var(--accent)]" />
                 <span>Edit Food</span>
@@ -1327,7 +1235,7 @@ export default function FoodsAndPantryPage() {
               <button
                 type="button"
                 onClick={() => setSelectedFoodDetails(null)}
-                className="px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs cursor-pointer transition"
+                className="px-5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs cursor-pointer transition"
               >
                 Close
               </button>
@@ -1336,201 +1244,29 @@ export default function FoodsAndPantryPage() {
         </div>
       )}
 
-      {/* Modal: External Food Lookup (USDA & Open Food Facts) */}
-      {isExternalModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
-          onClick={() => setIsExternalModalOpen(false)}
-        >
-          <div
-            className="w-full max-w-2xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-base text-[var(--text-primary)] flex items-center gap-2">
-                  <Database className="w-4 h-4 text-[var(--accent)]" />
-                  <span>External Food Lookup</span>
-                </h3>
-                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                  Search whole ingredients via <strong>USDA FoodData Central</strong> and packaged goods via <strong>Open Food Facts</strong>.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsExternalModalOpen(false)}
-                className="p-2 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Search Input Bar */}
-            <form onSubmit={handleSearchExternal} className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-[var(--text-secondary)]" />
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="e.g. Chicken breast raw, brown rice, oats..."
-                  value={externalQuery}
-                  onChange={(e) => setExternalQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isSearchingExternal || !externalQuery.trim()}
-                className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs shadow-xs transition disabled:opacity-50"
-              >
-                {isSearchingExternal ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Searching...</span>
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4" />
-                    <span>Search</span>
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Source Filter Tags */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-[var(--text-secondary)] font-medium">Source:</span>
-              <button
-                type="button"
-                onClick={() => setExternalSourceFilter("all")}
-                className={cn(
-                  "px-2.5 py-1 rounded-lg transition font-medium",
-                  externalSourceFilter === "all"
-                    ? "bg-[var(--accent)] text-white"
-                    : "bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)]"
-                )}
-              >
-                All Sources
-              </button>
-              <button
-                type="button"
-                onClick={() => setExternalSourceFilter("usda")}
-                className={cn(
-                  "px-2.5 py-1 rounded-lg transition font-medium",
-                  externalSourceFilter === "usda"
-                    ? "bg-[var(--accent)] text-white"
-                    : "bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)]"
-                )}
-              >
-                USDA (Whole / Raw)
-              </button>
-              <button
-                type="button"
-                onClick={() => setExternalSourceFilter("openfoodfacts")}
-                className={cn(
-                  "px-2.5 py-1 rounded-lg transition font-medium",
-                  externalSourceFilter === "openfoodfacts"
-                    ? "bg-[var(--accent)] text-white"
-                    : "bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)]"
-                )}
-              >
-                Open Food Facts (Branded)
-              </button>
-            </div>
-
-            {/* Results List */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[220px] divide-y divide-[var(--border)] border border-[var(--border)] rounded-xl bg-[var(--background)]/30 p-2">
-              {isSearchingExternal ? (
-                <div className="py-16 text-center text-xs text-[var(--text-secondary)] space-y-2">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-[var(--accent)]" />
-                  <p>Querying USDA FoodData Central and Open Food Facts...</p>
-                </div>
-              ) : externalError ? (
-                <div className="py-12 text-center text-xs text-[var(--text-secondary)] space-y-2">
-                  <Info className="w-5 h-5 mx-auto text-[var(--text-secondary)]" />
-                  <p>{externalError}</p>
-                </div>
-              ) : filteredExternalResults.length === 0 ? (
-                <div className="py-12 text-center text-xs text-[var(--text-secondary)] space-y-1">
-                  <p className="font-medium text-[var(--text-primary)]">Ready to search</p>
-                  <p>Type an ingredient above to find nutrition data per 100g.</p>
-                </div>
-              ) : (
-                filteredExternalResults.map((candidate) => {
-                  const isImported = importedIds.has(candidate.id);
-                  const isImporting = importingId === candidate.id;
-
-                  return (
-                    <div
-                      key={candidate.id}
-                      className="pt-2 pb-2 first:pt-1 last:pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-xs text-[var(--text-primary)]">
-                            {candidate.name}
-                          </span>
-                          <span
-                            className={cn(
-                              "text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded",
-                              candidate.source === "usda"
-                                ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
-                                : "bg-[#E6EEF5] text-[#4C6E8C] dark:bg-[#1A2633] dark:text-[#8BB4D9]"
-                            )}
-                          >
-                            {candidate.source === "usda" ? "USDA" : "Open Food Facts"}
-                          </span>
-                          {candidate.rawOrCooked && candidate.rawOrCooked !== "unspecified" && (
-                            <span className="text-[10px] font-medium uppercase px-1.5 py-0.5 rounded bg-[var(--surface)] border border-[var(--border)] text-[var(--text-secondary)]">
-                              {candidate.rawOrCooked}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-2 text-[11px] text-[var(--text-secondary)]">
-                          <span>{candidate.caloriesPer100g} kcal</span>
-                          <span>•</span>
-                          <span>{candidate.proteinPer100g}g Pro</span>
-                          <span>•</span>
-                          <span>{candidate.carbsPer100g}g Carb</span>
-                          <span>•</span>
-                          <span>{candidate.fatPer100g}g Fat</span>
-                          <span>(per 100g)</span>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        disabled={isImported || isImporting}
-                        onClick={() => handleImportCandidate(candidate)}
-                        className={cn(
-                          "px-3 py-1.5 rounded-xl font-medium text-xs flex items-center justify-center space-x-1 transition shrink-0",
-                          isImported
-                            ? "bg-[var(--surface)] text-[var(--accent)] border border-[var(--border)] cursor-default"
-                            : "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-xs"
-                        )}
-                      >
-                        {isImporting ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : isImported ? (
-                          <>
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Imported</span>
-                          </>
-                        ) : (
-                          <>
-                            <DownloadCloud className="w-3.5 h-3.5" />
-                            <span>Import</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Unified Multi-Provider Food Search Modal */}
+      <UnifiedFoodSearchModal
+        isOpen={isExternalModalOpen}
+        onClose={() => setIsExternalModalOpen(false)}
+        initialQuery={foodSearch}
+        onFoodImported={() => {
+          fetchFoods();
+          fetchPantry();
+        }}
+        onOpenBarcodeScanner={() => {
+          setIsExternalModalOpen(false);
+          setScannerMode("food");
+          setIsScannerOpen(true);
+        }}
+        onOpenNutritionScanner={() => {
+          setIsExternalModalOpen(false);
+          setIsNutritionScannerOpen(true);
+        }}
+        onOpenManualEntry={() => {
+          setIsExternalModalOpen(false);
+          setIsAddFoodModalOpen(true);
+        }}
+      />
 
       {/* Modal: Add Custom Food */}
       {isAddFoodModalOpen && (
@@ -1539,7 +1275,7 @@ export default function FoodsAndPantryPage() {
           onClick={() => setIsAddFoodModalOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-lg rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
@@ -1549,17 +1285,17 @@ export default function FoodsAndPantryPage() {
               <button
                 type="button"
                 onClick={() => setIsAddFoodModalOpen(false)}
-                className="p-1 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                className="p-1.5 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Entry Mode Switcher */}
-            <div className="flex rounded-xl bg-[var(--background)] p-1 border border-[var(--border)] text-xs">
+            <div className="flex rounded-full bg-[var(--background)] p-1 text-xs">
               <button
                 type="button"
-                className="flex-1 py-1.5 rounded-lg font-semibold bg-[var(--surface)] text-[var(--text-primary)] shadow-xs transition"
+                className="flex-1 py-2 min-h-[40px] rounded-full font-semibold bg-[var(--surface)] text-[var(--text-primary)] transition cursor-pointer"
               >
                 Create Manually
               </button>
@@ -1569,7 +1305,7 @@ export default function FoodsAndPantryPage() {
                   setIsAddFoodModalOpen(false);
                   setIsNutritionScannerOpen(true);
                 }}
-                className="flex-1 py-1.5 rounded-lg font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center space-x-1.5 transition cursor-pointer"
+                className="flex-1 py-2 min-h-[40px] rounded-full font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center space-x-1.5 transition cursor-pointer"
               >
                 <Camera className="w-3.5 h-3.5 text-[var(--accent)]" />
                 <span>Scan Nutrition Label</span>
@@ -1894,13 +1630,13 @@ export default function FoodsAndPantryPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddFoodModalOpen(false)}
-                  className="px-3.5 py-2 rounded-xl border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
+                  className="px-5 min-h-[44px] rounded-full bg-[var(--background)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-semibold shadow-xs hover:bg-[var(--accent-hover)] transition cursor-pointer"
+                  className="px-6 min-h-[44px] rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold hover:bg-[var(--accent-hover)] transition cursor-pointer"
                 >
                   Save Food
                 </button>
@@ -1917,7 +1653,7 @@ export default function FoodsAndPantryPage() {
           onClick={() => setIsAddPantryModalOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-2xl space-y-4"
+            className="w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -1927,15 +1663,15 @@ export default function FoodsAndPantryPage() {
               <button
                 type="button"
                 onClick={() => setIsAddPantryModalOpen(false)}
-                className="p-1 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="p-1.5 rounded-full text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreatePantryItem} className="space-y-3">
+            <form onSubmit={handleCreatePantryItem} className="space-y-4">
               <div>
-                <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
                   Item Name *
                 </label>
                 <input
@@ -1944,13 +1680,13 @@ export default function FoodsAndPantryPage() {
                   placeholder="e.g. Basmati Rice"
                   value={pantryName}
                   onChange={(e) => setPantryName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  className="w-full px-4 py-2.5 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
                     Quantity
                   </label>
                   <input
@@ -1959,17 +1695,17 @@ export default function FoodsAndPantryPage() {
                     required
                     value={pantryQuantity}
                     onChange={(e) => setPantryQuantity(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-full px-4 py-2.5 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
                     Unit
                   </label>
                   <select
                     value={pantryUnit}
                     onChange={(e) => setPantryUnit(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-full px-4 py-2.5 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)] cursor-pointer"
                   >
                     <option value="g">Grams (g)</option>
                     <option value="kg">Kilograms (kg)</option>
@@ -1981,13 +1717,13 @@ export default function FoodsAndPantryPage() {
               </div>
 
               <div>
-                <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
                   Category
                 </label>
                 <select
                   value={pantryCategory}
                   onChange={(e) => setPantryCategory(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                  className="w-full px-4 py-2.5 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)] cursor-pointer"
                 >
                   <option value="Pantry">Pantry</option>
                   <option value="Produce">Produce</option>
@@ -2003,13 +1739,13 @@ export default function FoodsAndPantryPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddPantryModalOpen(false)}
-                  className="px-3.5 py-2 rounded-xl border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+                  className="px-5 min-h-[44px] rounded-full bg-[var(--background)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3.5 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-semibold shadow-xs hover:bg-[var(--accent-hover)] transition"
+                  className="px-6 min-h-[44px] rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold hover:bg-[var(--accent-hover)] transition cursor-pointer"
                 >
                   Add to Pantry
                 </button>

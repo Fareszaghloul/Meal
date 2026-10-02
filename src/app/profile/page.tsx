@@ -4,8 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import {
-  User as UserIcon,
-  Shield,
+  Scale,
   KeyRound,
   Trash2,
   CheckCircle2,
@@ -13,14 +12,7 @@ import {
   Loader2,
   Save,
   Lock,
-  Mail,
-  Scale,
-  Activity,
-  Calendar,
-  Sparkles,
   ArrowRight,
-  TrendingDown,
-  TrendingUp,
   Plus,
   Users,
 } from "lucide-react";
@@ -32,13 +24,6 @@ import { ProcessedWeightPoint, WeightAnalyticsSummary } from "@/lib/nutrition/we
 
 export default function ProfilePage() {
   const { user, refreshUser, logout } = useAuth();
-
-  // Email verification state
-  const [verificationStatus, setVerificationStatus] = useState<{
-    loading: boolean;
-    msg: string | null;
-    type: "success" | "error" | null;
-  }>({ loading: false, msg: null, type: null });
 
   // Profile info state
   const [displayName, setDisplayName] = useState(user?.displayName || "");
@@ -216,7 +201,7 @@ export default function ProfilePage() {
     if (displayBmi < 18.5) return { text: "Underweight (<18.5)", color: "text-[var(--macro-carbs)]" };
     if (displayBmi < 25.0) return { text: "Normal (18.5–24.9)", color: "text-[var(--accent)]" };
     if (displayBmi < 30.0) return { text: "Overweight (25–29.9)", color: "text-[var(--macro-carbs)]" };
-    return { text: "Obese (≥30.0)", color: "text-[var(--ui-error)]" };
+    return { text: "Obese (≥30.0)", color: "text-[var(--status-over-target)]" };
   }, [displayBmi]);
 
   // Transform weight entries into InBody entries list for chart
@@ -378,22 +363,20 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl pb-16">
+    <div className="space-y-8 max-w-5xl pb-16">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-            User Profile & Body Metrics
+          <p className="text-sm text-[var(--text-muted)] font-normal">Account & Body Profile</p>
+          <h1 className="text-[34px] leading-tight font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+            User Profile
           </h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Manage your physical stats, birthday, monthly InBody scan tracking, and account security
-          </p>
         </div>
 
         <button
           type="button"
           onClick={() => setIsLogModalOpen(true)}
-          className="inline-flex items-center space-x-2 px-3.5 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center justify-center space-x-2 px-5 min-h-[44px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-sm font-semibold rounded-full transition cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Log Weigh-In / InBody</span>
@@ -401,51 +384,42 @@ export default function ProfilePage() {
       </div>
 
       {/* Account Overview Header Card */}
-      <div className="p-6 bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-xs">
+      <div className="p-6 md:p-8 bg-[var(--surface)] rounded-3xl space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-5 pb-6 border-b border-[var(--border)]">
-          <div className="w-16 h-16 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center text-xl font-bold uppercase shadow-sm shrink-0">
+          <div className="w-16 h-16 rounded-full bg-[var(--lime)] text-[var(--on-lime)] flex items-center justify-center text-2xl font-bold uppercase shrink-0">
             {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center space-x-2">
-              <h2 className="text-lg font-bold text-[var(--text-primary)] truncate">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-bold text-[var(--text-primary)] truncate">
                 {user?.displayName || "User"}
               </h2>
-              <span
-                className={cn(
-                  "text-[10px] uppercase font-bold px-2 py-0.5 rounded-md shrink-0",
-                  user?.role === "admin"
-                    ? "bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]"
-                    : "bg-[var(--accent-subtle)] text-[var(--accent)]"
-                )}
-              >
-                {user?.role}
+              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] capitalize">
+                {user?.role || "Member"}
               </span>
-            </div>
-            <div className="flex items-center space-x-2 mt-0.5">
-              <span className="text-xs text-[var(--text-secondary)]">{user?.email}</span>
               {user?.emailVerified ? (
-                <span className="inline-flex items-center space-x-1 text-[10px] font-semibold text-[var(--ui-success)] bg-[var(--ui-success-bg)] px-2 py-0.5 rounded-full border border-[var(--ui-success-border)]">
-                  <CheckCircle2 className="w-3 h-3" />
+                <span className="inline-flex items-center space-x-1 text-xs font-semibold text-[var(--accent)] bg-[var(--accent-subtle)] px-3 py-1 rounded-full">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Verified</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center space-x-1 text-[10px] font-semibold text-[var(--macro-carbs)] bg-[var(--macro-carbs-bg)] px-2 py-0.5 rounded-full border border-[var(--macro-carbs-border)]">
-                  <AlertCircle className="w-3 h-3" />
+                <span className="inline-flex items-center space-x-1 text-xs font-semibold text-[var(--macro-carbs)] bg-[var(--macro-carbs-bg)] px-3 py-1 rounded-full">
+                  <AlertCircle className="w-3.5 h-3.5" />
                   <span>Unverified</span>
                 </span>
               )}
             </div>
+            <div className="mt-1 text-sm text-[var(--text-secondary)]">{user?.email}</div>
 
             {user?.role === "admin" && (
-              <div className="mt-2.5">
+              <div className="mt-3">
                 <Link
                   href="/admin"
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] hover:bg-[var(--surface)] text-[var(--accent)] border border-[var(--border)] text-xs font-semibold transition shadow-2xs"
+                  className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-[var(--background)] hover:bg-[var(--accent-subtle)] text-[var(--text-primary)] hover:text-[var(--accent)] text-xs font-semibold transition"
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span>User Management &amp; Add Accounts</span>
-                  <ArrowRight className="w-3 h-3 ml-0.5" />
+                  <span>Users &amp; accounts management</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
                 </Link>
               </div>
             )}
@@ -453,14 +427,14 @@ export default function ProfilePage() {
         </div>
 
         {/* Quick Name Form */}
-        <form onSubmit={handleUpdateProfile} className="mt-5 space-y-3 max-w-md">
+        <form onSubmit={handleUpdateProfile} className="space-y-3 max-w-md">
           {infoMsg && (
             <div
               className={cn(
-                "p-3 rounded-xl text-xs flex items-center space-x-2",
+                "p-3 rounded-2xl text-xs flex items-center space-x-2",
                 infoMsg.type === "success"
-                  ? "bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)]"
-                  : "bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)]"
+                  ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                  : "bg-[var(--macro-fat-bg)] text-[var(--status-over-target)]"
               )}
             >
               {infoMsg.type === "success" ? (
@@ -472,29 +446,27 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:items-end">
             <div className="flex-1">
-              <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
-                Display Name
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                Display name
               </label>
               <input
                 type="text"
                 required
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-xl text-xs font-semibold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition"
+                className="w-full px-4 min-h-[44px] bg-[var(--background)] rounded-2xl text-sm font-medium text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
               />
             </div>
-            <div className="self-end">
-              <button
-                type="submit"
-                disabled={infoLoading}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
-              >
-                {infoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                <span>Save</span>
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={infoLoading}
+              className="inline-flex items-center justify-center space-x-1.5 px-6 min-h-[44px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold rounded-full transition disabled:opacity-60 cursor-pointer shrink-0"
+            >
+              {infoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              <span>Save name</span>
+            </button>
           </div>
         </form>
       </div>
@@ -502,37 +474,37 @@ export default function ProfilePage() {
       {/* Body & Health Metrics Summary Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Weight */}
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-1">
-          <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
-            Current Weight
-          </span>
-          <div className="text-xl font-bold text-[var(--text-primary)] font-tabular">
+        <div className="p-5 rounded-3xl bg-[var(--surface)] space-y-1">
+          <span className="text-xs text-[var(--text-muted)] block">Current weight</span>
+          <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
             {currentWeightInput || "—"} <span className="text-xs font-normal text-[var(--text-secondary)]">{weightUnit}</span>
           </div>
-          <span className="text-[10px] text-[var(--text-muted)] block truncate">
-            {weightAnalytics?.latest7dAvgKg ? `7-day avg: ${isImperial ? Math.round(weightAnalytics.latest7dAvgKg * 2.20462 * 10) / 10 : weightAnalytics.latest7dAvgKg} ${weightUnit}` : "Logged weight"}
+          <span className="text-xs text-[var(--text-muted)] block truncate">
+            {weightAnalytics?.latest7dAvgKg ? `7-day: ${isImperial ? Math.round(weightAnalytics.latest7dAvgKg * 2.20462 * 10) / 10 : weightAnalytics.latest7dAvgKg} ${weightUnit}` : "Logged weight"}
           </span>
         </div>
 
         {/* Body Fat % */}
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-1">
-          <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
-            Body Fat (InBody)
-          </span>
-          <div className="text-xl font-bold text-[var(--macro-protein)] font-tabular">
+        <div className="p-5 rounded-3xl bg-[var(--surface)] space-y-1">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--macro-protein)] shrink-0" />
+            <span className="text-xs text-[var(--text-muted)] block truncate">Body fat</span>
+          </div>
+          <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
             {bodyFatPct ? `${bodyFatPct}%` : "—"}
           </div>
-          <span className="text-[10px] text-[var(--text-muted)] block">
+          <span className="text-xs text-[var(--text-muted)] block">
             {inBodyEntries.filter(e => e.bodyFatPct).length > 0 ? `${inBodyEntries.filter(e => e.bodyFatPct).length} scans logged` : "Monthly scan"}
           </span>
         </div>
 
         {/* SMM (Skeletal Muscle Mass) */}
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-1">
-          <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
-            SMM (Muscle)
-          </span>
-          <div className="text-xl font-bold text-[var(--accent)] font-tabular">
+        <div className="p-5 rounded-3xl bg-[var(--surface)] space-y-1">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--accent)] shrink-0" />
+            <span className="text-xs text-[var(--text-muted)] block truncate">SMM (Muscle)</span>
+          </div>
+          <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
             {smmInput !== "" ? (
               <>
                 {smmInput} <span className="text-xs font-normal text-[var(--text-secondary)]">{weightUnit}</span>
@@ -541,30 +513,30 @@ export default function ProfilePage() {
               "—"
             )}
           </div>
-          <span className="text-[10px] text-[var(--text-muted)] block">
-            InBody muscle mass
-          </span>
+          <span className="text-xs text-[var(--text-muted)] block">InBody scan</span>
         </div>
 
         {/* BMI */}
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-1">
-          <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
-            BMI
-          </span>
-          <div className="text-xl font-bold text-[var(--macro-carbs)] font-tabular">
+        <div className="p-5 rounded-3xl bg-[var(--surface)] space-y-1">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--macro-carbs)] shrink-0" />
+            <span className="text-xs text-[var(--text-muted)] block truncate">BMI</span>
+          </div>
+          <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
             {displayBmi || "—"}
           </div>
-          <span className={cn("text-[10px] font-medium block truncate", bmiCategory?.color || "text-[var(--text-muted)]")}>
-            {bmiCategory ? bmiCategory.text : "Body Mass Index"}
+          <span className={cn("text-xs font-medium block truncate", bmiCategory?.color || "text-[var(--text-muted)]")}>
+            {bmiCategory ? bmiCategory.text : "Index"}
           </span>
         </div>
 
         {/* Lean Body Mass */}
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-1">
-          <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
-            Lean Mass
-          </span>
-          <div className="text-xl font-bold text-[var(--macro-protein)] font-tabular">
+        <div className="p-5 rounded-3xl bg-[var(--surface)] space-y-1">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--macro-protein)] shrink-0" />
+            <span className="text-xs text-[var(--text-muted)] block truncate">Lean mass</span>
+          </div>
+          <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
             {leanMassKg !== null ? (
               <>
                 {isImperial ? Math.round(leanMassKg * 2.20462 * 10) / 10 : leanMassKg}{" "}
@@ -574,17 +546,16 @@ export default function ProfilePage() {
               "—"
             )}
           </div>
-          <span className="text-[10px] text-[var(--text-muted)] block">
-            Muscle & lean tissue
-          </span>
+          <span className="text-xs text-[var(--text-muted)] block truncate">Lean tissue</span>
         </div>
 
         {/* Total Fat Mass */}
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-1">
-          <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block">
-            Total Fat Mass
-          </span>
-          <div className="text-xl font-bold text-[var(--macro-fat)] font-tabular">
+        <div className="p-5 rounded-3xl bg-[var(--surface)] space-y-1">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-2 h-2 rounded-full bg-[var(--macro-fat)] shrink-0" />
+            <span className="text-xs text-[var(--text-muted)] block truncate">Fat mass</span>
+          </div>
+          <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
             {fatMassKg !== null ? (
               <>
                 {isImperial ? Math.round(fatMassKg * 2.20462 * 10) / 10 : fatMassKg}{" "}
@@ -594,32 +565,62 @@ export default function ProfilePage() {
               "—"
             )}
           </div>
-          <span className="text-[10px] text-[var(--text-muted)] block">
-            Body fat weight
-          </span>
+          <span className="text-xs text-[var(--text-muted)] block truncate">Body fat</span>
         </div>
       </div>
 
       {/* Body & Health Profile Form Card */}
-      <div className="p-6 bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-xs space-y-5">
-        <div className="flex items-center space-x-2">
-          <Scale className="w-5 h-5 text-[var(--accent)]" />
-          <div>
-            <h2 className="text-base font-bold text-[var(--text-primary)]">Body & Physical Profile</h2>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Your birthday automatically increments your age every year. Height, weight, and InBody fat %, SMM, and BMI tune your metrics and targets.
-            </p>
+      <div className="p-6 md:p-8 bg-[var(--surface)] rounded-3xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-[var(--background)] flex items-center justify-center text-[var(--accent)] shrink-0">
+              <Scale className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-[var(--text-primary)]">Body & Physical Profile</h2>
+              <p className="text-xs text-[var(--text-secondary)]">
+                Birthday automatically tracks age. Height, weight, InBody stats calculate accurate TDEE.
+              </p>
+            </div>
+          </div>
+
+          {/* Units Segmented Control */}
+          <div className="flex bg-[var(--background)] p-1 rounded-full self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setMeasurementSystem("metric")}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-xs font-medium transition cursor-pointer",
+                measurementSystem === "metric"
+                  ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              Metric (kg, cm)
+            </button>
+            <button
+              type="button"
+              onClick={() => setMeasurementSystem("imperial")}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-xs font-medium transition cursor-pointer",
+                measurementSystem === "imperial"
+                  ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              Imperial (lbs, ft)
+            </button>
           </div>
         </div>
 
-        <form onSubmit={handleSaveBodyProfile} className="space-y-4">
+        <form onSubmit={handleSaveBodyProfile} className="space-y-6">
           {bodyMsg && (
             <div
               className={cn(
-                "p-3 rounded-xl text-xs flex items-center space-x-2",
+                "p-3 rounded-2xl text-xs flex items-center space-x-2",
                 bodyMsg.type === "success"
-                  ? "bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)]"
-                  : "bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)]"
+                  ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                  : "bg-[var(--macro-fat-bg)] text-[var(--status-over-target)]"
               )}
             >
               {bodyMsg.type === "success" ? (
@@ -634,13 +635,13 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {/* Sex */}
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-                Biological Sex
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                Biological sex
               </label>
               <select
                 value={sex}
                 onChange={(e) => setSex(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                className="w-full px-4 min-h-[44px] text-sm font-medium rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
               >
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -650,38 +651,35 @@ export default function ProfilePage() {
             {/* Birthday with Auto-Adjusting Age */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-[var(--text-secondary)]">
+                <label className="block text-xs font-medium text-[var(--text-secondary)]">
                   Birthday
                 </label>
-                <span className="text-[10px] font-semibold text-[var(--accent)] bg-[var(--accent-subtle)] px-1.5 py-0.5 rounded">
-                  Age: {computedAgeFromBirthDate} yrs
+                <span className="text-[11px] font-semibold text-[var(--accent)] bg-[var(--accent-subtle)] px-2 py-0.5 rounded-full">
+                  {computedAgeFromBirthDate} yrs
                 </span>
               </div>
               <input
                 type="date"
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                className="w-full px-4 min-h-[44px] text-sm font-medium rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
               />
-              <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                Auto-adjusts on your birthday
-              </p>
             </div>
 
             {/* Height */}
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                 Height ({heightUnit})
               </label>
               {isImperial ? (
-                <div className="flex items-center space-x-1.5">
+                <div className="flex items-center space-x-2">
                   <input
                     type="number"
                     min={3}
                     max={7}
                     value={heightFeet}
                     onChange={(e) => setHeightFeet(e.target.value)}
-                    className="w-1/2 px-2 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-1/2 px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
                     placeholder="ft"
                   />
                   <span className="text-xs text-[var(--text-secondary)]">ft</span>
@@ -691,7 +689,7 @@ export default function ProfilePage() {
                     max={11}
                     value={heightInches}
                     onChange={(e) => setHeightInches(e.target.value)}
-                    className="w-1/2 px-2 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                    className="w-1/2 px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
                     placeholder="in"
                   />
                   <span className="text-xs text-[var(--text-secondary)]">in</span>
@@ -704,15 +702,15 @@ export default function ProfilePage() {
                   required
                   value={heightCm}
                   onChange={(e) => setHeightCm(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                  className="w-full px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
                 />
               )}
             </div>
 
             {/* Current Weight */}
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-                Current Weight ({weightUnit})
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                Current weight ({weightUnit})
               </label>
               <input
                 type="number"
@@ -722,14 +720,14 @@ export default function ProfilePage() {
                 required
                 value={currentWeightInput}
                 onChange={(e) => setCurrentWeightInput(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                className="w-full px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
               />
             </div>
 
             {/* Body Fat % (InBody scan) */}
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-                Monthly InBody Body Fat %
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                InBody body fat %
               </label>
               <div className="relative">
                 <input
@@ -740,21 +738,18 @@ export default function ProfilePage() {
                   placeholder="e.g. 15.5"
                   value={bodyFatPct}
                   onChange={(e) => setBodyFatPct(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                  className="w-full px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] font-medium">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] font-medium">
                   %
                 </span>
               </div>
-              <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                Updated from monthly scans
-              </p>
             </div>
 
             {/* SMM (Skeletal Muscle Mass) */}
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-                Monthly InBody SMM ({weightUnit})
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                InBody SMM ({weightUnit})
               </label>
               <div className="relative">
                 <input
@@ -765,28 +760,25 @@ export default function ProfilePage() {
                   placeholder={isImperial ? "e.g. 76.5" : "e.g. 34.8"}
                   value={smmInput}
                   onChange={(e) => setSmmInput(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                  className="w-full px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] font-medium">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] font-medium">
                   {weightUnit}
                 </span>
               </div>
-              <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                Skeletal muscle mass
-              </p>
             </div>
 
             {/* BMI (Body Mass Index) */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-[var(--text-secondary)]">
-                  Monthly InBody BMI
+                <label className="block text-xs font-medium text-[var(--text-secondary)]">
+                  InBody BMI
                 </label>
                 {calculatedBmiFromStats && (
                   <button
                     type="button"
                     onClick={() => setBmiInput(String(calculatedBmiFromStats))}
-                    className="text-[10px] text-[var(--accent)] hover:underline font-medium cursor-pointer"
+                    className="text-xs text-[var(--accent)] hover:underline font-medium cursor-pointer"
                   >
                     Auto: {calculatedBmiFromStats}
                   </button>
@@ -800,33 +792,15 @@ export default function ProfilePage() {
                 placeholder={calculatedBmiFromStats ? String(calculatedBmiFromStats) : "e.g. 23.8"}
                 value={bmiInput}
                 onChange={(e) => setBmiInput(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:border-[var(--accent)]"
+                className="w-full px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
               />
-              <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                {bmiCategory ? bmiCategory.text : "Body mass index"}
-              </p>
-            </div>
-
-            {/* Measurement System Selector */}
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-                Measurement Units
-              </label>
-              <select
-                value={measurementSystem}
-                onChange={(e) => setMeasurementSystem(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-              >
-                <option value="metric">Metric (kg, cm)</option>
-                <option value="imperial">Imperial (lbs, ft/in)</option>
-              </select>
             </div>
           </div>
 
-          <div className="pt-2 flex items-center justify-between border-t border-[var(--border)]">
+          <div className="pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-[var(--border)]">
             <Link
               href="/settings"
-              className="text-xs font-medium text-[var(--accent)] hover:underline inline-flex items-center gap-1"
+              className="text-xs font-semibold text-[var(--accent)] hover:underline inline-flex items-center gap-1.5"
             >
               <span>Adjust nutrition targets & TDEE</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -835,38 +809,36 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={bodyLoading}
-              className="inline-flex items-center space-x-2 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
+              className="inline-flex items-center space-x-2 px-6 min-h-[44px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold rounded-full transition disabled:opacity-60 cursor-pointer"
             >
               {bodyLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              <span>Save Body Profile</span>
+              <span>Save body profile</span>
             </button>
           </div>
         </form>
       </div>
 
-      {/* Visual Trends Section: Weight Trend & InBody Body Fat Graphs */}
+      {/* Visual Trends Section */}
       <div className="space-y-6">
         <div>
-          <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
+          <p className="text-sm text-[var(--text-muted)] font-normal">Analytics & Progress</p>
+          <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
             Composition & Progress Charts
           </h2>
-          <p className="text-xs text-[var(--text-secondary)]">
-            Visual graphs for your daily/weekly scale weight and monthly InBody body fat percentage scans
-          </p>
         </div>
 
         {/* 1. Body Fat % InBody Trend Chart */}
         <BodyFatTrendChart entries={inBodyEntries} measurementSystem={measurementSystem} />
 
         {/* 2. Scale Weight Trend Chart */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm text-[var(--text-primary)]">
               Weight Trend & 7-Day Average
             </h3>
             <Link
               href="/weight"
-              className="text-xs font-medium text-[var(--accent)] hover:underline inline-flex items-center gap-1"
+              className="text-xs font-semibold text-[var(--accent)] hover:underline inline-flex items-center gap-1"
             >
               <span>Open full weight log</span>
               <ArrowRight className="w-3 h-3" />
@@ -881,23 +853,27 @@ export default function ProfilePage() {
       </div>
 
       {/* Password Change Card */}
-      <div className="p-6 bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-xs">
-        <div className="flex items-center space-x-2.5 mb-1">
-          <KeyRound className="w-5 h-5 text-[var(--accent)]" />
-          <h2 className="text-base font-bold text-[var(--text-primary)]">Change Password</h2>
+      <div className="p-6 md:p-8 bg-[var(--surface)] rounded-3xl space-y-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-2xl bg-[var(--background)] flex items-center justify-center text-[var(--accent)] shrink-0">
+            <KeyRound className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">Change Password</h2>
+            <p className="text-xs text-[var(--text-secondary)]">
+              Updating your password will automatically invalidate other active sessions.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-[var(--text-secondary)] mb-5">
-          Updating your password will automatically invalidate your other active sessions for security.
-        </p>
 
-        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md pt-2">
           {pwdMsg && (
             <div
               className={cn(
-                "p-3 rounded-xl text-xs flex items-center space-x-2",
+                "p-3 rounded-2xl text-xs flex items-center space-x-2",
                 pwdMsg.type === "success"
-                  ? "bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)]"
-                  : "bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)]"
+                  ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                  : "bg-[var(--macro-fat-bg)] text-[var(--status-over-target)]"
               )}
             >
               {pwdMsg.type === "success" ? (
@@ -910,8 +886,8 @@ export default function ProfilePage() {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-              Current Password
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+              Current password
             </label>
             <input
               type="password"
@@ -919,13 +895,13 @@ export default function ProfilePage() {
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3.5 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-xl text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition"
+              className="w-full px-4 min-h-[44px] bg-[var(--background)] rounded-2xl text-sm text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-              New Password (min. 8 characters)
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+              New password (min. 8 characters)
             </label>
             <input
               type="password"
@@ -933,13 +909,13 @@ export default function ProfilePage() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3.5 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-xl text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition"
+              className="w-full px-4 min-h-[44px] bg-[var(--background)] rounded-2xl text-sm text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-              Confirm New Password
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+              Confirm new password
             </label>
             <input
               type="password"
@@ -947,42 +923,46 @@ export default function ProfilePage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3.5 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-xl text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition"
+              className="w-full px-4 min-h-[44px] bg-[var(--background)] rounded-2xl text-sm text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
             />
           </div>
 
           <button
             type="submit"
             disabled={pwdLoading}
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
+            className="inline-flex items-center space-x-2 px-6 min-h-[44px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold rounded-full transition disabled:opacity-60 cursor-pointer"
           >
             {pwdLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
-            <span>Update Password</span>
+            <span>Update password</span>
           </button>
         </form>
       </div>
 
-      {/* Danger Zone */}
-      <div className="p-6 bg-[var(--surface)] border border-red-500/20 rounded-2xl shadow-xs">
-        <div className="flex items-center space-x-2.5 mb-1 text-red-500">
-          <Trash2 className="w-5 h-5" />
-          <h2 className="text-base font-bold">Delete Account</h2>
+      {/* Delete Account Section */}
+      <div className="p-6 md:p-8 bg-[var(--surface)] rounded-3xl space-y-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-2xl bg-[var(--macro-fat-bg)] flex items-center justify-center text-[var(--status-over-target)] shrink-0">
+            <Trash2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-[var(--status-over-target)]">Delete Account</h2>
+            <p className="text-xs text-[var(--text-secondary)]">
+              Permanently delete your account and all associated recipes, meal plans, pantry items, and logs. This action is irreversible.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-[var(--text-secondary)] mb-4">
-          Permanently delete your account and all associated recipes, meal plans, pantry items, and logs. This action is irreversible.
-        </p>
 
         {showDeleteConfirm ? (
           <form onSubmit={handleDeleteAccount} className="space-y-4 max-w-md pt-2">
             {deleteMsg && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs flex items-center space-x-2">
+              <div className="p-3 rounded-2xl bg-[var(--macro-fat-bg)] text-[var(--status-over-target)] text-xs flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{deleteMsg}</span>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-red-500 mb-1.5">
+              <label className="block text-xs font-medium text-[var(--status-over-target)] mb-1.5">
                 Confirm your password to delete your account:
               </label>
               <input
@@ -991,36 +971,38 @@ export default function ProfilePage() {
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3.5 py-2.5 bg-[var(--background)] border border-red-500/30 rounded-xl text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                className="w-full px-4 min-h-[44px] bg-[var(--background)] rounded-2xl text-sm text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--status-over-target)] transition"
               />
             </div>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="submit"
                 disabled={deleteLoading}
-                className="inline-flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
+                className="inline-flex items-center space-x-2 px-6 min-h-[44px] bg-[var(--status-over-target)] text-white text-xs font-semibold rounded-full transition disabled:opacity-60 cursor-pointer"
               >
                 {deleteLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                <span>Permanently Delete My Account</span>
+                <span>Permanently delete my account</span>
               </button>
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl transition cursor-pointer"
+                className="px-5 min-h-[44px] bg-[var(--background)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full transition cursor-pointer"
               >
                 Cancel
               </button>
             </div>
           </form>
         ) : (
-          <button
-            type="button"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-4 py-2 border border-red-500/30 text-red-500 hover:bg-red-500/10 text-xs font-semibold rounded-xl transition cursor-pointer"
-          >
-            Delete Account...
-          </button>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="inline-flex items-center px-6 min-h-[44px] border border-[var(--status-over-target)] text-[var(--status-over-target)] hover:bg-[var(--macro-fat-bg)] text-xs font-semibold rounded-full transition cursor-pointer"
+            >
+              Delete account...
+            </button>
+          </div>
         )}
       </div>
 

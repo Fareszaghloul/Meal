@@ -9,7 +9,6 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
-  Loader2,
   UserCheck,
   UserX,
   RefreshCw,
@@ -17,8 +16,6 @@ import {
   UserPlus,
   Search,
   ShieldCheck,
-  Filter,
-  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CreateUserModal } from "@/components/admin/CreateUserModal";
@@ -92,10 +89,10 @@ export default function AdminPage() {
 
   if (user && user.role !== "admin") {
     return (
-      <div className="p-8 text-center max-w-md mx-auto bg-[var(--surface)] border border-red-500/30 rounded-2xl">
-        <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-3" />
+      <div className="p-8 text-center max-w-md mx-auto bg-[var(--surface)] rounded-3xl space-y-4">
+        <ShieldAlert className="w-12 h-12 text-[var(--status-over-target)] mx-auto" />
         <h1 className="text-xl font-bold text-[var(--text-primary)]">Access Forbidden</h1>
-        <p className="text-xs text-[var(--text-secondary)] mt-2">
+        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
           You do not have administrative privileges to view this page. All administrative operations are enforced on the server.
         </p>
       </div>
@@ -197,137 +194,135 @@ export default function AdminPage() {
   const totalRecipes = users.reduce((acc, u) => acc + (u._count?.recipes || 0), 0);
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-8 pb-16 max-w-6xl">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+          <p className="text-sm text-[var(--text-muted)] font-normal">Administration</p>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-[34px] leading-tight font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
               User Management
             </h1>
-            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]">
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)]">
               Admin Only
             </span>
           </div>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Add people, create isolated accounts with separate data, and manage user permissions
-          </p>
         </div>
 
-        <div className="flex items-center space-x-2.5 self-start sm:self-auto">
+        <div className="flex items-center space-x-3 self-start sm:self-auto flex-wrap">
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold rounded-xl transition cursor-pointer shadow-xs"
+            className="inline-flex items-center justify-center space-x-2 px-5 min-h-[44px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold rounded-full transition cursor-pointer"
           >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>Add New User</span>
+            <UserPlus className="w-4 h-4" />
+            <span>Add new user</span>
           </button>
 
           <button
             type="button"
             onClick={fetchUsers}
             disabled={loading}
-            className="inline-flex items-center space-x-1.5 px-3 py-2 bg-[var(--surface)] hover:bg-[var(--background)] border border-[var(--border)] text-xs font-semibold text-[var(--text-primary)] rounded-xl transition cursor-pointer"
+            className="inline-flex items-center justify-center space-x-2 px-4 min-h-[44px] bg-[var(--surface)] text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--accent-subtle)] rounded-full transition cursor-pointer"
             title="Refresh user list"
           >
-            <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
+            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
             <span>Refresh</span>
           </button>
         </div>
       </div>
 
       {/* Data Isolation Guarantee Callout */}
-      <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs flex items-start space-x-3.5">
-        <div className="w-8 h-8 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center shrink-0 mt-0.5">
-          <ShieldCheck className="w-4 h-4" />
+      <div className="p-6 rounded-3xl bg-[var(--surface)] flex items-start space-x-4">
+        <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center shrink-0">
+          <ShieldCheck className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-xs font-bold text-[var(--text-primary)]">
-            Separate &amp; Isolated Personal Data
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+            Separate &amp; isolated personal data
           </h3>
-          <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-relaxed">
-            Every user account created operates in its own separate data space. Recipes, meal plans, pantry inventory, body weight &amp; InBody measurements, and settings are completely private to each person.
+          <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+            Every user account operates in its own isolated workspace. Recipes, meal plans, pantry inventory, body weight and InBody measurements, and settings are strictly private to each person.
           </p>
         </div>
       </div>
 
-      {/* Metrics Row */}
+      {/* Metrics Row: 3 Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 bg-[var(--surface)] border border-[var(--border)] rounded-2xl flex items-center space-x-4 shadow-xs">
-          <div className="w-10 h-10 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-            <Users className="w-5 h-5" />
+        <div className="p-6 bg-[var(--surface)] rounded-3xl flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--background)] text-[var(--accent)] flex items-center justify-center shrink-0">
+            <Users className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-[var(--text-primary)]">{totalUsers}</div>
-            <div className="text-xs text-[var(--text-secondary)]">Registered Accounts</div>
+            <div className="text-3xl font-bold text-[var(--text-primary)] font-tabular">{totalUsers}</div>
+            <div className="text-xs text-[var(--text-muted)] mt-0.5">Registered accounts</div>
           </div>
         </div>
 
-        <div className="p-5 bg-[var(--surface)] border border-[var(--border)] rounded-2xl flex items-center space-x-4 shadow-xs">
-          <div className="w-10 h-10 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-            <Key className="w-5 h-5" />
+        <div className="p-6 bg-[var(--surface)] rounded-3xl flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--background)] text-[var(--accent)] flex items-center justify-center shrink-0">
+            <Key className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-[var(--text-primary)]">{activeSessions}</div>
-            <div className="text-xs text-[var(--text-secondary)]">Active Sessions</div>
+            <div className="text-3xl font-bold text-[var(--text-primary)] font-tabular">{activeSessions}</div>
+            <div className="text-xs text-[var(--text-muted)] mt-0.5">Active sessions</div>
           </div>
         </div>
 
-        <div className="p-5 bg-[var(--surface)] border border-[var(--border)] rounded-2xl flex items-center space-x-4 shadow-xs">
-          <div className="w-10 h-10 rounded-xl bg-[var(--macro-protein-bg)] text-[var(--macro-protein)] flex items-center justify-center">
-            <BookOpen className="w-5 h-5" />
+        <div className="p-6 bg-[var(--surface)] rounded-3xl flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--macro-protein-bg)] text-[var(--macro-protein)] flex items-center justify-center shrink-0">
+            <BookOpen className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-[var(--text-primary)]">{totalRecipes}</div>
-            <div className="text-xs text-[var(--text-secondary)]">User Recipes Created</div>
+            <div className="text-3xl font-bold text-[var(--text-primary)] font-tabular">{totalRecipes}</div>
+            <div className="text-xs text-[var(--text-muted)] mt-0.5">Recipes created</div>
           </div>
         </div>
       </div>
 
       {/* Notifications */}
       {actionError && (
-        <div className="p-3.5 rounded-xl bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)] text-xs flex items-center space-x-2">
+        <div className="p-4 rounded-2xl bg-[var(--macro-fat-bg)] text-[var(--status-over-target)] text-xs flex items-center space-x-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{actionError}</span>
         </div>
       )}
       {actionSuccess && (
-        <div className="p-3.5 rounded-xl bg-[var(--ui-success-bg)] border border-[var(--ui-success-border)] text-[var(--ui-success)] text-xs flex items-center space-x-2">
+        <div className="p-4 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] text-xs flex items-center space-x-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{actionSuccess}</span>
         </div>
       )}
 
       {/* Users Table Card */}
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-xs space-y-3">
+      <div className="bg-[var(--surface)] rounded-3xl p-6 md:p-8 space-y-6">
         {/* Table Header Controls: Search & Filters */}
-        <div className="p-4 sm:p-6 border-b border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-2">
-            <h2 className="text-sm font-bold text-[var(--text-primary)]">User Accounts</h2>
-            <span className="text-[10px] font-semibold text-[var(--text-secondary)] bg-[var(--background)] px-2 py-0.5 rounded-full border border-[var(--border)]">
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">User Accounts</h2>
+            <span className="text-xs font-medium text-[var(--text-muted)] bg-[var(--background)] px-3 py-1 rounded-full">
               {filteredUsers.length} of {users.length}
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             {/* Search Input */}
-            <div className="relative flex-1 sm:w-60">
+            <div className="relative flex-1 sm:w-64">
               <input
                 type="text"
                 placeholder="Search name or email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)] transition"
+                className="w-full pl-10 pr-4 min-h-[44px] rounded-full bg-[var(--background)] text-xs font-medium text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
               />
-              <Search className="w-3.5 h-3.5 text-[var(--text-secondary)] absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
             </div>
 
             {/* Role Filter */}
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as any)}
-              className="px-2.5 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+              className="px-4 min-h-[44px] rounded-full bg-[var(--background)] text-xs font-medium text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] cursor-pointer"
             >
               <option value="all">All Roles</option>
               <option value="user">Users</option>
@@ -338,7 +333,7 @@ export default function AdminPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-2.5 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+              className="px-4 min-h-[44px] rounded-full bg-[var(--background)] text-xs font-medium text-[var(--text-primary)] focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] cursor-pointer"
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -350,32 +345,32 @@ export default function AdminPage() {
         {/* Table Body */}
         <div className="overflow-x-auto">
           {filteredUsers.length === 0 ? (
-            <div className="py-12 text-center space-y-2">
-              <Users className="w-8 h-8 text-[var(--text-secondary)] opacity-30 mx-auto" />
-              <p className="text-xs font-semibold text-[var(--text-primary)]">No matching users found</p>
-              <p className="text-[11px] text-[var(--text-secondary)]">
+            <div className="py-16 text-center space-y-3">
+              <Users className="w-10 h-10 text-[var(--text-muted)] opacity-40 mx-auto" />
+              <p className="text-sm font-semibold text-[var(--text-primary)]">No matching users found</p>
+              <p className="text-xs text-[var(--text-secondary)]">
                 Try adjusting your search query or filters.
               </p>
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(true)}
-                className="mt-2 inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[var(--accent)] text-white text-xs font-semibold rounded-xl transition cursor-pointer"
+                className="mt-2 inline-flex items-center space-x-1.5 px-5 min-h-[44px] bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold rounded-full transition cursor-pointer"
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                <span>Create New User</span>
+                <span>Create new user</span>
               </button>
             </div>
           ) : (
             <table className="w-full text-left text-xs">
-              <thead className="bg-[var(--background)] border-b border-[var(--border)] text-[var(--text-secondary)] uppercase font-semibold">
-                <tr>
-                  <th className="px-5 py-3">User</th>
-                  <th className="px-5 py-3">Role</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Recipes</th>
-                  <th className="px-5 py-3">Sessions</th>
-                  <th className="px-5 py-3">Created</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
+              <thead>
+                <tr className="text-[var(--text-muted)] font-normal border-b border-[var(--border)]">
+                  <th className="pb-3 px-4">User</th>
+                  <th className="pb-3 px-4">Role</th>
+                  <th className="pb-3 px-4">Status</th>
+                  <th className="pb-3 px-4">Recipes</th>
+                  <th className="pb-3 px-4">Sessions</th>
+                  <th className="pb-3 px-4">Created</th>
+                  <th className="pb-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">
@@ -384,90 +379,83 @@ export default function AdminPage() {
                   const isBusy = operatingId === u.id;
 
                   return (
-                    <tr key={u.id} className="hover:bg-[var(--background)]/50 transition">
-                      <td className="px-5 py-4">
+                    <tr key={u.id} className="hover:bg-[var(--background)]/40 transition">
+                      <td className="py-4 px-4">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-white flex items-center justify-center font-bold text-xs uppercase shrink-0 shadow-xs">
+                          <div className="w-9 h-9 rounded-full bg-[var(--lime)] text-[var(--on-lime)] flex items-center justify-center font-bold text-xs uppercase shrink-0">
                             {u.displayName?.charAt(0) || u.email.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-semibold text-[var(--text-primary)]">
+                            <div className="font-semibold text-sm text-[var(--text-primary)]">
                               {u.displayName || "No Name"}
                               {isCurrent && (
-                                <span className="ml-1.5 text-[10px] text-[var(--accent)] font-medium">
+                                <span className="ml-1.5 text-xs text-[var(--accent)] font-medium">
                                   (You)
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-[var(--text-muted)] font-mono">
+                            <div className="text-xs text-[var(--text-muted)]">
                               {u.email}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      <td className="px-5 py-4">
+                      <td className="py-4 px-4">
                         <span
                           className={cn(
-                            "inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-md",
+                            "inline-block text-xs font-semibold px-3 py-1 rounded-full capitalize",
                             u.role === "admin"
-                              ? "bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--border)]"
-                              : "bg-[var(--background)] text-[var(--text-secondary)] border border-[var(--border)]"
+                              ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                              : "bg-[var(--background)] text-[var(--text-secondary)]"
                           )}
                         >
                           {u.role}
                         </span>
                       </td>
 
-                      <td className="px-5 py-4">
-                        <span
-                          className={cn(
-                            "inline-flex items-center space-x-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-md",
-                            u.status === "active"
-                              ? "bg-[var(--ui-success-bg)] text-[var(--ui-success)] border border-[var(--ui-success-border)]"
-                              : "bg-[var(--ui-error-bg)] text-[var(--ui-error)] border border-[var(--ui-error-border)]"
-                          )}
-                        >
+                      <td className="py-4 px-4">
+                        <span className="inline-flex items-center space-x-1.5 text-xs font-medium">
                           <span
                             className={cn(
-                              "w-1.5 h-1.5 rounded-full",
-                              u.status === "active" ? "bg-[var(--ui-success)]" : "bg-[var(--ui-error)]"
+                              "w-2 h-2 rounded-full",
+                              u.status === "active" ? "bg-[var(--accent)]" : "bg-[var(--status-over-target)]"
                             )}
                           />
-                          <span>{u.status}</span>
+                          <span className="capitalize text-[var(--text-secondary)]">{u.status}</span>
                         </span>
                       </td>
 
-                      <td className="px-5 py-4 font-mono text-[var(--text-primary)]">
+                      <td className="py-4 px-4 font-tabular text-sm text-[var(--text-primary)]">
                         {u._count?.recipes ?? 0}
                       </td>
 
-                      <td className="px-5 py-4 font-mono text-[var(--text-primary)]">
+                      <td className="py-4 px-4 font-tabular text-sm text-[var(--text-primary)]">
                         {u._count?.sessions ?? 0}
                       </td>
 
-                      <td className="px-5 py-4 text-[var(--text-muted)] whitespace-nowrap font-mono">
+                      <td className="py-4 px-4 text-xs text-[var(--text-muted)] whitespace-nowrap">
                         {new Date(u.createdAt).toLocaleDateString()}
                       </td>
 
-                      <td className="px-5 py-4 text-right">
+                      <td className="py-4 px-4 text-right">
                         <div className="inline-flex items-center space-x-2">
                           {/* Toggle Status */}
                           <button
                             onClick={() => handleToggleStatus(u)}
                             disabled={isCurrent || isBusy}
                             className={cn(
-                              "p-1.5 rounded-lg border border-[var(--border)] transition cursor-pointer disabled:opacity-30",
+                              "w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer disabled:opacity-30",
                               u.status === "active"
-                                ? "text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)]"
-                                : "text-[var(--ui-success)] hover:bg-[var(--ui-success-bg)]"
+                                ? "bg-[var(--macro-fat-bg)] text-[var(--status-over-target)] hover:opacity-80"
+                                : "bg-[var(--accent-subtle)] text-[var(--accent)] hover:opacity-80"
                             )}
                             title={u.status === "active" ? "Disable account" : "Enable account"}
                           >
                             {u.status === "active" ? (
-                              <UserX className="w-3.5 h-3.5" />
+                              <UserX className="w-4 h-4" />
                             ) : (
-                              <UserCheck className="w-3.5 h-3.5" />
+                              <UserCheck className="w-4 h-4" />
                             )}
                           </button>
 
@@ -475,20 +463,20 @@ export default function AdminPage() {
                           <button
                             onClick={() => handleChangeRole(u)}
                             disabled={isCurrent || isBusy}
-                            className="p-1.5 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition cursor-pointer disabled:opacity-30"
+                            className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition cursor-pointer disabled:opacity-30"
                             title="Toggle role (user/admin)"
                           >
-                            <Key className="w-3.5 h-3.5" />
+                            <Key className="w-4 h-4" />
                           </button>
 
                           {/* Delete User */}
                           <button
                             onClick={() => handleDeleteUser(u)}
                             disabled={isCurrent || isBusy}
-                            className="p-1.5 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer disabled:opacity-30"
+                            className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--status-over-target)] hover:bg-[var(--macro-fat-bg)] transition cursor-pointer disabled:opacity-30"
                             title="Delete user permanently"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>

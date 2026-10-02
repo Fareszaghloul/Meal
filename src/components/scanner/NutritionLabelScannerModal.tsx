@@ -262,7 +262,7 @@ export function NutritionLabelScannerModal({
       aria-labelledby="scanner-modal-title"
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl p-5 space-y-4 max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-150"
+        className="w-full max-w-lg rounded-3xl bg-[var(--surface)] p-6 space-y-5 max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -389,7 +389,7 @@ export function NutritionLabelScannerModal({
                   <button
                     type="button"
                     onClick={handleCapturePhoto}
-                    className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                    className="inline-flex items-center space-x-2 px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer"
                   >
                     <Camera className="w-4 h-4" />
                     <span>Capture Label</span>
@@ -483,7 +483,7 @@ export function NutritionLabelScannerModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3.5 py-2 rounded-xl border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
+                className="px-5 min-h-[44px] rounded-full bg-[var(--background)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -493,7 +493,7 @@ export function NutritionLabelScannerModal({
                   setStep("capture");
                   if (inputMode === "camera") startCamera();
                 }}
-                className="px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                className="px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer"
               >
                 Try Again
               </button>

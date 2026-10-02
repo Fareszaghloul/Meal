@@ -11,26 +11,28 @@ import {
   Loader2,
   AlertCircle,
   Upload,
-  CheckCircle2,
   Info,
+  ArrowRight,
 } from "lucide-react";
 import { RecipeReviewForm } from "@/components/recipes/RecipeReviewForm";
 import { ParsedRecipe } from "@/lib/ai/types";
-
-type Mode = "select" | "paste" | "url" | "screenshot" | "manual" | "review";
+import { cn } from "@/lib/utils";
 
 export default function AddRecipePage() {
-  const [mode, setMode] = useState<Mode>("select");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
   // Input states
-  const [pasteText, setPasteText] = useState("");
   const [urlInput, setUrlInput] = useState("");
+  const [pasteText, setPasteText] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  // Active form section accordion/expand if desired, or all 3 stacked ready to use!
+  const [activeTab, setActiveTab] = useState<"link" | "paste" | "screenshot">("link");
+
   // Review state
+  const [isReviewMode, setIsReviewMode] = useState(false);
   const [parsedRecipe, setParsedRecipe] = useState<ParsedRecipe | null>(null);
   const [sourcePlatform, setSourcePlatform] = useState("Manual");
   const [sourceUrl, setSourceUrl] = useState<string | undefined>(undefined);
@@ -60,7 +62,7 @@ export default function AddRecipePage() {
     } else if (type === "image") {
       setProcessingStatus("Scanning image & recognizing text (OCR)...");
     } else {
-      setProcessingStatus("Formatting recipe with local AI model...");
+      setProcessingStatus("Formatting recipe with AI parser...");
     }
 
     try {
@@ -79,7 +81,7 @@ export default function AddRecipePage() {
       setSourcePlatform(data.sourcePlatform || "Manual");
       setSourceUrl(data.sourceUrl);
       setWarnings(data.warnings || []);
-      setMode("review");
+      setIsReviewMode(true);
     } catch (err: unknown) {
       setErrorMsg(
         err instanceof Error ? err.message : "Error processing recipe"
@@ -96,7 +98,9 @@ export default function AddRecipePage() {
 
     const reader = new FileReader();
     reader.onload = () => {
-      setSelectedImage(reader.result as string);
+      const result = reader.result as string;
+      setSelectedImage(result);
+      handleParse("image", result);
     };
     reader.readAsDataURL(file);
   };
@@ -114,325 +118,254 @@ export default function AddRecipePage() {
     });
     setSourcePlatform("Manual");
     setWarnings([]);
-    setMode("review");
+    setIsReviewMode(true);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Breadcrumb Header */}
+    <div className="space-y-6 max-w-4xl mx-auto pb-16">
+      {/* ─── Page Header ─── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <button
-            onClick={() => {
-              if (mode === "review") setMode("select");
-              else if (mode !== "select") setMode("select");
-              else window.history.back();
-            }}
-            className="p-2 rounded-xl border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition"
+          <Link
+            href="/recipes"
+            className="p-2 rounded-full hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+            aria-label="Back to recipes"
           >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-              {mode === "review" ? "Review Recipe" : "Add Recipe"}
-            </h1>
-            <p className="text-xs text-[var(--text-secondary)]">
-              {mode === "review"
-                ? "Verify and edit recipe details before saving"
-                : "Choose how you would like to import your recipe"}
+            <p className="text-sm text-[var(--text-muted)] font-normal">
+              Recipe importer
             </p>
+            <h1 className="text-[34px] font-semibold tracking-[-0.03em] leading-tight text-[var(--text-primary)]">
+              {isReviewMode ? "Review Recipe" : "Add Recipe"}
+            </h1>
           </div>
         </div>
+
+        {!isReviewMode && (
+          <button
+            type="button"
+            onClick={startManual}
+            className="px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] hover:bg-[var(--surface)]/80 text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5"
+          >
+            <PenTool className="w-4 h-4" />
+            <span>Create manually</span>
+          </button>
+        )}
       </div>
 
-      {/* Ollama Status Pill if not running */}
-      {ollamaStatus && !ollamaStatus.isRunning && mode !== "review" && (
-        <div className="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--macro-carbs)] flex items-start space-x-3 text-xs text-[var(--text-primary)]">
-          <Info className="w-4 h-4 text-[var(--macro-carbs)] shrink-0 mt-0.5" />
-          <div>
-            <span className="font-semibold text-[var(--macro-carbs)]">Local Ollama is currently offline: </span>
-            <span className="text-[var(--text-secondary)]">
-              The app will use rule-based parsing or manual entry. To enable local AI models (e.g. Qwen2.5 7B), open a terminal and run{" "}
-              <code className="bg-[var(--surface)] border border-[var(--border)] px-1 py-0.5 rounded font-mono text-[var(--text-primary)]">
-                ollama serve
-              </code>
-              .
-            </span>
+      {/* ─── Ollama Offline Banner in carbs-bg with link to AI settings ─── */}
+      {ollamaStatus && !ollamaStatus.isRunning && !isReviewMode && (
+        <div className="p-4 rounded-3xl bg-[var(--macro-carbs-bg)] text-[var(--text-primary)] flex items-start space-x-3.5 shadow-none">
+          <div className="w-8 h-8 rounded-xl bg-[var(--macro-carbs)]/20 text-[var(--macro-carbs)] flex items-center justify-center shrink-0 mt-0.5">
+            <Info className="w-4 h-4" />
+          </div>
+          <div className="text-xs space-y-1 flex-1">
+            <div className="font-semibold text-[var(--text-primary)]">
+              Local Ollama AI is currently offline
+            </div>
+            <div className="text-[var(--text-secondary)] leading-relaxed">
+              Recipe parsing will use structured heuristics and rule-based extraction. For enhanced local AI extraction (e.g. Qwen2.5), ensure Ollama is running.
+            </div>
+            <div>
+              <Link
+                href="/settings"
+                className="inline-flex items-center gap-1 font-semibold text-[var(--macro-carbs)] hover:underline mt-1"
+              >
+                <span>Configure AI settings</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-[var(--ui-error-bg)] border border-[var(--ui-error-border)] text-[var(--ui-error)] text-xs flex items-center space-x-2">
+        <div className="p-4 rounded-2xl bg-[var(--ui-error-bg)] text-[var(--ui-error)] text-xs flex items-center space-x-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Mode: Selection Hub */}
-      {mode === "select" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl pt-2">
-          {/* Paste Recipe Option */}
-          <button
-            onClick={() => setMode("paste")}
-            className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] hover:bg-[var(--background)] transition text-left space-y-3 group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-[var(--text-primary)] text-base">
-                Paste Recipe
-              </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
-                Copy text or captions from Instagram, TikTok, Reels, or notes and paste them. AI automatically structures ingredients and steps.
-              </p>
-            </div>
-          </button>
-
-          {/* Import from URL Option */}
-          <button
-            onClick={() => setMode("url")}
-            className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] hover:bg-[var(--background)] transition text-left space-y-3 group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-              <LinkIcon className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-[var(--text-primary)] text-base">
-                Import from URL
-              </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
-                Paste a web link or social media post URL. The app extracts text, captions, and images.
-              </p>
-            </div>
-          </button>
-
-          {/* Upload Screenshot Option */}
-          <button
-            onClick={() => setMode("screenshot")}
-            className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] hover:bg-[var(--background)] transition text-left space-y-3 group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-              <Camera className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-[var(--text-primary)] text-base">
-                Upload Screenshot
-              </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
-                Upload an image or screenshot of a recipe. Local OCR extracts the text and passes it to the parser.
-              </p>
-            </div>
-          </button>
-
-          {/* Create Manually Option */}
-          <button
-            onClick={startManual}
-            className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] hover:bg-[var(--background)] transition text-left space-y-3 group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-              <PenTool className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-[var(--text-primary)] text-base">
-                Create Manually
-              </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
-                Directly type recipe title, ingredients, quantities, and steps using our structured editor.
-              </p>
-            </div>
-          </button>
-        </div>
-      )}
-
-      {/* Mode: Paste Text */}
-      {mode === "paste" && (
-        <div className="max-w-2xl p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
-          <div className="flex items-center space-x-2 text-sm font-semibold text-[var(--text-primary)]">
-            <Sparkles className="w-4 h-4 text-[var(--accent)]" />
-            <span>Paste Raw Recipe Text or Caption</span>
+      {/* ─── Review Mode ─── */}
+      {isReviewMode && parsedRecipe ? (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setIsReviewMode(false)}
+              className="px-4 py-2 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold transition"
+            >
+              ← Import another recipe
+            </button>
           </div>
 
-          <textarea
-            rows={10}
-            required
-            value={pasteText}
-            onChange={(e) => setPasteText(e.target.value)}
-            disabled={isProcessing}
-            placeholder={`High protein chicken pasta\n\n500g chicken breast\n300g pasta\n200g Greek yogurt\n30g parmesan\ngarlic, paprika, salt\n\nCook the pasta.\nSeason and cook chicken.\nMix yogurt and parmesan into warm pan.\nCombine everything.`}
-            className="w-full p-4 text-xs sm:text-sm font-mono rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+          <RecipeReviewForm
+            initialData={parsedRecipe}
+            sourcePlatform={sourcePlatform}
+            sourceUrl={sourceUrl}
+            warnings={warnings}
+            onSaved={(newId) => {
+              window.location.href = `/recipes/${newId}`;
+            }}
           />
-
-          <div className="flex items-center justify-between pt-2">
-            <button
-              type="button"
-              onClick={() => setMode("select")}
-              disabled={isProcessing}
-              className="px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              disabled={isProcessing || !pasteText.trim()}
-              onClick={() => handleParse("text", pasteText)}
-              className="flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white font-medium text-xs shadow-xs transition"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                  <span>{processingStatus || "Parsing..."}</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Parse Recipe</span>
-                </>
-              )}
-            </button>
-          </div>
         </div>
-      )}
+      ) : (
+        /* ─── Three Stacked Method Cards: From a link, Paste text, From a screenshot ─── */
+        <div className="space-y-4">
+          {/* Card 1: From a link */}
+          <div className="rounded-3xl bg-[var(--surface)] p-6 space-y-4 shadow-none">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--accent-subtle)] text-[var(--lime)] flex items-center justify-center shrink-0">
+                <LinkIcon className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                  From a link
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Import recipe from Instagram, TikTok, blogs, or YouTube videos
+                </p>
+              </div>
+            </div>
 
-      {/* Mode: URL Import */}
-      {mode === "url" && (
-        <div className="max-w-2xl p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
-          <div className="flex items-center space-x-2 text-sm font-semibold text-[var(--text-primary)]">
-            <LinkIcon className="w-4 h-4 text-[var(--accent)]" />
-            <span>Enter Recipe or Video URL</span>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
-              URL (Instagram, TikTok, blog link, YouTube)
-            </label>
-            <input
-              type="url"
-              required
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              disabled={isProcessing}
-              placeholder="https://www.instagram.com/reel/..."
-              className="w-full px-4 py-2.5 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <button
-              type="button"
-              onClick={() => setMode("select")}
-              disabled={isProcessing}
-              className="px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (urlInput.trim()) handleParse("url", urlInput.trim());
+              }}
+              className="flex flex-col sm:flex-row gap-2.5 pt-1"
             >
-              Back
-            </button>
-            <button
-              type="button"
-              disabled={isProcessing || !urlInput.trim()}
-              onClick={() => handleParse("url", urlInput)}
-              className="flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white font-medium text-xs shadow-xs transition"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                  <span>{processingStatus || "Importing..."}</span>
-                </>
-              ) : (
-                <>
-                  <LinkIcon className="w-4 h-4" />
-                  <span>Import & Parse</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Mode: Screenshot OCR */}
-      {mode === "screenshot" && (
-        <div className="max-w-2xl p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
-          <div className="flex items-center space-x-2 text-sm font-semibold text-[var(--text-primary)]">
-            <Camera className="w-4 h-4 text-[var(--accent)]" />
-            <span>Upload Recipe Screenshot</span>
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://www.instagram.com/p/... or recipe URL"
+                className="input-field flex-1"
+                disabled={isProcessing}
+                required
+              />
+              <button
+                type="submit"
+                disabled={isProcessing || !urlInput.trim()}
+                className="px-6 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer flex items-center justify-center space-x-2 shrink-0 disabled:opacity-50"
+              >
+                {isProcessing && activeTab === "link" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{processingStatus || "Extracting..."}</span>
+                  </>
+                ) : (
+                  <span>Extract recipe</span>
+                )}
+              </button>
+            </form>
           </div>
 
-          <div className="border border-dashed border-[var(--border)] bg-[var(--background)] rounded-2xl p-8 text-center space-y-3">
-            {selectedImage ? (
-              <div className="space-y-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={selectedImage}
-                  alt="Recipe screenshot preview"
-                  className="max-h-64 mx-auto rounded-xl border border-[var(--border)] object-contain"
-                />
+          {/* Card 2: Paste text */}
+          <div className="rounded-3xl bg-[var(--surface)] p-6 space-y-4 shadow-none">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--macro-protein-bg)] text-[var(--macro-protein)] flex items-center justify-center shrink-0">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                  Paste text
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Copy recipe text, notes or post captions and paste directly
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              <textarea
+                rows={6}
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder="High Protein Chipotle Chicken Bowl&#10;&#10;500g chicken breast&#10;200g brown rice&#10;1 can black beans&#10;1 avocado&#10;&#10;Season chicken with cumin and chili powder. Grill for 6-8 mins each side..."
+                className="input-field font-mono text-xs p-4 resize-y"
+                disabled={isProcessing}
+              />
+
+              <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setSelectedImage(null)}
-                  className="text-xs text-[var(--ui-error)] hover:underline"
+                  disabled={isProcessing || !pasteText.trim()}
+                  onClick={() => {
+                    setActiveTab("paste");
+                    handleParse("text", pasteText);
+                  }}
+                  className="px-6 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer flex items-center space-x-2 disabled:opacity-50"
                 >
-                  Remove & pick another image
+                  {isProcessing && activeTab === "paste" ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{processingStatus || "Parsing..."}</span>
+                    </>
+                  ) : (
+                    <span>Parse text</span>
+                  )}
                 </button>
               </div>
-            ) : (
-              <div>
-                <Upload className="w-10 h-10 text-[var(--text-secondary)] opacity-40 mx-auto mb-2" />
-                <p className="text-xs text-[var(--text-primary)] font-medium">
-                  Click to select an image from your device
-                </p>
-                <p className="text-[11px] text-[var(--text-secondary)]">
-                  PNG, JPG, or WebP screenshot
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="mt-3 text-xs text-[var(--text-secondary)] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-medium file:bg-[var(--accent-subtle)] file:text-[var(--accent)] hover:file:opacity-90"
-                />
-              </div>
-            )}
+            </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <button
-              type="button"
-              onClick={() => setMode("select")}
-              disabled={isProcessing}
-              className="px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              disabled={isProcessing || !selectedImage}
-              onClick={() => selectedImage && handleParse("image", selectedImage)}
-              className="flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white font-medium text-xs shadow-xs transition"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                  <span>{processingStatus || "Scanning OCR..."}</span>
-                </>
-              ) : (
-                <>
-                  <Camera className="w-4 h-4" />
-                  <span>Scan & Parse Image</span>
-                </>
+          {/* Card 3: From a screenshot as a dashed dropzone */}
+          <div className="rounded-3xl bg-[var(--surface)] p-6 space-y-4 shadow-none">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--macro-fat-bg)] text-[var(--macro-fat)] flex items-center justify-center shrink-0">
+                <Camera className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                  From a screenshot
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Upload a photo or screenshot of a recipe from Instagram, Pinterest, or cookbook
+                </p>
+              </div>
+            </div>
+
+            {/* Dashed dropzone */}
+            <label
+              htmlFor="recipe-image-upload"
+              className={cn(
+                "border-2 border-dashed border-[var(--border)] hover:border-[var(--lime)] rounded-2xl p-8 text-center flex flex-col items-center justify-center gap-2 transition cursor-pointer bg-[var(--background)]/40 hover:bg-[var(--background)]",
+                isProcessing && "pointer-events-none opacity-50"
               )}
-            </button>
+            >
+              <input
+                id="recipe-image-upload"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  setActiveTab("screenshot");
+                  handleImageUpload(e);
+                }}
+                className="hidden"
+                disabled={isProcessing}
+              />
+              <div className="w-12 h-12 rounded-full bg-[var(--surface)] text-[var(--text-secondary)] flex items-center justify-center mb-1">
+                <Upload className="w-5 h-5 text-[var(--lime)]" />
+              </div>
+              <span className="text-xs font-semibold text-[var(--text-primary)]">
+                Click or drop recipe screenshot here
+              </span>
+              <span className="text-[11px] text-[var(--text-muted)]">
+                Supports PNG, JPG, WEBP (OCR text extraction)
+              </span>
+
+              {isProcessing && activeTab === "screenshot" && (
+                <div className="flex items-center space-x-2 text-xs text-[var(--lime)] mt-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{processingStatus || "Scanning image..."}</span>
+                </div>
+              )}
+            </label>
           </div>
         </div>
-      )}
-
-      {/* Mode: Review Screen (Sections 8 & 9) */}
-      {mode === "review" && parsedRecipe && (
-        <RecipeReviewForm
-          initialData={parsedRecipe}
-          sourcePlatform={sourcePlatform}
-          sourceUrl={sourceUrl}
-          warnings={warnings}
-          onCancel={() => setMode("select")}
-        />
       )}
     </div>
   );

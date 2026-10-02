@@ -440,7 +440,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
             <button
               onClick={importAllMenu}
               disabled={isImportingAll}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-sm shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Download className="w-4 h-4" />
               {isImportingAll ? "Importing All 79..." : "Import Entire Menu (79 items)"}
@@ -519,8 +519,8 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                     className={cn(
                       "px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer",
                       isSelected
-                        ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
-                        : "bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
+                        : "bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     )}
                   >
                     <span>{cat}</span>
@@ -528,8 +528,8 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                       className={cn(
                         "text-[10px] px-1.5 py-0.5 rounded-full",
                         isSelected
-                          ? "bg-black/20 text-white font-bold"
-                          : "bg-[var(--surface)] text-[var(--text-secondary)] border border-[var(--border)]"
+                          ? "bg-black/15 text-[var(--on-accent)] font-bold"
+                          : "bg-[var(--surface)] text-[var(--text-secondary)]"
                       )}
                     >
                       {count}
@@ -632,7 +632,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                   <div className="pt-2 flex items-center gap-2">
                     <button
                       onClick={() => addItemToTray(item)}
-                      className="flex-1 py-2 px-3 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+                      className="flex-1 py-2 px-4 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer min-h-[38px]"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>{qty > 0 ? `Add Another (${qty})` : "Add to Tray"}</span>
@@ -928,7 +928,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
               <button
                 onClick={importSelectedToFoods}
                 disabled={trayItems.length === 0 || isImportingSelected}
-                className="w-full py-3 px-4 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98 disabled:opacity-40 cursor-pointer"
+                className="w-full min-h-[44px] px-5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-40 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 <span>
@@ -1108,7 +1108,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                         setInspectingItem(null);
                         showToast(`Added ${formatItemDisplayName(inspectingItem, modalRemovedIngredients)} to your tray!`);
                       }}
-                      className="flex-1 py-2.5 px-4 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                      className="flex-1 min-h-[44px] px-5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Add to Tray ({modalNut.calories} kcal)</span>

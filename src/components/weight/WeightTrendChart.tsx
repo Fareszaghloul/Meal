@@ -48,7 +48,7 @@ export function WeightTrendChart({
 
   if (!entries || entries.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)]">
+      <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl bg-[var(--surface)] text-[var(--text-secondary)]">
         <TrendingDown className="w-8 h-8 mb-2 opacity-40 text-[var(--text-secondary)]" />
         <p className="text-sm font-medium text-[var(--text-primary)]">No weight entries recorded yet</p>
         <p className="text-xs text-[var(--text-secondary)] mt-0.5">
@@ -114,21 +114,21 @@ export function WeightTrendChart({
   return (
     <div
       className={cn(
-        "p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4",
+        "p-6 rounded-3xl bg-[var(--surface)] space-y-4",
         className
       )}
     >
       {/* Header with Time Range Selectors and Legend */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
+          <div className="flex items-center space-x-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[var(--lime)]" />
             <span className="text-xs font-medium text-[var(--text-primary)]">
               7-day rolling avg
             </span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-[var(--accent)] opacity-40" />
+            <span className="w-2 h-2 rounded-full bg-[var(--text-muted)]" />
             <span className="text-xs text-[var(--text-secondary)]">
               Raw entry
             </span>
@@ -143,17 +143,17 @@ export function WeightTrendChart({
           )}
         </div>
 
-        {/* Time Filter Buttons */}
-        <div className="flex items-center space-x-1 bg-[var(--background)] border border-[var(--border)] p-0.5 rounded-xl text-xs">
+        {/* Time Filter Pill Buttons */}
+        <div className="flex items-center p-1 rounded-full bg-[var(--background)] text-xs">
           {(["1m", "3m", "6m", "1y", "all"] as TimeRange[]).map((r) => (
             <button
               key={r}
               type="button"
               onClick={() => setTimeRange(r)}
               className={cn(
-                "px-2.5 py-1 rounded-lg font-medium transition",
+                "px-3 py-1 rounded-full font-medium transition cursor-pointer",
                 timeRange === r
-                  ? "bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] font-semibold"
+                  ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
@@ -218,13 +218,13 @@ export function WeightTrendChart({
             </g>
           )}
 
-          {/* 7-Day Rolling Average Solid Line (flat 2px) */}
+          {/* 7-Day Rolling Average Solid Line (thick lime) */}
           {displayPoints.length > 1 && (
             <path
               d={rollingPathD}
               fill="none"
-              stroke="var(--accent)"
-              strokeWidth="2.5"
+              stroke="var(--lime)"
+              strokeWidth="3.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -245,9 +245,8 @@ export function WeightTrendChart({
                   y1={rawY}
                   x2={x}
                   y2={rollingY}
-                  stroke="var(--accent)"
+                  stroke="var(--border)"
                   strokeWidth="1"
-                  strokeOpacity="0.2"
                 />
 
                 {/* Raw entry dot */}
@@ -255,8 +254,8 @@ export function WeightTrendChart({
                   cx={x}
                   cy={rawY}
                   r={isHovered ? "4.5" : "3"}
-                  fill="var(--accent)"
-                  fillOpacity={isHovered ? 1 : 0.4}
+                  fill="var(--text-muted)"
+                  fillOpacity={isHovered ? 1 : 0.6}
                   stroke="var(--surface)"
                   strokeWidth={isHovered ? "2" : "1"}
                   onMouseEnter={() => setHoveredPoint(p)}
@@ -267,8 +266,8 @@ export function WeightTrendChart({
                 <circle
                   cx={x}
                   cy={rollingY}
-                  r="2"
-                  fill="var(--accent)"
+                  r="2.5"
+                  fill="var(--lime)"
                 />
 
                 {/* X-axis date label */}
@@ -290,11 +289,11 @@ export function WeightTrendChart({
           })}
         </svg>
 
-        {/* Hover Tooltip Overlay (Flat surface styling) */}
+        {/* Hover Tooltip Overlay */}
         {hoveredPoint && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] shadow-md text-xs flex items-center space-x-4 animate-in fade-in pointer-events-none font-tabular">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-2xl bg-[var(--surface)] text-[var(--text-primary)] shadow-xl text-xs flex items-center space-x-4 animate-in fade-in pointer-events-none font-tabular">
             <div>
-              <span className="text-xs text-[var(--text-secondary)] block font-normal">
+              <span className="text-[11px] text-[var(--text-secondary)] block font-normal">
                 {hoveredPoint.date}
               </span>
               <span className="font-semibold text-sm text-[var(--text-primary)]">
@@ -302,10 +301,10 @@ export function WeightTrendChart({
               </span>
             </div>
             <div className="border-l border-[var(--border)] pl-3">
-              <span className="text-xs text-[var(--text-secondary)] block font-normal">
+              <span className="text-[11px] text-[var(--text-secondary)] block font-normal">
                 7d rolling avg
               </span>
-              <span className="font-semibold text-sm text-[var(--accent)]">
+              <span className="font-semibold text-sm text-[var(--lime)]">
                 {toDisplay(hoveredPoint.rollingAvg7d)} {unitLabel}
               </span>
             </div>

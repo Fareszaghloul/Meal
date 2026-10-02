@@ -5,16 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Heart,
-  Users,
-  Clock,
   MoreVertical,
   Copy,
   Pencil,
   Trash2,
-  ExternalLink,
   Utensils,
 } from "lucide-react";
-import { MacroBadge } from "@/components/ui/MacroBadge";
 import { cn } from "@/lib/utils";
 
 export interface RecipeCardData {
@@ -37,11 +33,19 @@ export interface RecipeCardData {
 
 interface RecipeCardProps {
   recipe: RecipeCardData;
+  index?: number;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
 }
 
-export function RecipeCard({ recipe, onDelete, onDuplicate }: RecipeCardProps) {
+const TINTS = [
+  "bg-[var(--accent-subtle)] text-[var(--lime)]",
+  "bg-[var(--macro-protein-bg)] text-[var(--macro-protein)]",
+  "bg-[var(--macro-carbs-bg)] text-[var(--macro-carbs)]",
+  "bg-[var(--macro-fat-bg)] text-[var(--macro-fat)]",
+];
+
+export function RecipeCard({ recipe, index = 0, onDelete, onDuplicate }: RecipeCardProps) {
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(recipe.isFavorite);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -69,7 +73,6 @@ export function RecipeCard({ recipe, onDelete, onDuplicate }: RecipeCardProps) {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMenuOpen]);
-
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -131,11 +134,13 @@ export function RecipeCard({ recipe, onDelete, onDuplicate }: RecipeCardProps) {
     }
   };
 
+  const tintClass = TINTS[index % TINTS.length];
+
   return (
-    <div className="group relative rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden">
+    <div className="group relative rounded-3xl bg-[var(--surface)] shadow-none flex flex-col justify-between overflow-hidden transition-transform duration-200 hover:-translate-y-1">
       <div>
         {/* Top Media / Thumbnail Bar */}
-        <div className="relative h-44 w-full bg-[var(--background)] overflow-hidden flex items-center justify-center">
+        <div className={cn("relative h-44 w-full overflow-hidden flex items-center justify-center", !recipe.imageUrl && tintClass)}>
           {recipe.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -144,22 +149,24 @@ export function RecipeCard({ recipe, onDelete, onDuplicate }: RecipeCardProps) {
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="flex flex-col items-center justify-center text-[var(--text-secondary)] opacity-50">
+            <div className="flex flex-col items-center justify-center opacity-70">
               <Utensils className="w-10 h-10 stroke-1 mb-1" />
-              <span className="text-xs font-medium">MealPrep</span>
+              <span className="text-[11px] font-semibold tracking-wider uppercase">MealPrep</span>
             </div>
           )}
 
-          {/* Favorite Button */}
+          {/* Round Favorite Button Top-Right */}
           <button
+            type="button"
             onClick={handleToggleFavorite}
             className={cn(
-              "absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition shadow-xs",
+              "absolute top-3.5 right-3.5 w-9 h-9 rounded-full backdrop-blur-md transition flex items-center justify-center cursor-pointer",
               isFavorite
-                ? "bg-[var(--status-over-target)] text-white"
-                : "bg-[var(--surface)]/80 text-[var(--text-secondary)] hover:text-[var(--status-over-target)]"
+                ? "bg-[var(--surface)] text-[var(--status-over-target)]"
+                : "bg-[var(--surface)]/70 text-[var(--text-secondary)] hover:text-[var(--status-over-target)]"
             )}
             title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
             <Heart
               className={cn(
@@ -168,17 +175,10 @@ export function RecipeCard({ recipe, onDelete, onDuplicate }: RecipeCardProps) {
               )}
             />
           </button>
-
-          {/* Platform Source pill */}
-          {recipe.sourcePlatform && recipe.sourcePlatform !== "Manual" && (
-            <span className="absolute bottom-3 left-3 px-2 py-0.5 rounded-md bg-[var(--surface)]/90 text-[var(--text-primary)] border border-[var(--border)] text-[10px] font-medium tracking-wide">
-              {recipe.sourcePlatform}
-            </span>
-          )}
         </div>
 
         {/* Card Body */}
-        <div className="p-4">
+        <div className="p-5">
           <div className="flex items-start justify-between gap-2">
             <Link
               href={`/recipes/${recipe.id}`}
@@ -190,6 +190,7 @@ export function RecipeCard({ recipe, onDelete, onDuplicate }: RecipeCardProps) {
             {/* Context Menu Trigger */}
             <div className="relative" ref={menuRef}>
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -198,113 +199,64 @@ export function RecipeCard({ recipe, onDelete, onDuplicate }: RecipeCardProps) {
                 aria-label="Recipe actions"
                 aria-expanded={isMenuOpen}
                 aria-haspopup="true"
-                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors"
+                className="p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors cursor-pointer"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
 
               {isMenuOpen && (
-                <div role="menu" className="absolute right-0 top-8 z-20 w-36 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-xl py-1 text-xs animate-in fade-in">
+                <div role="menu" className="absolute right-0 top-8 z-20 w-36 rounded-2xl bg-[var(--surface)] shadow-2xl py-1 text-xs animate-in fade-in">
                   <button
                     role="menuitem"
+                    type="button"
                     onClick={() => {
                       setIsMenuOpen(false);
                       router.push(`/recipes/${recipe.id}/edit`);
                     }}
-                    className="w-full flex items-center px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors"
+                    className="w-full flex items-center px-3.5 py-2 text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5 mr-2" />
                     <span>Edit</span>
                   </button>
                   <button
                     role="menuitem"
+                    type="button"
                     onClick={handleDuplicate}
-                    className="w-full flex items-center px-3 py-2 text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors"
+                    className="w-full flex items-center px-3.5 py-2 text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5 mr-2" />
                     <span>Duplicate</span>
                   </button>
                   <button
                     role="menuitem"
+                    type="button"
                     onClick={handleDelete}
-                    className="w-full flex items-center px-3 py-2 text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition-colors"
+                    className="w-full flex items-center px-3.5 py-2 text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5 mr-2" />
                     <span>Delete</span>
                   </button>
                 </div>
               )}
-
             </div>
           </div>
 
-          {/* Servings and Time meta */}
-          <div className="flex items-center space-x-3 text-xs text-[var(--text-secondary)] mt-1.5 mb-3">
-            <span className="flex items-center">
-              <Users className="w-3.5 h-3.5 mr-1 text-[var(--text-secondary)] opacity-70" />
-              {recipe.servings} {recipe.servings === 1 ? "serving" : "servings"}
-            </span>
-            {totalTime > 0 && (
-              <span className="flex items-center font-tabular">
-                <Clock className="w-3.5 h-3.5 mr-1 text-[var(--text-secondary)] opacity-70" />
-                {totalTime} min
-              </span>
-            )}
+          {/* servings · min */}
+          <div className="text-xs text-[var(--text-muted)] font-tabular mt-1">
+            {recipe.servings} {recipe.servings === 1 ? "serving" : "servings"}
+            {totalTime > 0 ? ` · ${totalTime} min` : ""}
           </div>
-
-          {/* Tags */}
-          {recipe.tags && recipe.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
-              {recipe.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--background)] border border-[var(--border)] text-[var(--text-secondary)]"
-                >
-                  #{tag}
-                </span>
-              ))}
-              {recipe.tags.length > 3 && (
-                <span className="text-[10px] text-[var(--text-secondary)] self-center font-tabular">
-                  +{recipe.tags.length - 3}
-                </span>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Card Footer: Nutrition Badges */}
-      <div className="px-4 py-3 bg-[var(--background)]/60 border-t border-[var(--border)]">
-        <div className="grid grid-cols-2 gap-1.5 text-center">
-          <MacroBadge
-            label="Calories"
-            value={Math.round(recipe.caloriesPerServing)}
-            unit="kcal"
-            type="calories"
-            size="sm"
-          />
-          <MacroBadge
-            label="Protein"
-            value={Math.round(recipe.proteinPerServing)}
-            unit="g"
-            type="protein"
-            size="sm"
-          />
-          <MacroBadge
-            label="Carbs"
-            value={Math.round(recipe.carbsPerServing)}
-            unit="g"
-            type="carbs"
-            size="sm"
-          />
-          <MacroBadge
-            label="Fat"
-            value={Math.round(recipe.fatPerServing)}
-            unit="g"
-            type="fat"
-            size="sm"
-          />
-        </div>
+      {/* Card Footer with 1px divider: kcal and "P · C · F" */}
+      <div className="px-5 py-3.5 border-t border-[var(--border)] flex items-center justify-between text-xs font-tabular">
+        <span className="font-bold text-[var(--text-primary)]">
+          {Math.round(recipe.caloriesPerServing)} kcal
+        </span>
+        <span className="text-[var(--text-muted)]">
+          {Math.round(recipe.proteinPerServing)}g P · {Math.round(recipe.carbsPerServing)}g C · {Math.round(recipe.fatPerServing)}g F
+        </span>
       </div>
     </div>
   );

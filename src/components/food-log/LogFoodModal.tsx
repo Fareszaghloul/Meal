@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import mcdonaldsData from "@/data/mcdonalds-jordan-menu.json";
 import { DynamicPortionAdjuster, ScaledNutrition } from "@/components/food-log/DynamicPortionAdjuster";
+import { UnifiedFoodSearchModal } from "@/components/foods/UnifiedFoodSearchModal";
+import { NormalizedFood } from "@/lib/nutrition/providers/types";
 import { cn } from "@/lib/utils";
 
 interface LogFoodModalProps {
@@ -62,6 +64,7 @@ export function LogFoodModal({
   const [onlineResults, setOnlineResults] = useState<any[]>([]);
   const [isSearchingOnline, setIsSearchingOnline] = useState(false);
   const [onlineError, setOnlineError] = useState<string | null>(null);
+  const [isUnifiedSearchOpen, setIsUnifiedSearchOpen] = useState(false);
 
   // Dynamic portion scaling state
   const [selectedItem, setSelectedItem] = useState<{
@@ -221,19 +224,19 @@ export function LogFoodModal({
     setIsSearchingOnline(true);
     setOnlineError(null);
     try {
-      const res = await fetch(`/api/foods/external/search?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`/api/foods/search?q=${encodeURIComponent(q)}&source=all`);
       if (res.ok) {
         const data = await res.json();
         setOnlineResults(data);
         if (data.length === 0) {
-          setOnlineError("No foods found matching query in USDA or Open Food Facts.");
+          setOnlineError("No foods found matching query across MealPrep, Open Food Facts, USDA, or FatSecret.");
         }
       } else {
-        setOnlineError("Failed to query external food databases.");
+        setOnlineError("Failed to query food databases.");
       }
     } catch (err) {
       console.error(err);
-      setOnlineError("Network error while searching external databases.");
+      setOnlineError("Network error while searching food databases.");
     } finally {
       setIsSearchingOnline(false);
     }
@@ -278,15 +281,26 @@ export function LogFoodModal({
   const selectOnline = (c: any) => {
     const baseWeight = c.servingWeightGrams || 100;
     const factor = baseWeight / 100;
+    const calPer100 = c.caloriesPer100g ?? c.calories ?? 0;
+    const proPer100 = c.proteinPer100g ?? c.protein ?? 0;
+    const carbPer100 = c.carbsPer100g ?? c.carbohydrates ?? 0;
+    const fatPer100 = c.fatPer100g ?? c.fat ?? 0;
+    const fiberPer100 = c.fiberPer100g ?? c.dietaryFiber ?? null;
+
     setSelectedItem({
       type: "online",
       item: c,
       baseWeightGrams: baseWeight,
-      baseCalories: Math.round((c.caloriesPer100g || 0) * factor),
-      baseProtein: Math.round((c.proteinPer100g || 0) * factor * 10) / 10,
-      baseCarbs: Math.round((c.carbsPer100g || 0) * factor * 10) / 10,
-      baseFat: Math.round((c.fatPer100g || 0) * factor * 10) / 10,
-      baseFiber: Math.round((c.fiberPer100g || 0) * factor * 10) / 10,
+      baseCalories: Math.round(calPer100 * factor),
+      baseProtein: Math.round(proPer100 * factor * 10) / 10,
+      baseCarbs: Math.round(carbPer100 * factor * 10) / 10,
+      baseFat: Math.round(fatPer100 * factor * 10) / 10,
+      baseFiber: fiberPer100 !== null ? Math.round(fiberPer100 * factor * 10) / 10 : 0,
+      baseTotalSugars: c.totalSugarsPer100g !== null && c.totalSugarsPer100g !== undefined ? Math.round(c.totalSugarsPer100g * factor * 10) / 10 : (c.totalSugars !== null && c.totalSugars !== undefined ? Math.round(c.totalSugars * factor * 10) / 10 : null),
+      baseAddedSugars: c.addedSugarsPer100g !== null && c.addedSugarsPer100g !== undefined ? Math.round(c.addedSugarsPer100g * factor * 10) / 10 : (c.addedSugars !== null && c.addedSugars !== undefined ? Math.round(c.addedSugars * factor * 10) / 10 : null),
+      baseSaturatedFat: c.saturatedFatPer100g !== null && c.saturatedFatPer100g !== undefined ? Math.round(c.saturatedFatPer100g * factor * 10) / 10 : (c.saturatedFat !== null && c.saturatedFat !== undefined ? Math.round(c.saturatedFat * factor * 10) / 10 : null),
+      baseTransFat: c.transFatPer100g !== null && c.transFatPer100g !== undefined ? Math.round(c.transFatPer100g * factor * 10) / 10 : (c.transFat !== null && c.transFat !== undefined ? Math.round(c.transFat * factor * 10) / 10 : null),
+      baseSodium: c.sodiumPer100g !== null && c.sodiumPer100g !== undefined ? Math.round(c.sodiumPer100g * factor) : (c.sodium !== null && c.sodium !== undefined ? Math.round(c.sodium * factor) : null),
       defaultUnit: c.defaultUnit || "g",
     });
   };
@@ -300,21 +314,25 @@ export function LogFoodModal({
       let foodId = selectedItem.type === "food" ? selectedItem.item.dbId || selectedItem.item.id : null;
       let recipeId = selectedItem.type === "recipe" ? selectedItem.item.id : null;
 
-      // Auto-import online candidate if selected
+      // Auto-import online candidate if not already in local database
       if (selectedItem.type === "online") {
-        try {
-          const impRes = await fetch("/api/foods/external/import", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(selectedItem.item),
-          });
-          if (impRes.ok) {
-            const imported = await impRes.json();
-            foodId = imported.id;
-            loggedName = imported.name;
+        if (selectedItem.item.isLocal && selectedItem.item.providerId) {
+          foodId = selectedItem.item.providerId;
+        } else {
+          try {
+            const impRes = await fetch("/api/foods/external/import", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(selectedItem.item),
+            });
+            if (impRes.ok) {
+              const imported = await impRes.json();
+              foodId = imported.id;
+              loggedName = imported.name;
+            }
+          } catch (e) {
+            console.error("Auto import error:", e);
           }
-        } catch (e) {
-          console.error("Auto import error:", e);
         }
       }
 
@@ -402,7 +420,7 @@ export function LogFoodModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl p-5 sm:p-6 space-y-5 flex flex-col max-h-[90vh] text-[var(--text-primary)]"
+        className="w-full max-w-2xl rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-6 flex flex-col max-h-[90vh] text-[var(--text-primary)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -447,7 +465,7 @@ export function LogFoodModal({
                   className={cn(
                     "py-1.5 text-center rounded-lg text-xs font-medium transition-all cursor-pointer",
                     mealCategory === cat.id
-                      ? "bg-[var(--accent)] text-white font-semibold shadow-xs"
+                      ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold rounded-full"
                       : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   )}
                 >
@@ -536,7 +554,7 @@ export function LogFoodModal({
                 type="button"
                 disabled={isSubmitting || !scaledPortion}
                 onClick={handleConfirmLog}
-                className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center space-x-1.5 px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -650,7 +668,7 @@ export function LogFoodModal({
 
                         <button
                           type="button"
-                          className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition shrink-0"
+                          className="px-4 py-2 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-[var(--on-accent)] transition shrink-0"
                         >
                           Scale &amp; Log →
                         </button>
@@ -680,10 +698,10 @@ export function LogFoodModal({
                       type="button"
                       onClick={() => setFoodFilterSource("all")}
                       className={cn(
-                        "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
+                        "px-3 py-1.5 rounded-full font-medium transition cursor-pointer",
                         foodFilterSource === "all"
-                          ? "bg-[var(--accent)] text-white"
-                          : "bg-[var(--background)] text-[var(--text-secondary)] border border-[var(--border)]"
+                          ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
+                          : "bg-[var(--background)] text-[var(--text-secondary)]"
                       )}
                     >
                       All ({combinedFoods.length})
@@ -692,10 +710,10 @@ export function LogFoodModal({
                       type="button"
                       onClick={() => setFoodFilterSource("mcdonalds")}
                       className={cn(
-                        "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
+                        "px-3 py-1.5 rounded-full font-medium transition cursor-pointer",
                         foodFilterSource === "mcdonalds"
-                          ? "bg-[var(--accent)] text-white"
-                          : "bg-[var(--background)] text-[var(--text-secondary)] border border-[var(--border)]"
+                          ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
+                          : "bg-[var(--background)] text-[var(--text-secondary)]"
                       )}
                     >
                       🍔 McDonald&apos;s
@@ -704,10 +722,10 @@ export function LogFoodModal({
                       type="button"
                       onClick={() => setFoodFilterSource("custom")}
                       className={cn(
-                        "px-2.5 py-1.5 rounded-lg font-medium transition cursor-pointer",
+                        "px-3 py-1.5 rounded-full font-medium transition cursor-pointer",
                         foodFilterSource === "custom"
-                          ? "bg-[var(--accent)] text-white"
-                          : "bg-[var(--background)] text-[var(--text-secondary)] border border-[var(--border)]"
+                          ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
+                          : "bg-[var(--background)] text-[var(--text-secondary)]"
                       )}
                     >
                       Custom ({userFoods.length})
@@ -726,7 +744,7 @@ export function LogFoodModal({
                           setActiveTab("online");
                           handleSearchOnline();
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-[var(--accent)] text-white font-medium text-xs shadow-xs"
+                        className="px-4 min-h-[44px] rounded-full bg-[var(--accent)] text-[var(--on-accent)] font-semibold text-xs"
                       >
                         Search Online DBs for &quot;{foodSearch || "food"}&quot; →
                       </button>
@@ -773,7 +791,7 @@ export function LogFoodModal({
 
                         <button
                           type="button"
-                          className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition shrink-0"
+                          className="px-4 py-2 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-[var(--on-accent)] transition shrink-0"
                         >
                           Scale &amp; Log →
                         </button>
@@ -787,89 +805,131 @@ export function LogFoodModal({
             {/* Tab 3: Online Search (USDA & Open Food Facts) */}
             {activeTab === "online" && (
               <div className="flex-1 flex flex-col min-h-0 space-y-3">
-                <form onSubmit={handleSearchOnline} className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
-                    <input
-                      type="text"
-                      autoFocus
-                      placeholder="Search whole foods via USDA & branded goods via Open Food Facts..."
-                      value={onlineQuery}
-                      onChange={(e) => setOnlineQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
-                    />
-                  </div>
+                <div className="flex items-center justify-between gap-2">
+                  <form onSubmit={handleSearchOnline} className="flex gap-2 flex-1">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                      <input
+                        type="text"
+                        autoFocus
+                        placeholder="Search MealPrep, Open Food Facts, USDA, FatSecret..."
+                        value={onlineQuery}
+                        onChange={(e) => setOnlineQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-primary)] focus:outline-hidden focus:border-[var(--accent)]"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isSearchingOnline || !onlineQuery.trim()}
+                      className="px-5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shrink-0"
+                    >
+                      {isSearchingOnline ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Search className="w-3.5 h-3.5" />
+                      )}
+                      <span>Search</span>
+                    </button>
+                  </form>
                   <button
-                    type="submit"
-                    disabled={isSearchingOnline || !onlineQuery.trim()}
-                    className="px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                    type="button"
+                    onClick={() => setIsUnifiedSearchOpen(true)}
+                    className="px-3 py-2 rounded-xl bg-[var(--surface)] hover:bg-[var(--background)] border border-[var(--border)] text-[var(--accent)] font-semibold text-xs shadow-xs transition shrink-0 cursor-pointer flex items-center gap-1.5"
+                    title="Open full-featured unified food search dialog"
                   >
-                    {isSearchingOnline ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Search className="w-3.5 h-3.5" />
-                    )}
-                    <span>Search</span>
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Advanced</span>
                   </button>
-                </form>
+                </div>
 
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-[var(--border)] max-h-[340px]">
                   {isSearchingOnline ? (
                     <div className="py-16 text-center text-xs text-[var(--text-secondary)] space-y-2">
                       <Loader2 className="w-5 h-5 animate-spin mx-auto text-[var(--accent)]" />
-                      <p>Querying USDA FoodData Central &amp; Open Food Facts...</p>
+                      <p>Searching across MealPrep, Open Food Facts, USDA, and FatSecret...</p>
                     </div>
                   ) : onlineError ? (
                     <div className="p-8 text-center rounded-2xl border border-dashed border-[var(--border)] text-xs text-[var(--text-secondary)]">
                       {onlineError}
                     </div>
                   ) : onlineResults.length === 0 ? (
-                    <div className="p-10 text-center rounded-2xl border border-dashed border-[var(--border)] text-xs text-[var(--text-secondary)] space-y-1">
+                    <div className="p-10 text-center rounded-2xl border border-dashed border-[var(--border)] text-xs text-[var(--text-secondary)] space-y-2">
                       <Globe className="w-6 h-6 mx-auto opacity-40 text-[var(--accent)]" />
-                      <p className="font-semibold text-[var(--text-primary)]">Outsourced Food Database Fallback</p>
-                      <p>Search any ingredient or branded item to calculate grams and log it directly.</p>
+                      <p className="font-semibold text-[var(--text-primary)]">Unified Food Database Search</p>
+                      <p className="text-[11px] text-[var(--text-secondary)] max-w-sm mx-auto">
+                        Search any ingredient or packaged food across MealPrep Local, Open Food Facts, USDA FoodData Central, and FatSecret.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsUnifiedSearchOpen(true)}
+                        className="px-5 min-h-[44px] rounded-full bg-[var(--accent)] text-[var(--on-accent)] font-semibold text-xs hover:bg-[var(--accent-hover)] transition cursor-pointer"
+                      >
+                        Open Unified Search Dialog →
+                      </button>
                     </div>
                   ) : (
-                    onlineResults.map((candidate) => (
-                      <div
-                        key={candidate.id}
-                        onClick={() => selectOnline(candidate)}
-                        className="pt-2.5 pb-2.5 first:pt-0 flex items-center justify-between gap-3 hover:bg-[var(--background)]/60 px-2 rounded-xl transition cursor-pointer group"
-                      >
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-xs text-[var(--text-primary)] group-hover:text-[var(--accent)] transition">
-                              {candidate.name}
-                            </h4>
-                            <span
-                              className={cn(
-                                "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded",
-                                candidate.source === "usda"
-                                  ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
-                                  : "bg-sky-500/10 text-sky-500"
-                              )}
-                            >
-                              {candidate.source === "usda" ? "USDA" : "Open Food Facts"}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2 text-[11px] text-[var(--text-secondary)] font-mono">
-                            <span>{candidate.caloriesPer100g} kcal/100g</span>
-                            <span>•</span>
-                            <span className="text-[var(--macro-protein)]">{candidate.proteinPer100g}g P</span>
-                            <span>•</span>
-                            <span className="text-[var(--macro-carbs)]">{candidate.carbsPer100g}g C</span>
-                            <span>•</span>
-                            <span className="text-[var(--macro-fat)]">{candidate.fatPer100g}g F</span>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition shrink-0"
+                    onlineResults.map((candidate) => {
+                      const prov = (candidate.provider || candidate.source || "openfoodfacts").toLowerCase();
+                      const provLabel =
+                        prov === "local" ? "MealPrep" :
+                        prov === "usda" ? "USDA" :
+                        prov === "fatsecret" ? "FatSecret" : "Open Food Facts";
+
+                      const cal = candidate.caloriesPer100g ?? candidate.calories ?? 0;
+                      const pro = candidate.proteinPer100g ?? candidate.protein ?? 0;
+                      const carb = candidate.carbsPer100g ?? candidate.carbohydrates ?? 0;
+                      const fat = candidate.fatPer100g ?? candidate.fat ?? 0;
+
+                      return (
+                        <div
+                          key={candidate.id}
+                          onClick={() => selectOnline(candidate)}
+                          className="pt-2.5 pb-2.5 first:pt-0 flex items-center justify-between gap-3 hover:bg-[var(--background)]/60 px-2 rounded-xl transition cursor-pointer group"
                         >
-                          Scale &amp; Log →
-                        </button>
-                      </div>
-                    ))
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-xs text-[var(--text-primary)] group-hover:text-[var(--accent)] transition">
+                                {candidate.name}
+                              </h4>
+                              {candidate.brand && (
+                                <span className="text-[10px] text-[var(--text-secondary)] font-normal">
+                                  ({candidate.brand})
+                                </span>
+                              )}
+                              <span
+                                className={cn(
+                                  "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded",
+                                  prov === "local"
+                                    ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                                    : prov === "usda"
+                                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                    : prov === "fatsecret"
+                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-sky-500/10 text-sky-500"
+                                )}
+                              >
+                                {provLabel}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-[11px] text-[var(--text-secondary)] font-mono">
+                              <span>{cal} kcal/100g</span>
+                              <span>•</span>
+                              <span className="text-[var(--macro-protein)]">{pro}g P</span>
+                              <span>•</span>
+                              <span className="text-[var(--macro-carbs)]">{carb}g C</span>
+                              <span>•</span>
+                              <span className="text-[var(--macro-fat)]">{fat}g F</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="px-3 py-1.5 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold text-xs group-hover:bg-[var(--accent)] group-hover:text-white transition shrink-0"
+                          >
+                            Scale &amp; Log →
+                          </button>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -950,7 +1010,7 @@ export function LogFoodModal({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-5 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                    className="px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
                   >
                     {isSubmitting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -965,6 +1025,81 @@ export function LogFoodModal({
           </>
         )}
       </div>
+
+      {/* Unified Food Search Modal (MealPrep, OFF, USDA, FatSecret) */}
+      <UnifiedFoodSearchModal
+        isOpen={isUnifiedSearchOpen}
+        onClose={() => setIsUnifiedSearchOpen(false)}
+        mode="log"
+        initialQuery={onlineQuery || foodSearch || recipeSearch}
+        onSaveAndLog={async (food: NormalizedFood, grams: number) => {
+          let foodId = food.isLocal && food.providerId ? food.providerId : null;
+          let foodName = food.name;
+
+          if (!foodId) {
+            try {
+              const impRes = await fetch("/api/foods/external/import", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(food),
+              });
+              if (impRes.ok) {
+                const imported = await impRes.json();
+                foodId = imported.id;
+                foodName = imported.name;
+              }
+            } catch (e) {
+              console.error("Auto import error:", e);
+            }
+          }
+
+          const servingWeight = food.servingWeightGrams || 100;
+          const cal = food.nutritionBasis === "PER_100G"
+            ? Math.round(food.calories * (grams / 100))
+            : Math.round((food.calories / servingWeight) * grams);
+          const pro = food.nutritionBasis === "PER_100G"
+            ? Math.round(food.protein * (grams / 100) * 10) / 10
+            : Math.round(((food.protein / servingWeight) * grams) * 10) / 10;
+          const carb = food.nutritionBasis === "PER_100G"
+            ? Math.round(food.carbohydrates * (grams / 100) * 10) / 10
+            : Math.round(((food.carbohydrates / servingWeight) * grams) * 10) / 10;
+          const fat = food.nutritionBasis === "PER_100G"
+            ? Math.round(food.fat * (grams / 100) * 10) / 10
+            : Math.round(((food.fat / servingWeight) * grams) * 10) / 10;
+          const fib = food.dietaryFiber !== null
+            ? (food.nutritionBasis === "PER_100G"
+                ? Math.round(food.dietaryFiber * (grams / 100) * 10) / 10
+                : Math.round(((food.dietaryFiber / servingWeight) * grams) * 10) / 10)
+            : null;
+
+          const logRes = await fetch("/api/food-log", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              date: logDate,
+              mealCategory,
+              name: foodName,
+              servings: grams,
+              servingUnit: "g",
+              calories: cal,
+              protein: pro,
+              carbs: carb,
+              fat: fat,
+              fiber: fib,
+              foodId,
+            }),
+          });
+
+          if (logRes.ok) {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("meal-logged"));
+            }
+            onLogSuccess();
+            setIsUnifiedSearchOpen(false);
+            onClose();
+          }
+        }}
+      />
     </div>
   );
 }

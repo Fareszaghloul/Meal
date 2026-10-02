@@ -200,36 +200,38 @@ export default function WeightTrackingPage() {
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16 px-4 sm:px-6">
-      {/* Header & Mode Switcher */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2">
-            <Scale className="w-5 h-5 text-[var(--accent)]" />
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-              Weight &amp; Body Tracking
-            </h1>
-          </div>
-          <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-2xl leading-relaxed">
-            Separate logs for everyday scale weigh-ins with 7-day smoothing and periodic InBody composition scans.
+          <p className="text-sm text-[var(--text-muted)] font-normal mb-1">
+            Tracking &amp; Body Composition
           </p>
+          <h1 className="text-[34px] font-semibold tracking-[-0.03em] text-[var(--text-primary)] leading-tight">
+            Weight Log
+          </h1>
         </div>
 
-        {/* Tab Buttons & CTAs */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Segmented Switcher */}
-          <div className="flex items-center p-1 rounded-2xl bg-[var(--background)] border border-[var(--border)] text-xs overflow-x-auto max-w-full scrollbar-none shrink-0 shadow-inner">
+        {/* Tab Buttons & Primary Action */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Segmented Pill Switcher on surface */}
+          <div className="flex items-center p-1 rounded-full bg-[var(--surface)] text-xs shrink-0">
             <button
               onClick={() => setActiveTab("everyday")}
               className={cn(
-                "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-2 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
+                "px-4 py-2 rounded-full font-medium transition flex items-center space-x-2 shrink-0 cursor-pointer min-h-[36px]",
                 activeTab === "everyday"
-                  ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                  ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
-              <Scale className="w-3.5 h-3.5 text-[var(--accent)]" />
-              <span>Everyday Weigh-ins</span>
-              <span className="ml-1 text-[11px] px-1.5 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold">
+              <Scale className="w-3.5 h-3.5" />
+              <span>Weigh-ins</span>
+              <span className={cn(
+                "ml-1 text-[11px] px-1.5 py-0.5 rounded-full font-semibold",
+                activeTab === "everyday"
+                  ? "bg-[var(--on-accent)]/15 text-[var(--on-accent)]"
+                  : "bg-[var(--accent-subtle)] text-[var(--accent)]"
+              )}>
                 {everydayEntries.length}
               </span>
             </button>
@@ -237,35 +239,40 @@ export default function WeightTrackingPage() {
             <button
               onClick={() => setActiveTab("inbody")}
               className={cn(
-                "px-3.5 py-2 rounded-xl font-medium transition flex items-center space-x-2 shrink-0 whitespace-nowrap touch-manipulation cursor-pointer",
+                "px-4 py-2 rounded-full font-medium transition flex items-center space-x-2 shrink-0 cursor-pointer min-h-[36px]",
                 activeTab === "inbody"
-                  ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
+                  ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-xs"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
-              <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
-              <span>InBody Scans</span>
-              <span className="ml-1 text-[11px] px-1.5 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>InBody scans</span>
+              <span className={cn(
+                "ml-1 text-[11px] px-1.5 py-0.5 rounded-full font-semibold",
+                activeTab === "inbody"
+                  ? "bg-[var(--on-accent)]/15 text-[var(--on-accent)]"
+                  : "bg-[var(--accent-subtle)] text-[var(--accent)]"
+              )}>
                 {inbodyEntries.length}
               </span>
             </button>
           </div>
 
-          {/* Primary Add CTA */}
+          {/* Primary Add Weigh-in Pill CTA */}
           <button
             type="button"
             onClick={() => handleOpenAddModal(activeTab === "inbody" ? "inbody" : "daily")}
-            className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition touch-manipulation cursor-pointer"
+            className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-sm transition touch-manipulation cursor-pointer min-h-[44px]"
           >
             <Plus className="w-4 h-4" />
-            <span>{activeTab === "inbody" ? "Log InBody scan" : "Log weigh-in"}</span>
+            <span>{activeTab === "inbody" ? "Add InBody scan" : "Add weigh-in"}</span>
           </button>
         </div>
       </div>
 
       {/* Success Notification Banner */}
       {adaptiveSuccessMsg && (
-        <div className="p-3.5 rounded-2xl bg-[var(--status-on-track)]/10 border border-[var(--status-on-track)]/20 text-[var(--status-on-track)] text-xs flex items-center space-x-2 animate-in fade-in">
+        <div className="p-4 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] text-sm flex items-center space-x-2 animate-in fade-in">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{adaptiveSuccessMsg}</span>
         </div>
@@ -274,187 +281,134 @@ export default function WeightTrackingPage() {
       {/* TAB 1: Everyday Weigh-ins */}
       {activeTab === "everyday" && (
         <div className="space-y-8 animate-in fade-in duration-300">
-          {/* Adaptive Calorie Suggestion Banner */}
-          {analytics?.adaptiveSuggestion?.hasSuggestion && !adaptiveDismissed && (
-            <div className="p-5 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-subtle)]/40 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start space-x-3">
-                  <Sparkles className="w-5 h-5 text-[var(--accent)] shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-xs text-[var(--text-primary)]">
-                      Adaptive Calorie Target Suggestion
-                    </h3>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
-                      {analytics.adaptiveSuggestion.reason}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs">
-                      <span className="text-[var(--text-secondary)]">
-                        Current:{" "}
-                        <strong className="text-[var(--text-primary)] font-tabular">
-                          {analytics.adaptiveSuggestion.currentCalorieTarget} kcal
-                        </strong>
-                      </span>
-                      <span className="text-[var(--accent)] font-semibold flex items-center space-x-1">
-                        <span>Suggested:</span>
-                        <strong className="font-tabular">
-                          {analytics.adaptiveSuggestion.suggestedCalorieTarget} kcal
-                        </strong>
-                        <span className="text-[11px] font-normal">
-                          ({analytics.adaptiveSuggestion.differenceKcal > 0 ? "+" : ""}
-                          {analytics.adaptiveSuggestion.differenceKcal} kcal)
-                        </span>
-                      </span>
-                    </div>
-                  </div>
+          {/* Key Metrics Overview: 4 Stat tiles */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Tile 1: Current (Hero Card) */}
+            <div className="p-6 rounded-[28px] bg-[var(--hero)] text-[var(--hero-text)] space-y-2 flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-normal text-[var(--hero-muted)] block">
+                  Current weight
+                </span>
+                <div className="flex items-baseline space-x-1.5 mt-1">
+                  <span className="text-3xl font-semibold tracking-tight text-[var(--hero-text)] font-tabular">
+                    {latestWeight !== null ? latestWeight : "--"}
+                  </span>
+                  <span className="text-xs font-normal text-[var(--hero-muted)]">
+                    {unitLabel}
+                  </span>
                 </div>
+              </div>
+              <span className="text-xs text-[var(--hero-muted)] block font-tabular">
+                {latestEveryday?.date ? `Logged ${latestEveryday.date}` : "No check-ins yet"}
+              </span>
+            </div>
 
-                <div className="flex items-center space-x-2 shrink-0 self-end sm:self-center">
-                  <button
-                    type="button"
-                    onClick={() => setAdaptiveDismissed(true)}
-                    className="px-3 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition cursor-pointer"
-                  >
-                    Keep current
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isApplyingAdaptive}
-                    onClick={() =>
-                      handleAcceptAdaptiveSuggestion(
-                        analytics.adaptiveSuggestion!.suggestedCalorieTarget
-                      )
-                    }
-                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
-                  >
-                    {isApplyingAdaptive ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+            {/* Tile 2: 7-day average */}
+            <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-2 flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-normal text-[var(--text-secondary)] block">
+                  7-day average
+                </span>
+                <div className="flex items-baseline space-x-1.5 mt-1">
+                  <span className="text-3xl font-semibold tracking-tight text-[var(--text-primary)] font-tabular">
+                    {current7dAvg !== null ? current7dAvg : "--"}
+                  </span>
+                  <span className="text-xs font-normal text-[var(--text-secondary)]">
+                    {unitLabel}
+                  </span>
+                </div>
+              </div>
+              <span className="text-xs text-[var(--text-muted)] block">
+                Smoothed trend
+              </span>
+            </div>
+
+            {/* Tile 3: This week */}
+            <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-2 flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-normal text-[var(--text-secondary)] block">
+                  This week
+                </span>
+                <div className="flex items-baseline space-x-1.5 mt-1">
+                  <span
+                    className={cn(
+                      "text-3xl font-semibold tracking-tight font-tabular",
+                      weeklyChange !== null && weeklyChange > 0
+                        ? "text-[var(--status-over-target)]"
+                        : weeklyChange !== null && weeklyChange < 0
+                        ? "text-[var(--accent)]"
+                        : "text-[var(--text-primary)]"
                     )}
-                    <span>Accept target</span>
-                  </button>
+                  >
+                    {weeklyChange !== null
+                      ? weeklyChange > 0
+                        ? `+${weeklyChange}`
+                        : `${weeklyChange}`
+                      : "--"}
+                  </span>
+                  <span className="text-xs font-normal text-[var(--text-secondary)]">
+                    {unitLabel}/wk
+                  </span>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Key Metrics Overview Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 7-Day Rolling Avg */}
-            <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-1">
-              <span className="text-xs font-medium text-[var(--text-secondary)] block">
-                7-day rolling avg
-              </span>
-              <div className="flex items-baseline space-x-1.5">
-                <span className="text-3xl font-bold tracking-tight text-[var(--text-primary)] font-tabular">
-                  {current7dAvg !== null ? current7dAvg : "--"}
-                </span>
-                <span className="text-xs font-normal text-[var(--text-secondary)]">
-                  {unitLabel}
-                </span>
-              </div>
-              <span className="text-xs text-[var(--text-secondary)] block font-tabular">
-                Latest raw: {latestWeight !== null ? `${latestWeight} ${unitLabel}` : "--"}
-              </span>
-            </div>
-
-            {/* Change this week */}
-            <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-1">
-              <span className="text-xs font-medium text-[var(--text-secondary)] block">
-                Weekly trend
-              </span>
-              <div className="flex items-baseline space-x-1.5">
-                <span
-                  className={cn(
-                    "text-3xl font-bold tracking-tight font-tabular",
-                    weeklyChange !== null && weeklyChange < 0
-                      ? "text-[var(--status-on-track)]"
-                      : weeklyChange !== null && weeklyChange > 0
-                      ? "text-[var(--status-over-target)]"
-                      : "text-[var(--text-primary)]"
-                  )}
-                >
-                  {weeklyChange !== null
-                    ? weeklyChange > 0
-                      ? `+${weeklyChange}`
-                      : `${weeklyChange}`
-                    : "--"}
-                </span>
-                <span className="text-xs font-normal text-[var(--text-secondary)]">
-                  {unitLabel}/wk
-                </span>
-              </div>
-              <span className="text-xs text-[var(--text-secondary)] block">
+              <span className="text-xs text-[var(--text-muted)] block">
                 vs. previous 7-day average
               </span>
             </div>
 
-            {/* Total Progress */}
-            <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-1">
-              <span className="text-xs font-medium text-[var(--text-secondary)] block">
-                Total change
-              </span>
-              <div className="flex items-baseline space-x-1.5">
-                <span
-                  className={cn(
-                    "text-3xl font-bold tracking-tight font-tabular",
-                    totalChange !== null && totalChange < 0
-                      ? "text-[var(--status-on-track)]"
-                      : totalChange !== null && totalChange > 0
-                      ? "text-[var(--status-over-target)]"
-                      : "text-[var(--text-primary)]"
-                  )}
-                >
-                  {totalChange !== null
-                    ? totalChange > 0
-                      ? `+${totalChange}`
-                      : `${totalChange}`
-                    : "--"}
-                </span>
-                <span className="text-xs font-normal text-[var(--text-secondary)]">
-                  {unitLabel}
-                </span>
+            {/* Tile 4: Suggested target (lime-subtle card) */}
+            <div className="p-6 rounded-3xl bg-[var(--accent-subtle)] space-y-3 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-[var(--accent)] block">
+                    Suggested target
+                  </span>
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
+                </div>
+                <div className="flex items-baseline space-x-1.5 mt-1">
+                  <span className="text-3xl font-semibold tracking-tight text-[var(--text-primary)] font-tabular">
+                    {analytics?.adaptiveSuggestion?.suggestedCalorieTarget || goalWeight || "--"}
+                  </span>
+                  <span className="text-xs font-normal text-[var(--text-secondary)]">
+                    {analytics?.adaptiveSuggestion?.hasSuggestion ? "kcal/day" : unitLabel}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-1">
+                  {analytics?.adaptiveSuggestion?.reason || (remainingGoal !== null ? `${remainingGoal} ${unitLabel} to go` : "Target nutrition pace")}
+                </p>
               </div>
-              <span className="text-xs text-[var(--text-secondary)] block font-tabular">
-                Start: {toDisplay(analytics?.startWeightKg) || "--"} {unitLabel}
-              </span>
-            </div>
 
-            {/* Goal Target */}
-            <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-1">
-              <span className="text-xs font-medium text-[var(--text-secondary)] block">
-                Goal weight
-              </span>
-              <div className="flex items-baseline space-x-1.5">
-                <span className="text-3xl font-bold tracking-tight text-[var(--accent)] font-tabular">
-                  {goalWeight !== null ? goalWeight : "--"}
-                </span>
-                <span className="text-xs font-normal text-[var(--text-secondary)]">
-                  {unitLabel}
-                </span>
-              </div>
-              <span className="text-xs text-[var(--text-secondary)] block font-tabular">
-                {remainingGoal !== null
-                  ? `${remainingGoal} ${unitLabel} to go`
-                  : "Set in settings"}
-                {estWeeks !== null && estWeeks !== undefined && estWeeks > 0
-                  ? ` (~${estWeeks} wks)`
-                  : ""}
-              </span>
+              {analytics?.adaptiveSuggestion?.hasSuggestion && (
+                <button
+                  type="button"
+                  disabled={isApplyingAdaptive}
+                  onClick={() =>
+                    handleAcceptAdaptiveSuggestion(
+                      analytics.adaptiveSuggestion!.suggestedCalorieTarget
+                    )
+                  }
+                  className="inline-flex items-center justify-center space-x-1.5 w-full py-2 px-3 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer min-h-[36px]"
+                >
+                  {isApplyingAdaptive ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  )}
+                  <span>Accept target</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Interactive Weight Trend Chart (Exclusively Everyday Scale Weigh-ins) */}
+          {/* Interactive Weight Trend Chart */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
-                  Daily weigh-in trend line
-                </h2>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Raw scale entries (dots) with 7-day rolling average (solid line)
-                </p>
-              </div>
+            <div>
+              <p className="text-xs text-[var(--text-muted)]">
+                Daily weigh-in trend line
+              </p>
+              <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
+                Scale weight &amp; 7-day average
+              </h2>
             </div>
 
             <WeightTrendChart
@@ -464,22 +418,20 @@ export default function WeightTrackingPage() {
             />
           </div>
 
-          {/* Everyday Weigh-in Table (Strictly Everyday Weigh-ins, No InBody Columns) */}
+          {/* Everyday Weigh-in Table */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
-                  Everyday weigh-in logs
+                <p className="text-xs text-[var(--text-muted)]">Check-in history</p>
+                <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
+                  Everyday weigh-ins ({everydayEntries.length})
                 </h2>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  {everydayEntries.length} logged scale check-ins
-                </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => handleOpenAddModal("daily")}
-                className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--background)] transition"
+                className="inline-flex items-center space-x-1 px-4 py-2 rounded-full bg-[var(--surface)] text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer min-h-[36px]"
               >
                 <Plus className="w-3.5 h-3.5 text-[var(--accent)]" />
                 <span>Add weigh-in</span>
@@ -487,35 +439,37 @@ export default function WeightTrackingPage() {
             </div>
 
             {everydayEntries.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
-                <Scale className="w-8 h-8 text-[var(--text-secondary)] opacity-40 mx-auto" />
-                <h3 className="font-semibold text-sm text-[var(--text-primary)]">
-                  No everyday weigh-ins logged yet
-                </h3>
-                <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
-                  Weigh yourself under consistent conditions (e.g. morning, fasted) and log daily to track real fat loss and muscle gain trends.
-                </p>
+              <div className="p-12 text-center rounded-3xl bg-[var(--surface)] space-y-4">
+                <Scale className="w-10 h-10 text-[var(--text-muted)] opacity-50 mx-auto" />
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-base text-[var(--text-primary)]">
+                    No weigh-ins logged yet
+                  </h3>
+                  <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
+                    Weigh yourself under consistent conditions (morning, fasted) and log daily to track real fat loss and muscle gain trends.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => handleOpenAddModal("daily")}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition"
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer min-h-[44px]"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Log your first weigh-in</span>
                 </button>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs">
+              <div className="overflow-hidden rounded-3xl bg-[var(--surface)]">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[var(--background)] border-b border-[var(--border)] text-[var(--text-secondary)] font-medium text-xs">
+                    <thead className="bg-[var(--surface)] border-b border-[var(--border)] text-[var(--text-secondary)] font-medium text-xs">
                       <tr>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">Date &amp; Time</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">Scale weight</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">7-day rolling avg</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">Change vs prev</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">Notes</th>
-                        <th className="px-4 sm:px-6 py-3 text-right whitespace-nowrap">Actions</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">Date &amp; Time</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">Scale weight</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">7-day rolling avg</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">Change vs prev</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">Notes</th>
+                        <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border)]">
@@ -523,7 +477,6 @@ export default function WeightTrackingPage() {
                         const rawDisp = toDisplay(point.weightKg);
                         const avgDisp = toDisplay(point.rollingAvg7d);
 
-                        // Calculate delta vs previous chronologically (which is next item in reversed array)
                         const prevPoint = arr[idx + 1];
                         let deltaDisp = null;
                         let deltaVal = 0;
@@ -535,9 +488,9 @@ export default function WeightTrackingPage() {
                         return (
                           <tr
                             key={point.id || `${point.date}-${point.time}`}
-                            className="hover:bg-[var(--background)]/50 transition group"
+                            className="hover:bg-[var(--background)]/40 transition group"
                           >
-                            <td className="px-4 sm:px-6 py-3 font-normal text-[var(--text-primary)] whitespace-nowrap">
+                            <td className="px-5 py-3.5 font-normal text-[var(--text-primary)] whitespace-nowrap">
                               <div className="font-medium font-tabular">{point.date}</div>
                               {point.time && (
                                 <div className="text-[11px] text-[var(--text-secondary)] flex items-center gap-1 mt-0.5 font-tabular">
@@ -546,23 +499,23 @@ export default function WeightTrackingPage() {
                                 </div>
                               )}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 font-bold text-[var(--text-primary)] text-sm font-tabular whitespace-nowrap">
+                            <td className="px-5 py-3.5 font-semibold text-[var(--text-primary)] text-sm font-tabular whitespace-nowrap">
                               {rawDisp} {unitLabel}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
-                              <span className="font-semibold text-[var(--accent)] font-tabular">
+                            <td className="px-5 py-3.5 whitespace-nowrap">
+                              <span className="font-semibold text-[var(--lime)] font-tabular">
                                 {avgDisp} {unitLabel}
                               </span>
                             </td>
-                            <td className="px-4 sm:px-6 py-3 whitespace-nowrap font-tabular">
+                            <td className="px-5 py-3.5 whitespace-nowrap font-tabular">
                               {deltaDisp !== null ? (
                                 <span
                                   className={cn(
-                                    "font-medium",
-                                    deltaVal < 0
-                                      ? "text-[var(--status-on-track)]"
-                                      : deltaVal > 0
+                                    "font-semibold",
+                                    deltaVal > 0
                                       ? "text-[var(--status-over-target)]"
+                                      : deltaVal < 0
+                                      ? "text-[var(--text-primary)]"
                                       : "text-[var(--text-secondary)]"
                                   )}
                                 >
@@ -572,14 +525,14 @@ export default function WeightTrackingPage() {
                                 <span className="text-[var(--text-muted)]">--</span>
                               )}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 text-[var(--text-secondary)] max-w-xs truncate">
+                            <td className="px-5 py-3.5 text-[var(--text-secondary)] max-w-xs truncate">
                               {point.notes || "--"}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 text-right space-x-1 whitespace-nowrap">
+                            <td className="px-5 py-3.5 text-right space-x-1 whitespace-nowrap">
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditModal(point, "daily")}
-                                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
+                                className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation cursor-pointer"
                                 title="Edit weigh-in"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -587,7 +540,7 @@ export default function WeightTrackingPage() {
                               <button
                                 type="button"
                                 onClick={() => handleDeleteEntry(point.id)}
-                                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
+                                className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--status-over-target)] hover:bg-[var(--status-over-target)]/10 transition cursor-pointer"
                                 title="Delete weigh-in"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -611,21 +564,21 @@ export default function WeightTrackingPage() {
           {/* InBody KPI Overview Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Body Fat % */}
-            <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-1">
-              <span className="text-xs font-medium text-[var(--text-secondary)] block">
+            <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-1">
+              <span className="text-xs font-normal text-[var(--text-secondary)] block">
                 Latest Body Fat %
               </span>
               <div className="flex items-baseline space-x-1.5">
-                <span className="text-3xl font-bold tracking-tight text-sky-500 font-tabular">
+                <span className="text-3xl font-semibold tracking-tight text-[var(--macro-protein)] font-tabular">
                   {latestInBody?.bodyFatPct != null ? `${latestInBody.bodyFatPct}%` : "--"}
                 </span>
               </div>
-              <span className="text-xs text-[var(--text-secondary)] block font-tabular">
+              <span className="text-xs text-[var(--text-muted)] block font-tabular">
                 {inbodyBfChange !== null ? (
                   <span
                     className={cn(
                       inbodyBfChange < 0
-                        ? "text-[var(--status-on-track)] font-medium"
+                        ? "text-[var(--accent)] font-medium"
                         : inbodyBfChange > 0
                         ? "text-[var(--status-over-target)] font-medium"
                         : ""
@@ -640,24 +593,24 @@ export default function WeightTrackingPage() {
             </div>
 
             {/* Skeletal Muscle Mass (SMM) */}
-            <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-1">
-              <span className="text-xs font-medium text-[var(--text-secondary)] block">
+            <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-1">
+              <span className="text-xs font-normal text-[var(--text-secondary)] block">
                 Skeletal Muscle (SMM)
               </span>
               <div className="flex items-baseline space-x-1.5">
-                <span className="text-3xl font-bold tracking-tight text-emerald-500 font-tabular">
+                <span className="text-3xl font-semibold tracking-tight text-[var(--accent)] font-tabular">
                   {toDisplay(latestInBody?.smmKg) || "--"}
                 </span>
                 <span className="text-xs font-normal text-[var(--text-secondary)]">
                   {unitLabel}
                 </span>
               </div>
-              <span className="text-xs text-[var(--text-secondary)] block font-tabular">
+              <span className="text-xs text-[var(--text-muted)] block font-tabular">
                 {inbodySmmChange !== null ? (
                   <span
                     className={cn(
                       inbodySmmChange > 0
-                        ? "text-[var(--status-on-track)] font-medium"
+                        ? "text-[var(--accent)] font-medium"
                         : inbodySmmChange < 0
                         ? "text-[var(--status-over-target)] font-medium"
                         : ""
@@ -672,16 +625,16 @@ export default function WeightTrackingPage() {
             </div>
 
             {/* BMI */}
-            <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-1">
-              <span className="text-xs font-medium text-[var(--text-secondary)] block">
+            <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-1">
+              <span className="text-xs font-normal text-[var(--text-secondary)] block">
                 Body Mass Index (BMI)
               </span>
               <div className="flex items-baseline space-x-1.5">
-                <span className="text-3xl font-bold tracking-tight text-purple-500 font-tabular">
+                <span className="text-3xl font-semibold tracking-tight text-[var(--macro-carbs)] font-tabular">
                   {latestInBody?.bmi != null ? latestInBody.bmi : "--"}
                 </span>
               </div>
-              <span className="text-xs text-[var(--text-secondary)] block">
+              <span className="text-xs text-[var(--text-muted)] block">
                 {latestInBody?.bmi ? (
                   latestInBody.bmi < 18.5
                     ? "Underweight (<18.5)"
@@ -691,23 +644,23 @@ export default function WeightTrackingPage() {
                     ? "Overweight (25–29.9)"
                     : "Obese (≥30)"
                 ) : (
-                  "Calculated from height & weight"
+                  "From height & weight"
                 )}
               </span>
             </div>
 
             {/* Lean Mass vs Fat Mass */}
-            <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-1">
-              <span className="text-xs font-medium text-[var(--text-secondary)] block">
+            <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-1">
+              <span className="text-xs font-normal text-[var(--text-secondary)] block">
                 Lean vs Fat Mass
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-xl font-bold tracking-tight text-[var(--text-primary)] font-tabular">
+                <span className="text-2xl font-semibold tracking-tight text-[var(--text-primary)] font-tabular">
                   {latestLeanMass ? `${latestLeanMass} ${unitLabel}` : "--"}
                 </span>
                 <span className="text-xs text-[var(--text-secondary)]">Lean</span>
               </div>
-              <span className="text-xs text-[var(--text-secondary)] block font-tabular">
+              <span className="text-xs text-[var(--text-muted)] block font-tabular">
                 Fat mass: {latestFatMass ? `${latestFatMass} ${unitLabel}` : "--"}
               </span>
             </div>
@@ -717,18 +670,16 @@ export default function WeightTrackingPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
-                  InBody scan reports &amp; history
+                <p className="text-xs text-[var(--text-muted)]">Body composition records</p>
+                <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
+                  InBody scan history ({inbodyEntries.length})
                 </h2>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  {inbodyEntries.length} recorded InBody body composition scans
-                </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => handleOpenAddModal("inbody")}
-                className="inline-flex items-center space-x-1 px-3.5 py-1.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition"
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer min-h-[36px]"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Log InBody scan</span>
@@ -736,37 +687,39 @@ export default function WeightTrackingPage() {
             </div>
 
             {inbodyEntries.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] space-y-3">
-                <Sparkles className="w-8 h-8 text-[var(--accent)] opacity-50 mx-auto" />
-                <h3 className="font-semibold text-sm text-[var(--text-primary)]">
-                  No InBody scans logged yet
-                </h3>
-                <p className="text-xs text-[var(--text-secondary)] max-w-md mx-auto">
-                  Take your monthly InBody scan sheet from your gym or clinic, and log your Body Fat %, Skeletal Muscle Mass (SMM), and BMI here to watch true body recomposition progress over time!
-                </p>
+              <div className="p-12 text-center rounded-3xl bg-[var(--surface)] space-y-4">
+                <Sparkles className="w-10 h-10 text-[var(--accent)] opacity-50 mx-auto" />
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-base text-[var(--text-primary)]">
+                    No InBody scans logged yet
+                  </h3>
+                  <p className="text-xs text-[var(--text-secondary)] max-w-md mx-auto">
+                    Take your monthly InBody scan sheet from your gym or clinic, and log your Body Fat %, Skeletal Muscle Mass (SMM), and BMI here to watch true body recomposition progress over time!
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => handleOpenAddModal("inbody")}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-xs shadow-xs transition"
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer min-h-[44px]"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Log your first InBody scan</span>
                 </button>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs">
+              <div className="overflow-hidden rounded-3xl bg-[var(--surface)]">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[var(--background)] border-b border-[var(--border)] text-[var(--text-secondary)] font-medium text-xs">
+                    <thead className="bg-[var(--surface)] border-b border-[var(--border)] text-[var(--text-secondary)] font-medium text-xs">
                       <tr>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">Date &amp; Time</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">Total weight</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">Body Fat %</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">SMM (Muscle)</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">BMI</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">Lean / Fat Mass</th>
-                        <th className="px-4 sm:px-6 py-3 whitespace-nowrap">Notes</th>
-                        <th className="px-4 sm:px-6 py-3 text-right whitespace-nowrap">Actions</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">Date &amp; Time</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">Total weight</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">Body Fat %</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">SMM (Muscle)</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">BMI</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">Lean / Fat Mass</th>
+                        <th className="px-5 py-3.5 whitespace-nowrap">Notes</th>
+                        <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border)]">
@@ -786,9 +739,9 @@ export default function WeightTrackingPage() {
                         return (
                           <tr
                             key={scan.id || scan.date}
-                            className="hover:bg-[var(--background)]/50 transition group"
+                            className="hover:bg-[var(--background)]/40 transition group"
                           >
-                            <td className="px-4 sm:px-6 py-3 font-normal text-[var(--text-primary)] whitespace-nowrap">
+                            <td className="px-5 py-3.5 font-normal text-[var(--text-primary)] whitespace-nowrap">
                               <div className="font-medium font-tabular">{scan.date}</div>
                               {scan.time && (
                                 <div className="text-[11px] text-[var(--text-secondary)] flex items-center gap-1 mt-0.5 font-tabular">
@@ -797,56 +750,56 @@ export default function WeightTrackingPage() {
                                 </div>
                               )}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 font-bold text-[var(--text-primary)] text-sm font-tabular whitespace-nowrap">
+                            <td className="px-5 py-3.5 font-semibold text-[var(--text-primary)] text-sm font-tabular whitespace-nowrap">
                               {rawDisp} {unitLabel}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                            <td className="px-5 py-3.5 whitespace-nowrap">
                               {scan.bodyFatPct != null ? (
-                                <span className="px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-500 font-bold font-tabular text-xs">
+                                <span className="px-2.5 py-1 rounded-full bg-[var(--macro-protein-bg)] text-[var(--macro-protein)] font-semibold font-tabular text-xs">
                                   {scan.bodyFatPct}%
                                 </span>
                               ) : (
                                 "--"
                               )}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                            <td className="px-5 py-3.5 whitespace-nowrap">
                               {smmDisp != null ? (
-                                <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-500 font-bold font-tabular text-xs">
+                                <span className="px-2.5 py-1 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold font-tabular text-xs">
                                   {smmDisp} {unitLabel}
                                 </span>
                               ) : (
                                 "--"
                               )}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                            <td className="px-5 py-3.5 whitespace-nowrap">
                               {scan.bmi != null ? (
-                                <span className="px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-500 font-bold font-tabular text-xs">
+                                <span className="px-2.5 py-1 rounded-full bg-[var(--macro-carbs-bg)] text-[var(--macro-carbs)] font-semibold font-tabular text-xs">
                                   {scan.bmi}
                                 </span>
                               ) : (
                                 "--"
                               )}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 whitespace-nowrap font-tabular text-[11px]">
+                            <td className="px-5 py-3.5 whitespace-nowrap font-tabular text-xs">
                               {scanLeanDisp && scanFatDisp ? (
                                 <div>
                                   <span className="text-[var(--text-primary)] font-semibold">
                                     {scanLeanDisp} {unitLabel}
                                   </span>{" "}
-                                  <span className="text-[var(--text-secondary)]">/ {scanFatDisp} {unitLabel}</span>
+                                  <span className="text-[var(--text-muted)]">/ {scanFatDisp} {unitLabel}</span>
                                 </div>
                               ) : (
                                 "--"
                               )}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 text-[var(--text-secondary)] max-w-xs truncate">
+                            <td className="px-5 py-3.5 text-[var(--text-secondary)] max-w-xs truncate">
                               {scan.notes || "--"}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 text-right space-x-1 whitespace-nowrap">
+                            <td className="px-5 py-3.5 text-right space-x-1 whitespace-nowrap">
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditModal(scan, "inbody")}
-                                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
+                                className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation cursor-pointer"
                                 title="Edit scan"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -854,7 +807,7 @@ export default function WeightTrackingPage() {
                               <button
                                 type="button"
                                 onClick={() => handleDeleteEntry(scan.id)}
-                                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
+                                className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--status-over-target)] hover:bg-[var(--status-over-target)]/10 transition cursor-pointer"
                                 title="Delete scan"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

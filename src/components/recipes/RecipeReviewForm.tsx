@@ -30,6 +30,7 @@ interface RecipeReviewFormProps {
   sourceUrl?: string;
   warnings?: string[];
   onCancel?: () => void;
+  onSaved?: (newId: string) => void;
 }
 
 export function RecipeReviewForm({
@@ -38,6 +39,7 @@ export function RecipeReviewForm({
   sourceUrl,
   warnings = [],
   onCancel,
+  onSaved,
 }: RecipeReviewFormProps) {
   const router = useRouter();
 
@@ -278,7 +280,11 @@ export function RecipeReviewForm({
       }
 
       const saved = await res.json();
-      router.push(`/recipes/${saved.id}`);
+      if (onSaved) {
+        onSaved(saved.id);
+      } else {
+        router.push(`/recipes/${saved.id}`);
+      }
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : "Error saving recipe");
       setIsSaving(false);
@@ -290,7 +296,7 @@ export function RecipeReviewForm({
       {/* Header Notification Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[var(--accent-subtle)] border border-[var(--border)] text-[var(--text-primary)]">
         <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-[var(--accent)] text-white">
+          <div className="p-2 rounded-xl bg-[var(--accent)] text-[var(--on-accent)]">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
@@ -313,7 +319,7 @@ export function RecipeReviewForm({
           <button
             type="submit"
             disabled={isSaving}
-            className="px-5 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs shadow-xs transition"
+            className="px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer"
           >
             {isSaving ? "Saving..." : "Save recipe"}
           </button>
@@ -340,7 +346,7 @@ export function RecipeReviewForm({
       )}
 
       {/* Basic Metadata Card */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
+      <div className="p-6 md:p-8 rounded-3xl bg-[var(--surface)] space-y-5">
         <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
           Recipe overview
         </h2>
@@ -451,7 +457,7 @@ export function RecipeReviewForm({
       </div>
 
       {/* Ingredients Card */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
+      <div className="p-6 md:p-8 rounded-3xl bg-[var(--surface)] space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
@@ -586,7 +592,7 @@ export function RecipeReviewForm({
       </div>
 
       {/* Instructions Card */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
+      <div className="p-6 md:p-8 rounded-3xl bg-[var(--surface)] space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
             Instructions ({instructions.length})
@@ -607,7 +613,7 @@ export function RecipeReviewForm({
               key={inst.id}
               className="flex items-start space-x-3 p-3 rounded-xl bg-[var(--background)] border border-[var(--border)]"
             >
-              <div className="w-6 h-6 rounded-full bg-[var(--accent)] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-1">
+              <div className="w-6 h-6 rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-bold flex items-center justify-center shrink-0 mt-1">
                 {idx + 1}
               </div>
 
@@ -633,7 +639,7 @@ export function RecipeReviewForm({
       </div>
 
       {/* Nutrition Card (Calculated or Overridden) */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
+      <div className="p-6 md:p-8 rounded-3xl bg-[var(--surface)] space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
@@ -718,7 +724,7 @@ export function RecipeReviewForm({
           <button
             type="submit"
             disabled={isSaving}
-            className="px-6 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:opacity-90 text-white font-medium text-xs shadow-xs transition min-h-[38px] flex items-center justify-center touch-manipulation"
+            className="px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer"
           >
             {isSaving ? "Saving recipe..." : "Save recipe"}
           </button>
@@ -732,7 +738,7 @@ export function RecipeReviewForm({
           onClick={() => setIsLookupOpen(false)}
         >
           <div 
-            className="w-full max-w-xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
+            className="w-full max-w-xl rounded-3xl bg-[var(--surface)] p-6 space-y-5 max-h-[85vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -773,7 +779,7 @@ export function RecipeReviewForm({
                 type="button"
                 onClick={() => executeLookup(lookupQuery)}
                 disabled={isSearchingLookup || !lookupQuery.trim()}
-                className="px-3.5 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-medium hover:bg-[var(--accent-hover)] transition disabled:opacity-50"
+                className="px-4 min-h-[44px] rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold hover:bg-[var(--accent-hover)] transition disabled:opacity-50"
               >
                 {isSearchingLookup ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
               </button>
@@ -806,7 +812,7 @@ export function RecipeReviewForm({
                             "text-[9px] font-semibold uppercase px-1 py-0.5 rounded",
                             candidate.source === "usda"
                               ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
-                              : "bg-[#E6EEF5] text-[#4C6E8C] dark:bg-[#1A2633] dark:text-[#8BB4D9]"
+                              : "bg-[var(--macro-protein-bg)] text-[var(--macro-protein)]"
                           )}
                         >
                           {candidate.source === "usda" ? "USDA" : "OFF"}
@@ -821,7 +827,7 @@ export function RecipeReviewForm({
                       type="button"
                       disabled={isImportingLookup}
                       onClick={() => applyLookupSelection(candidate)}
-                      className="px-2.5 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-medium shrink-0 transition"
+                      className="px-3.5 py-1.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold shrink-0 transition"
                     >
                       Select &amp; Link
                     </button>

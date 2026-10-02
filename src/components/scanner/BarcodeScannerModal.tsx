@@ -16,8 +16,10 @@ import {
   ExternalLink,
   Flashlight,
   FlashlightOff,
+  Layers,
 } from "lucide-react";
 import { MacroBadge } from "@/components/ui/MacroBadge";
+import { cn } from "@/lib/utils";
 
 interface BarcodeScannerModalProps {
   isOpen: boolean;
@@ -27,6 +29,9 @@ interface BarcodeScannerModalProps {
   defaultMealCategory?: string;
   onProductSelected?: (product: any) => void;
   onSuccess?: () => void;
+  onOpenNutritionScanner?: () => void;
+  onOpenManualEntry?: (barcode?: string) => void;
+  onOpenSearchByName?: (initialQuery?: string) => void;
 }
 
 // Lightweight synthesized beep with haptic vibration feedback
@@ -67,18 +72,24 @@ export function BarcodeScannerModal({
   defaultMealCategory = "lunch",
   onProductSelected,
   onSuccess,
+  onOpenNutritionScanner,
+  onOpenManualEntry,
+  onOpenSearchByName,
 }: BarcodeScannerModalProps) {
   const [activeTab, setActiveTab] = useState<"camera" | "upload" | "manual">("camera");
   const [manualBarcode, setManualBarcode] = useState("");
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [productNotFound, setProductNotFound] = useState(false);
   const [scannedProduct, setScannedProduct] = useState<any | null>(null);
   const [scannedBarcode, setScannedBarcode] = useState<string>("");
 
   // Action states for saving
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isContinuousMode, setIsContinuousMode] = useState(false);
+  const [sessionScannedCount, setSessionScannedCount] = useState(0);
 
   // Meal customization
   const [selectedDay, setSelectedDay] = useState(defaultDayOfWeek);
@@ -249,28 +260,30 @@ export function BarcodeScannerModal({
   const lookupBarcode = async (barcode: string) => {
     setIsLookingUp(true);
     setLookupError(null);
+    setProductNotFound(false);
     setScannedProduct(null);
     setActionSuccess(null);
 
     try {
-      const res = await fetch(`/api/foods/external/search?q=${encodeURIComponent(barcode)}`);
-      if (!res.ok) throw new Error("Search request failed");
-      const candidates = await res.json();
-
-      if (Array.isArray(candidates) && candidates.length > 0) {
-        const item = candidates[0];
-        setScannedProduct(item);
-        if (item.servingWeightGrams && item.servingWeightGrams > 0) {
-          setPortionGrams(String(item.servingWeightGrams));
-        }
-        if (onProductSelected) {
-          onProductSelected(item);
+      const res = await fetch(`/api/foods/barcode/${encodeURIComponent(barcode)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.found && data.food) {
+          setScannedProduct(data.food);
+          setProductNotFound(false);
+          const servWeight = data.food.servingWeightGrams || data.food.servingSize || 100;
+          setPortionGrams(String(servWeight));
+          if (onProductSelected) {
+            onProductSelected(data.food);
+          }
+        } else {
+          setProductNotFound(true);
         }
       } else {
-        setLookupError(`No food item found for barcode "${barcode}". You can add it as a custom food.`);
+        setProductNotFound(true);
       }
     } catch (err: any) {
-      setLookupError(err?.message || "Failed to lookup barcode in Open Food Facts");
+      setLookupError("Network error while communicating with barcode lookup service.");
     } finally {
       setIsLookingUp(false);
     }
@@ -321,6 +334,7 @@ export function BarcodeScannerModal({
     setScannedProduct(null);
     setScannedBarcode("");
     setLookupError(null);
+    setProductNotFound(false);
     setActionSuccess(null);
     if (activeTab === "camera") {
       setTimeout(() => {
@@ -362,11 +376,20 @@ export function BarcodeScannerModal({
       });
 
       if (!res.ok) throw new Error("Failed to add meal");
-      setActionSuccess(`Logged to ${selectedDay.toUpperCase()} ${selectedCategory.toUpperCase()}!`);
       if (onSuccess) onSuccess();
-      setTimeout(() => {
-        handleClose();
-      }, 1200);
+
+      if (isContinuousMode) {
+        setSessionScannedCount((c) => c + 1);
+        setActionSuccess(`Logged! Ready for next barcode...`);
+        setTimeout(() => {
+          resetToScanAgain();
+        }, 1200);
+      } else {
+        setActionSuccess(`Logged to ${selectedDay.toUpperCase()} ${selectedCategory.toUpperCase()}!`);
+        setTimeout(() => {
+          handleClose();
+        }, 1200);
+      }
     } catch (err: any) {
       setLookupError(err?.message || "Failed to log meal");
     } finally {
@@ -405,11 +428,20 @@ export function BarcodeScannerModal({
       });
 
       if (!res.ok) throw new Error("Failed to add pantry item");
-      setActionSuccess("Added to your Pantry inventory!");
       if (onSuccess) onSuccess();
-      setTimeout(() => {
-        handleClose();
-      }, 1200);
+
+      if (isContinuousMode) {
+        setSessionScannedCount((c) => c + 1);
+        setActionSuccess(`Added to Pantry! Ready for next barcode...`);
+        setTimeout(() => {
+          resetToScanAgain();
+        }, 1200);
+      } else {
+        setActionSuccess("Added to your Pantry inventory!");
+        setTimeout(() => {
+          handleClose();
+        }, 1200);
+      }
     } catch (err: any) {
       setLookupError(err?.message || "Failed to add to pantry");
     } finally {
@@ -449,7 +481,7 @@ export function BarcodeScannerModal({
       onClick={handleClose}
     >
       <div 
-        className="relative w-full max-w-lg rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative w-full max-w-lg rounded-3xl bg-[var(--surface)] overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -465,13 +497,34 @@ export function BarcodeScannerModal({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setIsContinuousMode((v) => !v)}
+              className={cn(
+                "px-2.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5 border touch-manipulation",
+                isContinuousMode
+                  ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold rounded-full"
+                  : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full"
+              )}
+              title="Continuous grocery scanning mode: scans multiple items without closing the modal"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Continuous</span>
+              {sessionScannedCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 bg-white/20 rounded-full text-[10px] font-bold">
+                  {sessionScannedCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Mode Navigation Tabs (Camera / Photo Upload / Manual Digits) */}
@@ -520,7 +573,7 @@ export function BarcodeScannerModal({
             <div className="py-12 flex flex-col items-center justify-center space-y-3">
               <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
               <div className="text-sm font-medium text-[var(--text-primary)]">
-                Looking up barcode in Open Food Facts...
+                Searching MealPrep, Open Food Facts, and USDA for barcode...
               </div>
               <div className="text-xs font-tabular text-[var(--text-secondary)]">
                 Barcode: {scannedBarcode}
@@ -528,8 +581,73 @@ export function BarcodeScannerModal({
             </div>
           )}
 
-          {/* Error Message */}
-          {lookupError && !isLookingUp && (
+          {/* Product Not Found State (Calm, friendly guidance — not an error) */}
+          {productNotFound && !isLookingUp && (
+            <div className="p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border)] text-center space-y-3 animate-in fade-in">
+              <div className="w-10 h-10 rounded-full bg-[var(--background)] border border-[var(--border)] flex items-center justify-center mx-auto text-[var(--text-secondary)]">
+                <Package className="w-5 h-5 text-[var(--accent)]" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-[var(--text-primary)]">Product Not Found</h4>
+                <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
+                  We couldn&apos;t find a product matching barcode <span className="font-mono text-[var(--text-primary)]">{scannedBarcode}</span> in our databases.
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                {onOpenNutritionScanner && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClose();
+                      onOpenNutritionScanner();
+                    }}
+                    className="w-full sm:w-auto px-5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center justify-center space-x-1.5"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Scan Nutrition Label</span>
+                  </button>
+                )}
+
+                {onOpenManualEntry && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClose();
+                      onOpenManualEntry(scannedBarcode);
+                    }}
+                    className="w-full sm:w-auto px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--background)] text-xs font-medium text-[var(--text-primary)] transition cursor-pointer"
+                  >
+                    <span>Enter Manually</span>
+                  </button>
+                )}
+
+                {onOpenSearchByName && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClose();
+                      onOpenSearchByName();
+                    }}
+                    className="w-full sm:w-auto px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--background)] text-xs font-medium text-[var(--text-primary)] transition cursor-pointer"
+                  >
+                    <span>Search by Name</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={resetToScanAgain}
+                  className="w-full sm:w-auto px-3 py-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer"
+                >
+                  Scan another
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Error Message (Actual Network / System errors) */}
+          {lookupError && !isLookingUp && !productNotFound && (
             <div className="p-4 rounded-xl bg-[var(--ui-error-bg)] border border-[var(--border)] text-xs text-[var(--text-primary)] flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 text-[var(--ui-error)] shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -692,7 +810,7 @@ export function BarcodeScannerModal({
                   <button
                     onClick={handleLogToMealPlan}
                     disabled={isSubmitting}
-                    className="flex-1 py-2 px-3 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition flex items-center justify-center gap-1.5"
+                    className="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition flex items-center justify-center gap-1.5"
                   >
                     {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calendar className="w-3.5 h-3.5" />}
                     <span>Log to Meal Plan</span>
@@ -732,7 +850,7 @@ export function BarcodeScannerModal({
                     onClick={toggleTorch}
                     className={`absolute top-3 right-3 z-20 p-2.5 rounded-full backdrop-blur-md transition shadow-md touch-manipulation flex items-center justify-center ${
                       isTorchOn
-                        ? "bg-[var(--accent)] text-white shadow-xs"
+                        ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                         : "bg-black/60 text-white hover:bg-black/80 border border-white/20"
                     }`}
                     title={isTorchOn ? "Turn off flashlight" : "Turn on flashlight"}
@@ -817,7 +935,7 @@ export function BarcodeScannerModal({
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-xs transition"
+                    className="px-5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition"
                   >
                     Lookup
                   </button>

@@ -72,8 +72,8 @@ function applySecurityHeaders(response: NextResponse) {
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' blob: data: https://images.unsplash.com https://*.spoonacular.com https://*.openfoodfacts.org",
-    "connect-src 'self' https://world.openfoodfacts.org https://api.nal.usda.gov",
+    "img-src 'self' blob: data: https://images.unsplash.com https://*.spoonacular.com https://*.openfoodfacts.org https://*.mcdonalds.com.jo https://*.fatsecret.com",
+    "connect-src 'self' https://world.openfoodfacts.org https://api.nal.usda.gov https://platform.fatsecret.com",
     "worker-src 'self' blob:",
     "frame-ancestors 'none'",
   ].join("; ");

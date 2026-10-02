@@ -280,7 +280,7 @@ export function RecipeEditForm({ recipe }: RecipeEditFormProps) {
         <button
           type="submit"
           disabled={isSaving}
-          className="px-5 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-xs shadow-xs transition"
+          className="px-6 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer"
         >
           {isSaving ? "Saving..." : "Save changes"}
         </button>
@@ -293,7 +293,7 @@ export function RecipeEditForm({ recipe }: RecipeEditFormProps) {
       )}
 
       {/* Basic Metadata Card */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
+      <div className="p-6 md:p-8 rounded-3xl bg-[var(--surface)] space-y-5">
         <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
           Recipe details
         </h2>
@@ -410,7 +410,7 @@ export function RecipeEditForm({ recipe }: RecipeEditFormProps) {
       </div>
 
       {/* Ingredients Card */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
+      <div className="p-6 md:p-8 rounded-3xl bg-[var(--surface)] space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
             Ingredients ({ingredients.length})
@@ -574,7 +574,7 @@ export function RecipeEditForm({ recipe }: RecipeEditFormProps) {
       </div>
 
       {/* Nutrition Card */}
-      <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] space-y-4">
+      <div className="p-6 md:p-8 rounded-3xl bg-[var(--surface)] space-y-5">
         <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
           Nutrition (per serving)
         </h2>
@@ -637,7 +637,7 @@ export function RecipeEditForm({ recipe }: RecipeEditFormProps) {
           onClick={() => setIsLookupOpen(false)}
         >
           <div 
-            className="w-full max-w-xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
+            className="w-full max-w-xl rounded-3xl bg-[var(--surface)] p-6 space-y-5 max-h-[85vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -678,7 +678,7 @@ export function RecipeEditForm({ recipe }: RecipeEditFormProps) {
                 type="button"
                 onClick={() => executeLookup(lookupQuery)}
                 disabled={isSearchingLookup || !lookupQuery.trim()}
-                className="px-3.5 py-2 rounded-xl bg-[var(--accent)] text-white text-xs font-medium hover:bg-[var(--accent-hover)] transition disabled:opacity-50"
+                className="px-4 min-h-[44px] rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold hover:bg-[var(--accent-hover)] transition disabled:opacity-50"
               >
                 {isSearchingLookup ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
               </button>
@@ -711,7 +711,7 @@ export function RecipeEditForm({ recipe }: RecipeEditFormProps) {
                             "text-[9px] font-semibold uppercase px-1 py-0.5 rounded",
                             candidate.source === "usda"
                               ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
-                              : "bg-[#E6EEF5] text-[#4C6E8C] dark:bg-[#1A2633] dark:text-[#8BB4D9]"
+                              : "bg-[var(--macro-protein-bg)] text-[var(--macro-protein)]"
                           )}
                         >
                           {candidate.source === "usda" ? "USDA" : "OFF"}
@@ -726,7 +726,7 @@ export function RecipeEditForm({ recipe }: RecipeEditFormProps) {
                       type="button"
                       disabled={isImportingLookup}
                       onClick={() => applyLookupSelection(candidate)}
-                      className="px-2.5 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-medium shrink-0 transition"
+                      className="px-3.5 py-1.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold shrink-0 transition"
                     >
                       Select &amp; Link
                     </button>

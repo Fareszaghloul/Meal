@@ -46,7 +46,7 @@ export function BodyFatTrendChart({
         return {
           label: "Body Fat %",
           title: "Body Fat % Trend",
-          color: "#0ea5e9",
+          color: "var(--macro-protein)",
           unit: "%",
           icon: Activity,
           gradientId: "bfGradient",
@@ -56,7 +56,7 @@ export function BodyFatTrendChart({
         return {
           label: `SMM (${isImperial ? "lbs" : "kg"})`,
           title: "Skeletal Muscle Mass (SMM) Trend",
-          color: "#10b981",
+          color: "var(--accent)",
           unit: isImperial ? " lbs" : " kg",
           icon: Dumbbell,
           gradientId: "smmGradient",
@@ -66,7 +66,7 @@ export function BodyFatTrendChart({
         return {
           label: "BMI",
           title: "Body Mass Index (BMI) Trend",
-          color: "#8b5cf6",
+          color: "var(--macro-carbs)",
           unit: "",
           icon: Gauge,
           gradientId: "bmiGradient",
@@ -125,8 +125,8 @@ export function BodyFatTrendChart({
 
   if (!hasAnyInBody) {
     return (
-      <div className={cn("p-8 rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-center shadow-xs", className)}>
-        <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center mx-auto mb-2.5">
+      <div className={cn("p-8 rounded-3xl bg-[var(--surface)] text-center", className)}>
+        <div className="w-10 h-10 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center mx-auto mb-2.5">
           <Activity className="w-5 h-5" />
         </div>
         <h4 className="text-sm font-semibold text-[var(--text-primary)]">No InBody Scans Recorded Yet</h4>
@@ -178,18 +178,18 @@ export function BodyFatTrendChart({
   const totalChange = latest && first ? Math.round((latest.val - first.val) * 10) / 10 : 0;
 
   return (
-    <div className={cn("p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-xs space-y-4", className)}>
+    <div className={cn("p-6 rounded-3xl bg-[var(--surface)] space-y-4", className)}>
       {/* Top Controls: Metric Tabs & Time Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Metric Selector Pills */}
-        <div className="flex items-center space-x-1.5 bg-[var(--background)] border border-[var(--border)] p-1 rounded-xl">
+        <div className="flex items-center space-x-1 bg-[var(--background)] p-1 rounded-full text-xs">
           <button
             type="button"
             onClick={() => setActiveMetric("bodyFat")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5",
+              "px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center space-x-1.5 min-h-[32px]",
               activeMetric === "bodyFat"
-                ? "bg-[var(--surface)] text-sky-500 shadow-xs border border-[var(--border)]"
+                ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-xs"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
@@ -201,9 +201,9 @@ export function BodyFatTrendChart({
             type="button"
             onClick={() => setActiveMetric("smm")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5",
+              "px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center space-x-1.5 min-h-[32px]",
               activeMetric === "smm"
-                ? "bg-[var(--surface)] text-emerald-500 shadow-xs border border-[var(--border)]"
+                ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-xs"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
@@ -215,9 +215,9 @@ export function BodyFatTrendChart({
             type="button"
             onClick={() => setActiveMetric("bmi")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5",
+              "px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center space-x-1.5 min-h-[32px]",
               activeMetric === "bmi"
-                ? "bg-[var(--surface)] text-purple-500 shadow-xs border border-[var(--border)]"
+                ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-xs"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
