@@ -79,3 +79,15 @@ export function relativeDayLabel(date: DateString, today: DateString = todayLoca
 export function currentTimeString(d: Date = new Date()): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
+
+export function isToday(date: DateString, today: DateString = todayLocal()): boolean {
+  return date === today;
+}
+
+export function isYesterday(date: DateString, today: DateString = todayLocal()): boolean {
+  return diffDays(today, date) === -1;
+}
+
+export function formatDisplayDate(date: DateString): string {
+  return relativeDayLabel(date);
+}

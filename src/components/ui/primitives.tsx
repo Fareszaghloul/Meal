@@ -161,7 +161,7 @@ export function Menu({ items, label = "More actions", align = "right", trigger }
         {trigger ?? <MoreHorizontal className="h-4 w-4" />}
       </button>
       {open && (
-        <div role="menu" className={cn("anim-fade absolute z-30 mt-1 min-w-[180px] overflow-hidden rounded-md border border-line bg-surface py-1 shadow-md", align === "right" ? "right-0" : "left-0")}>
+        <div role="menu" className={cn("anim-fade absolute z-50 mt-1 min-w-[180px] overflow-hidden rounded-md border border-line bg-surface py-1 shadow-md", align === "right" ? "right-0" : "left-0")}>
           {items.map((it) => (
             <button
               key={it.label}

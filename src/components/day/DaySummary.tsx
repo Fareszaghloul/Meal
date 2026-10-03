@@ -2,124 +2,260 @@
 
 import React from "react";
 import Link from "next/link";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Scale, Droplet, ArrowUpRight } from "lucide-react";
 import type { DayData } from "@/lib/domain";
 import { percentOf } from "@/lib/nutrition/core";
-import { Bar, fmt } from "@/components/ui/primitives";
+import { fmt } from "@/components/ui/primitives";
 import { addWater, undoWater } from "@/lib/client/day-store";
 import { cn } from "@/lib/utils";
 
-/** 0 → "0", 250 → "0.25", 2500 → "2.5" */
 const liters = (ml: number) => String(Number((ml / 1000).toFixed(2)));
 
-function Row({ label, value, target, unit, color }: { label: string; value: number; target: number | null; unit: string; color: string }) {
-  const over = target !== null && value > target;
+interface MacroCardProps {
+  label: string;
+  consumed: number;
+  goal: number | null;
+  colorVar: string;
+  isPriority?: boolean;
+}
+
+function MacroProgress({ label, consumed, goal, colorVar, isPriority }: MacroCardProps) {
+  const hasGoal = goal !== null && goal > 0;
+  const pct = hasGoal ? percentOf(consumed, goal) : 0;
+  const remaining = hasGoal ? goal - consumed : null;
+  const isOver = remaining !== null && remaining < 0;
+
   return (
-    <div className="py-2">
-      <div className="flex items-baseline justify-between text-sm">
-        <span className="flex items-center gap-2 text-fg-2">
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
+    <div className={cn("flex flex-col justify-between rounded-lg bg-surface-2/50 p-3 transition-colors", isPriority && "bg-surface-2/80 ring-1 ring-line")}>
+      <div className="flex items-center justify-between text-xs">
+        <span className={cn("font-medium", isPriority ? "text-fg" : "text-fg-2")}>
           {label}
         </span>
-        <span className="tabular">
-          <span className="font-medium text-fg">{unit === "kcal" ? fmt.int(value) : fmt.g(value)}</span>
-          {target !== null && <span className="text-fg-3"> / {unit === "kcal" ? fmt.int(target) : fmt.g(target)} {unit}</span>}
-          {target === null && <span className="text-fg-3"> {unit}</span>}
+        <span className="tabular text-fg-3">
+          {remaining !== null ? (
+            isOver ? (
+              <span className="text-warning font-medium">{fmt.g(Math.abs(remaining))}g over target</span>
+            ) : (
+              <span>{fmt.g(remaining)}g left</span>
+            )
+          ) : (
+            <span>No goal</span>
+          )}
         </span>
       </div>
-      {target !== null && (
-        <div className="mt-1.5">
-          <Bar value={percentOf(value, target)} color={color} over={over} />
-        </div>
-      )}
+
+      <div className="my-2 flex items-baseline justify-between gap-1 tabular">
+        <span className="text-base font-semibold text-fg">
+          {fmt.g(consumed)}
+          <span className="ml-0.5 text-xs font-normal text-fg-3">g</span>
+        </span>
+        {hasGoal && (
+          <span className="text-xs text-fg-3">
+            / {fmt.g(goal)}g
+          </span>
+        )}
+      </div>
+
+      {/* Progress track */}
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3" role="progressbar" aria-label={`${label} progress`} aria-valuenow={Math.round(consumed)} aria-valuemin={0} aria-valuemax={goal ?? 100}>
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{
+            width: `${Math.min(100, Math.max(0, pct))}%`,
+            backgroundColor: isOver ? "var(--warning)" : colorVar,
+          }}
+        />
+      </div>
     </div>
   );
 }
 
 export function DaySummary({ day }: { day: DayData }) {
   const { totals, goals, water, weight } = day;
-  const remaining = goals.calories - totals.calories;
-  const over = remaining < 0;
+  const hasCalorieGoal = goals.calories > 0;
+  const remainingCalories = hasCalorieGoal ? goals.calories - totals.calories : 0;
+  const isOverCalories = hasCalorieGoal && remainingCalories < 0;
+  const calPercent = hasCalorieGoal ? percentOf(totals.calories, goals.calories) : 0;
+
   const kg = weight.unit === "lbs" ? (v: number | null) => (v === null ? null : v * 2.20462) : (v: number | null) => v;
-  const latest = kg(weight.avg7Kg ?? weight.latestKg);
-  const change = kg(weight.change7Kg);
+  const latestWeight = kg(weight.latestKg);
+  const avgWeight = kg(weight.avg7Kg);
+  const changeWeight = kg(weight.change7Kg);
 
   return (
-    <section className="card" aria-label="Today's summary">
-      <div className="grid grid-cols-1 divide-y divide-line md:grid-cols-[1.4fr_1fr] md:divide-x md:divide-y-0">
-        {/* Calories + macros */}
-        <div className="px-4 py-3 md:px-5">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <div className="text-xs font-medium uppercase tracking-wide text-fg-3">Calories</div>
-              <div className="mt-0.5 flex items-baseline gap-1.5 tabular">
-                <span className="text-2xl font-semibold text-fg">{fmt.int(totals.calories)}</span>
-                <span className="text-sm text-fg-3">/ {fmt.int(goals.calories)} kcal</span>
+    <section className="card overflow-hidden" aria-label="Daily nutrition summary">
+      {/* ─── Top Main Nutrition Area ─── */}
+      <div className="p-4 md:p-6">
+        {/* Calories Headline */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-3">
+              Calories Consumed
+            </div>
+            <div className="mt-1 flex items-baseline gap-2 tabular">
+              <span className="text-3xl font-bold tracking-tight text-fg md:text-4xl">
+                {fmt.int(totals.calories)}
+              </span>
+              {hasCalorieGoal ? (
+                <span className="text-sm text-fg-3">
+                  of <span className="font-medium text-fg-2">{fmt.int(goals.calories)}</span> kcal
+                </span>
+              ) : (
+                <span className="text-sm text-fg-3">kcal (no target set)</span>
+              )}
+            </div>
+          </div>
+
+          {/* Remaining / Over Indicator */}
+          {hasCalorieGoal && (
+            <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm tabular font-medium",
+                  isOverCalories
+                    ? "bg-warning/10 text-warning"
+                    : "bg-surface-2 text-fg"
+                )}
+              >
+                <span className="text-base font-semibold">
+                  {fmt.int(Math.abs(remainingCalories))}
+                </span>
+                <span className="text-xs text-fg-2">
+                  {isOverCalories ? "kcal over target" : "kcal remaining"}
+                </span>
               </div>
             </div>
-            <div className={cn("text-right text-sm tabular", over ? "text-negative" : "text-fg-2")}>
-              <span className="font-medium">{fmt.int(Math.abs(remaining))}</span> {over ? "over" : "remaining"}
+          )}
+        </div>
+
+        {/* Calorie Progress Bar */}
+        {hasCalorieGoal && (
+          <div className="mt-3.5" role="progressbar" aria-label="Calorie progress" aria-valuenow={Math.round(totals.calories)} aria-valuemin={0} aria-valuemax={goals.calories}>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-3">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(100, Math.max(0, calPercent))}%`,
+                  backgroundColor: isOverCalories ? "var(--warning)" : "var(--accent)",
+                }}
+              />
             </div>
           </div>
-          <div className="mt-2">
-            <Bar value={percentOf(totals.calories, goals.calories)} color="var(--fg)" over={over} />
+        )}
+
+        {/* Macros Breakdown */}
+        <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+          <MacroProgress
+            label="Protein"
+            consumed={totals.protein}
+            goal={goals.protein}
+            colorVar="var(--protein)"
+            isPriority
+          />
+          <MacroProgress
+            label="Carbs"
+            consumed={totals.carbs}
+            goal={goals.carbs}
+            colorVar="var(--carbs)"
+          />
+          <MacroProgress
+            label="Fat"
+            consumed={totals.fat}
+            goal={goals.fat}
+            colorVar="var(--fat)"
+          />
+        </div>
+
+        {/* Optional Fiber Pill */}
+        {(goals.fiber !== null || totals.fiber > 0) && (
+          <div className="mt-3 flex items-center justify-between rounded-md bg-surface-2/40 px-3 py-1.5 text-xs text-fg-2">
+            <span className="flex items-center gap-1.5 font-medium">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--fiber)]" aria-hidden="true" />
+              Fiber
+            </span>
+            <span className="tabular text-fg">
+              <span className="font-semibold">{fmt.g(totals.fiber)}</span>
+              {goals.fiber !== null && <span className="text-fg-3"> / {fmt.g(goals.fiber)} g</span>}
+            </span>
           </div>
-          <div className="mt-1 divide-y divide-line">
-            <Row label="Protein" value={totals.protein} target={goals.protein} unit="g" color="var(--protein)" />
-            <Row label="Carbs" value={totals.carbs} target={goals.carbs} unit="g" color="var(--carbs)" />
-            <Row label="Fat" value={totals.fat} target={goals.fat} unit="g" color="var(--fat)" />
-            {(goals.fiber !== null || totals.fiber > 0) && <Row label="Fiber" value={totals.fiber} target={goals.fiber} unit="g" color="var(--fiber)" />}
-            {goals.sodium !== null && <Row label="Sodium" value={totals.sodium ?? 0} target={goals.sodium} unit="mg" color="var(--fg-3)" />}
+        )}
+      </div>
+
+      {/* ─── Compact Hydration & Weight Bottom Strip ─── */}
+      <div className="grid grid-cols-1 divide-y divide-line border-t border-line bg-surface-2/30 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+        {/* Hydration */}
+        <div className="flex items-center justify-between px-4 py-2.5 md:px-5">
+          <div className="flex items-center gap-2">
+            <Droplet className="h-4 w-4 text-[var(--water)]" />
+            <div>
+              <span className="text-xs text-fg-3 font-medium uppercase tracking-wide">Water</span>
+              <div className="tabular text-sm font-semibold text-fg">
+                {liters(water.totalMl)}
+                <span className="text-xs font-normal text-fg-3"> / {liters(water.goalMl)} L</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => undoWater(day.date)}
+              className="btn btn-ghost btn-icon btn-sm h-7 w-7 text-fg-3 hover:text-fg"
+              aria-label="Remove 250ml water"
+              disabled={water.totalMl === 0}
+              title="Remove water"
+            >
+              <Minus className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => addWater(day.date, 250)}
+              className="btn btn-secondary btn-sm h-7 px-2 text-xs font-medium tabular"
+              aria-label="Add 250 ml water"
+            >
+              <Plus className="h-3 w-3 mr-0.5" /> 250ml
+            </button>
+            <button
+              type="button"
+              onClick={() => addWater(day.date, 500)}
+              className="btn btn-secondary btn-sm h-7 px-2 text-xs font-medium tabular"
+              aria-label="Add 500 ml water"
+            >
+              <Plus className="h-3 w-3 mr-0.5" /> 500ml
+            </button>
           </div>
         </div>
 
-        {/* Water + weight */}
-        <div className="flex flex-col divide-y divide-line">
-          <div className="flex-1 px-4 py-3 md:px-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-medium uppercase tracking-wide text-fg-3">Water</div>
-                <div className="mt-0.5 tabular">
-                  <span className="text-lg font-semibold text-fg">{liters(water.totalMl)}</span>
-                  <span className="text-sm text-fg-3"> / {liters(water.goalMl)} L</span>
+        {/* Weight */}
+        <Link
+          href="/weight"
+          className="group flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-surface-2 md:px-5"
+          title="Go to weight tracking"
+        >
+          <div className="flex items-center gap-2">
+            <Scale className="h-4 w-4 text-fg-3 group-hover:text-fg transition-colors" />
+            <div>
+              <span className="text-xs text-fg-3 font-medium uppercase tracking-wide">Weight</span>
+              {latestWeight === null ? (
+                <div className="text-xs text-fg-2">Tap to log weigh-in</div>
+              ) : (
+                <div className="flex items-baseline gap-1.5 tabular text-sm font-semibold text-fg">
+                  <span>{latestWeight.toFixed(1)} {weight.unit}</span>
+                  {avgWeight !== null && (
+                    <span className="text-xs font-normal text-fg-3">
+                      · 7d avg {avgWeight.toFixed(1)}
+                    </span>
+                  )}
+                  {changeWeight !== null && (
+                    <span className="text-xs font-medium text-fg-2">
+                      ({fmt.signed(changeWeight)}/wk)
+                    </span>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button type="button" onClick={() => undoWater(day.date)} className="btn btn-secondary btn-icon btn-sm" aria-label="Remove last glass" disabled={water.totalMl === 0}>
-                  <Minus className="h-3.5 w-3.5" />
-                </button>
-                <button type="button" onClick={() => addWater(day.date, 250)} className="btn btn-secondary btn-sm tabular" aria-label="Add 250 millilitres">
-                  <Plus className="h-3.5 w-3.5" /> 250
-                </button>
-                <button type="button" onClick={() => addWater(day.date, 500)} className="btn btn-secondary btn-sm tabular" aria-label="Add 500 millilitres">
-                  <Plus className="h-3.5 w-3.5" /> 500
-                </button>
-              </div>
-            </div>
-            <div className="mt-2">
-              <Bar value={percentOf(water.totalMl, water.goalMl)} color="var(--water)" />
+              )}
             </div>
           </div>
-          <Link href="/weight" className="flex-1 px-4 py-3 transition-colors hover:bg-surface-2 md:px-5">
-            <div className="text-xs font-medium uppercase tracking-wide text-fg-3">Weight</div>
-            {latest === null ? (
-              <div className="mt-0.5 text-sm text-fg-2">No weigh-ins yet · tap to log</div>
-            ) : (
-              <div className="mt-0.5 flex items-baseline justify-between gap-2 tabular">
-                <span>
-                  <span className="text-lg font-semibold text-fg">{latest.toFixed(1)}</span>
-                  <span className="text-sm text-fg-3"> {weight.unit}</span>
-                  {weight.avg7Kg !== null && <span className="ml-1.5 text-xs text-fg-3">7-day avg</span>}
-                </span>
-                {change !== null && (
-                  <span className={cn("text-sm", change < -0.05 ? "text-fg-2" : change > 0.05 ? "text-fg-2" : "text-fg-3")}>
-                    {fmt.signed(change)} {weight.unit} / wk
-                  </span>
-                )}
-              </div>
-            )}
-          </Link>
-        </div>
+          <ArrowUpRight className="h-4 w-4 text-fg-3 group-hover:text-fg transition-colors" />
+        </Link>
       </div>
     </section>
   );

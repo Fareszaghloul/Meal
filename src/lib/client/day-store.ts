@@ -106,6 +106,8 @@ function applyPending(day: DayData): DayData {
       d = { ...d, entries: d.entries.map((e) => (e.id === op.entryId ? { ...e, ...(op.body as Partial<MealItem>), _pending: "saving" } : e)) };
     } else if (op.kind === "water-add") {
       d = { ...d, water: { ...d.water, totalMl: d.water.totalMl + (op.body as { amountMl: number }).amountMl } };
+    } else if (op.kind === "water-undo") {
+      d = { ...d, water: { ...d.water, totalMl: Math.max(0, d.water.totalMl - 250) } };
     }
   }
   return recompute(d);
@@ -248,6 +250,7 @@ export function addWater(date: DateString, amountMl: number) {
 }
 
 export function undoWater(date: DateString) {
+  setDay(date, (d) => ({ ...d, water: { ...d.water, totalMl: Math.max(0, d.water.totalMl - 250) } }));
   enqueue({ id: crypto.randomUUID(), kind: "water-undo", url: `/api/water-log?date=${date}`, method: "DELETE", date });
 }
 

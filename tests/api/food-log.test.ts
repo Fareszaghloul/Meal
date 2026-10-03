@@ -17,8 +17,8 @@ const entry = (over: Partial<MealItem> = {}) => ({
 });
 
 describe("food log API", () => {
-  beforeAll(cleanupTestDates);
-  afterAll(cleanupTestDates);
+  beforeAll(cleanupTestDates, 30_000);
+  afterAll(cleanupTestDates, 30_000);
 
   it("creates, lists and totals entries for a local date", async () => {
     const c = await call<MealItem>("/api/food-log", { method: "POST", json: entry() });
@@ -95,6 +95,18 @@ describe("food log API", () => {
     expect(d.status).toBe(200);
     const day = await call<DayData>(`/api/day?date=${TEST_DATE}`);
     expect(day.body.entries.some((e) => e.id === c.body.id)).toBe(false);
+  });
+
+  it("fetches recent, frequent and yesterday items via /api/food-log/recent", async () => {
+    const res = await call<{
+      recent: MealItem[];
+      frequentByMeal: Record<string, MealItem[]>;
+      yesterdayByMeal: Record<string, MealItem[]>;
+    }>(`/api/food-log/recent?date=${TEST_DATE}`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.recent)).toBe(true);
+    expect(typeof res.body.frequentByMeal).toBe("object");
+    expect(typeof res.body.yesterdayByMeal).toBe("object");
   });
 
   it("requires authentication", async () => {

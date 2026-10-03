@@ -8,6 +8,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.TEST_BASE_URL || "http://localhost:3100",
     trace: "retain-on-failure",
+    reducedMotion: "reduce",
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },

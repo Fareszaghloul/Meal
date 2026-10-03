@@ -245,3 +245,79 @@ export async function copyEntries(
 export function previousDay(date: DateString): DateString {
   return addDays(date, -1);
 }
+
+export interface RecentFoodsData {
+  recent: MealItem[];
+  frequentByMeal: Record<string, MealItem[]>;
+  yesterdayByMeal: Record<string, MealItem[]>;
+}
+
+export async function getRecentAndFrequentFoods(userId: string, currentDate: DateString): Promise<RecentFoodsData> {
+  const yDate = addDays(currentDate, -1);
+  const [recentRows, yesterdayRows] = await Promise.all([
+    prisma.foodLogEntry.findMany({
+      where: { userId },
+      orderBy: { loggedAt: "desc" },
+      take: 200,
+    }),
+    prisma.foodLogEntry.findMany({
+      where: { userId, date: yDate },
+      orderBy: { loggedAt: "asc" },
+    }),
+  ]);
+
+  // Distinct recent items by name
+  const seenRecent = new Set<string>();
+  const recent: MealItem[] = [];
+  for (const r of recentRows) {
+    const key = r.name.toLowerCase().trim();
+    if (!seenRecent.has(key)) {
+      seenRecent.add(key);
+      recent.push(toMealItem(r));
+      if (recent.length >= 25) break;
+    }
+  }
+
+  // Frequent items grouped by mealCategory
+  const mealCountMap: Record<string, Map<string, { count: number; item: MealItem }>> = {
+    breakfast: new Map(),
+    lunch: new Map(),
+    dinner: new Map(),
+    snack: new Map(),
+  };
+
+  for (const r of recentRows) {
+    const cat = (r.mealCategory || "snack").toLowerCase();
+    const map = mealCountMap[cat] || (mealCountMap[cat] = new Map());
+    const key = r.name.toLowerCase().trim();
+    const existing = map.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      map.set(key, { count: 1, item: toMealItem(r) });
+    }
+  }
+
+  const frequentByMeal: Record<string, MealItem[]> = {};
+  for (const [cat, map] of Object.entries(mealCountMap)) {
+    frequentByMeal[cat] = Array.from(map.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+      .map((x) => x.item);
+  }
+
+  // Yesterday items grouped by mealCategory
+  const yesterdayByMeal: Record<string, MealItem[]> = {
+    breakfast: [],
+    lunch: [],
+    dinner: [],
+    snack: [],
+  };
+  for (const r of yesterdayRows) {
+    const cat = (r.mealCategory || "snack").toLowerCase();
+    if (!yesterdayByMeal[cat]) yesterdayByMeal[cat] = [];
+    yesterdayByMeal[cat].push(toMealItem(r));
+  }
+
+  return { recent, frequentByMeal, yesterdayByMeal };
+}

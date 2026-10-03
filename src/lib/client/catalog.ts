@@ -35,6 +35,9 @@ export function loadCatalog(force = false): Promise<Catalog> {
 
 export function invalidateCatalog() {
   cached = null;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("mealprep:catalog-invalidated"));
+  }
 }
 
 export function peekCatalog() {

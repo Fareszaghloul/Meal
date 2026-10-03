@@ -1,67 +1,70 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/session";
+import { findDuplicateCandidates, normalizeFoodName } from "@/lib/nutrition/duplicate-detector";
+import type { FoodSummary } from "@/lib/domain";
 
 export async function GET(request: Request) {
   try {
     const user = await requireAuth(request);
     const { searchParams } = new URL(request.url);
-    const name = searchParams.get("name")?.trim().toLowerCase();
-    const brand = searchParams.get("brand")?.trim().toLowerCase();
-    const servingSize = searchParams.get("servingSize")
-      ? parseFloat(searchParams.get("servingSize")!)
+    const name = searchParams.get("name")?.trim();
+    const brand = searchParams.get("brand")?.trim();
+    const caloriesPer100g = searchParams.get("caloriesPer100g")
+      ? parseFloat(searchParams.get("caloriesPer100g")!)
       : null;
+    const servingWeightGrams = searchParams.get("servingWeightGrams")
+      ? parseFloat(searchParams.get("servingWeightGrams")!)
+      : null;
+    const excludeId = searchParams.get("excludeId");
 
-    if (!name) {
-      return NextResponse.json({ duplicate: null });
+    if (!name || name.trim().length < 2) {
+      return NextResponse.json({ duplicate: null, found: false, candidates: [] });
     }
 
-    // Find any existing food accessible to this user matching the name (case-insensitive)
-    const candidates = await prisma.food.findMany({
+    const normName = normalizeFoodName(name);
+
+    // Search existing foods for this user or standard library matching tokens
+    const rawCandidates = await prisma.food.findMany({
       where: {
         OR: [{ userId: null }, { userId: user.id }],
-        name: { contains: name, mode: "insensitive" },
+        name: { contains: normName.split(" ")[0] || normName, mode: "insensitive" },
       },
-      take: 5,
+      include: { servings: { orderBy: { sortOrder: "asc" } } },
+      take: 20,
     });
 
-    if (candidates.length === 0) {
-      return NextResponse.json({ duplicate: null, found: false, exactMatch: null });
-    }
+    const candidates = findDuplicateCandidates(
+      {
+        name,
+        brand,
+        caloriesPer100g,
+        servingWeightGrams,
+      },
+      rawCandidates as unknown as FoodSummary[],
+      excludeId
+    );
 
-    // Rank matching candidates by brand and serving size similarity
-    let bestMatch: (typeof candidates)[0] | null = null;
-    let highestScore = 0;
-
-    for (const cand of candidates) {
-      let score = 1;
-      const candName = cand.name.toLowerCase();
-      if (candName === name) score += 3;
-      if (brand && cand.brand && cand.brand.toLowerCase() === brand) score += 3;
-      if (
-        servingSize &&
-        cand.servingSize &&
-        Math.abs(cand.servingSize - servingSize) < 2
-      ) {
-        score += 2;
-      }
-
-      if (score > highestScore && score >= 2) {
-        highestScore = score;
-        bestMatch = cand;
-      }
-    }
+    const bestMatch = candidates[0]?.food ?? null;
 
     return NextResponse.json({
       duplicate: bestMatch,
       found: !!bestMatch,
-      exactMatch: bestMatch,
+      confidence: candidates[0]?.confidence ?? null,
+      reason: candidates[0]?.reason ?? null,
+      candidates: candidates.slice(0, 3).map((c) => ({
+        food: c.food,
+        confidence: c.confidence,
+        reason: c.reason,
+      })),
+      exactMatch: candidates.find((c) => c.confidence === "high")?.food ?? null,
     });
   } catch (error: any) {
     if (error.name === "AuthError") {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
     console.error("GET /api/foods/check-duplicate error:", error);
-    return NextResponse.json({ duplicate: null });
+    return NextResponse.json({ duplicate: null, found: false, candidates: [] });
   }
 }
+

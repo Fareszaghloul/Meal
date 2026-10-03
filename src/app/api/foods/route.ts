@@ -116,9 +116,21 @@ export async function POST(request: Request) {
           },
           { status: 409 }
         );
-      } else {
-        finalName = `${cleanName} (${new Date().toLocaleDateString()})`;
+      } else if (existing.userId === user.id) {
+        // Disambiguate user's own duplicate to satisfy unique([userId, name])
+        if (brand && String(brand).trim() && !cleanName.toLowerCase().includes(String(brand).trim().toLowerCase())) {
+          finalName = `${cleanName} (${String(brand).trim()})`;
+        } else {
+          let counter = 2;
+          let candidate = `${cleanName} (${counter})`;
+          while (await prisma.food.findFirst({ where: { userId: user.id, name: candidate } })) {
+            counter++;
+            candidate = `${cleanName} (${counter})`;
+          }
+          finalName = candidate;
+        }
       }
+      // If existing was a system library food (userId === null), user can create their custom food with the exact clean name
     }
 
     const isPerServingBasis = nutritionBasis === "PER_SERVING";

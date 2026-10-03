@@ -48,7 +48,7 @@ function DashboardInner() {
     prefetchDay(addDays(date, 1));
   }, [date]);
 
-  // Keyboard: N = add food, ←/→ = change day, T = today (only when not typing).
+  // Keyboard shortcuts: N = add food, ←/→ = change day, T = today (only when not typing in inputs).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -58,9 +58,13 @@ function DashboardInner() {
       if (e.key === "n" || e.key === "N") {
         e.preventDefault();
         setAdding(suggestMeal());
-      } else if (e.key === "ArrowLeft") setDate(addDays(date, -1));
-      else if (e.key === "ArrowRight") setDate(addDays(date, 1));
-      else if (e.key === "t" || e.key === "T") setDate(todayLocal());
+      } else if (e.key === "ArrowLeft") {
+        setDate(addDays(date, -1));
+      } else if (e.key === "ArrowRight") {
+        setDate(addDays(date, 1));
+      } else if (e.key === "t" || e.key === "T") {
+        setDate(todayLocal());
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -75,7 +79,12 @@ function DashboardInner() {
   const copyYesterday = async (c: MealCategory) => {
     try {
       const created = await copyEntries({ fromDate: addDays(date, -1), toDate: date, fromMealCategory: c, toMealCategory: c });
-      toast(created.length ? `Copied ${created.length} item${created.length === 1 ? "" : "s"} from yesterday's ${MEAL_LABELS[c]}` : `Nothing was logged for ${MEAL_LABELS[c]} yesterday`, { kind: created.length ? "success" : "info" });
+      toast(
+        created.length
+          ? `Copied ${created.length} item${created.length === 1 ? "" : "s"} from yesterday's ${MEAL_LABELS[c]}`
+          : `Nothing was logged for ${MEAL_LABELS[c]} yesterday`,
+        { kind: created.length ? "success" : "info" }
+      );
     } catch (e) {
       toast(e instanceof Error ? e.message : "Couldn't copy", { kind: "error" });
     }
@@ -83,35 +92,46 @@ function DashboardInner() {
 
   return (
     <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-2">
+      {/* Top Header */}
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <DateNav date={date} onChange={setDate} />
-        <button type="button" onClick={() => setAdding(suggestMeal())} className="btn btn-primary">
+        <button
+          type="button"
+          onClick={() => setAdding(suggestMeal())}
+          className="btn btn-primary h-9 px-3.5 text-xs font-semibold shadow-xs"
+          aria-label="Add food"
+        >
           <Plus className="h-4 w-4" /> Add food
-          <span className="kbd ml-1 hidden md:inline">N</span>
+          <span className="kbd ml-1.5 hidden md:inline text-[10px]">N</span>
         </button>
       </header>
 
+      {/* Error state */}
       {error && !day && (
         <div className="card flex items-center justify-between gap-3 px-4 py-3 text-sm" role="alert">
-          <span className="text-fg-2">Couldn't load this day: {error}</span>
+          <span className="text-fg-2">Couldn&apos;t load this day: {error}</span>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => refresh()}>
             Retry
           </button>
         </div>
       )}
 
+      {/* Loading state skeleton */}
       {!day ? (
         !error && (
-          <div className="space-y-4" aria-busy="true" aria-label="Loading">
-            <div className="skeleton h-56" />
+          <div className="space-y-4" aria-busy="true" aria-label="Loading food log">
+            <div className="skeleton h-56 rounded-xl" />
             {MEAL_CATEGORIES.map((c) => (
-              <div key={c} className="skeleton h-16" />
+              <div key={c} className="skeleton h-14 rounded-lg" />
             ))}
           </div>
         )
       ) : (
         <>
+          {/* Daily Nutrition Summary */}
           <DaySummary day={day} />
+
+          {/* Meals List */}
           <div className="space-y-3">
             {MEAL_CATEGORIES.map((c) => (
               <MealSection
@@ -129,17 +149,32 @@ function DashboardInner() {
         </>
       )}
 
-      <AddFoodSheet open={adding !== null} onClose={() => setAdding(null)} date={date} initialMeal={adding ?? "lunch"} />
+      {/* Dialogs & Sheets */}
+      <AddFoodSheet
+        open={adding !== null}
+        onClose={() => setAdding(null)}
+        date={date}
+        initialMeal={adding ?? "lunch"}
+      />
       <EditEntrySheet entry={editing} onClose={() => setEditing(null)} />
-      <SaveTemplateSheet entries={saving?.entries ?? null} category={saving?.category ?? "lunch"} onClose={() => setSaving(null)} />
-      <CopyToSheet entries={copying?.entries ?? null} category={copying?.category ?? "lunch"} fromDate={date} onClose={() => setCopying(null)} />
+      <SaveTemplateSheet
+        entries={saving?.entries ?? null}
+        category={saving?.category ?? "lunch"}
+        onClose={() => setSaving(null)}
+      />
+      <CopyToSheet
+        entries={copying?.entries ?? null}
+        category={copying?.category ?? "lunch"}
+        fromDate={date}
+        onClose={() => setCopying(null)}
+      />
     </div>
   );
 }
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="skeleton h-56" />}>
+    <Suspense fallback={<div className="skeleton h-56 rounded-xl" />}>
       <DashboardInner />
     </Suspense>
   );

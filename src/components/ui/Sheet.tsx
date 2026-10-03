@@ -7,13 +7,14 @@ import { cn } from "@/lib/utils";
 interface SheetProps {
   open: boolean;
   onClose: () => void;
-  title: string;
+  title?: React.ReactNode;
   description?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   /** Element to focus on open (defaults to the first focusable inside). */
   initialFocusRef?: React.RefObject<HTMLElement | null>;
+  customHeader?: React.ReactNode;
 }
 
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -22,7 +23,7 @@ const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:n
  * Accessible dialog: bottom sheet on phones, centered on larger screens.
  * Traps focus, closes on Esc / backdrop, restores focus on close.
  */
-export function Sheet({ open, onClose, title, description, children, footer, size = "md", initialFocusRef }: SheetProps) {
+export function Sheet({ open, onClose, title, description, children, footer, size = "md", initialFocusRef, customHeader }: SheetProps) {
   const panel = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<Element | null>(null);
   const titleId = React.useId();
@@ -77,25 +78,30 @@ export function Sheet({ open, onClose, title, description, children, footer, siz
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "anim-sheet flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:max-h-[85vh] sm:rounded-xl",
+          "anim-sheet flex max-h-[92dvh] w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:max-h-[85vh] sm:rounded-xl",
           size === "sm" && "sm:max-w-sm",
           size === "md" && "sm:max-w-lg",
-          size === "lg" && "sm:max-w-2xl"
+          size === "lg" && "sm:max-w-2xl",
+          size === "xl" && "sm:max-w-[780px]"
         )}
       >
-        <header className="flex items-start justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
-          <div className="min-w-0">
-            <h2 id={titleId} className="text-base font-semibold text-fg">
-              {title}
-            </h2>
-            {description && <p className="mt-0.5 text-xs text-fg-2">{description}</p>}
-          </div>
-          <button type="button" onClick={onClose} className="btn btn-ghost btn-icon btn-sm -mr-1.5" aria-label="Close">
-            <X className="h-4 w-4" />
-          </button>
-        </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">{children}</div>
-        {footer && <footer className="safe-bottom flex items-center justify-end gap-2 border-t border-line px-4 py-3 sm:px-5">{footer}</footer>}
+        {customHeader ? (
+          customHeader
+        ) : (
+          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-line bg-surface px-4 py-3 sm:px-5">
+            <div className="min-w-0">
+              <h2 id={titleId} className="text-base font-semibold text-fg">
+                {title}
+              </h2>
+              {description && <p className="mt-0.5 text-xs text-fg-2">{description}</p>}
+            </div>
+            <button type="button" onClick={onClose} className="btn btn-ghost btn-icon btn-sm -mr-1.5" aria-label="Close">
+              <X className="h-4 w-4" />
+            </button>
+          </header>
+        )}
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">{children}</div>
+        {footer && <footer className="safe-bottom relative z-10 shrink-0 flex items-center justify-end gap-2 border-t border-line bg-surface px-4 py-3 sm:px-5">{footer}</footer>}
       </div>
     </div>
   );
