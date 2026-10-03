@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MealPrep
 
-## Getting Started
+A private, single-household meal and nutrition tracker. Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 · Prisma 6 · PostgreSQL (Prisma Postgres).
 
-First, run the development server:
+## Daily use
+
+- **Today** (`/`) — calories, macros, fiber/sodium (if targeted), water and weight at a glance; meals with inline edit, duplicate, move, delete, copy-yesterday and save-as-meal. Dates are the browser's **local** calendar date and switching days is instant (cached + prefetched).
+- **Add food** — `N` on the dashboard. Recent / Favorites / My foods / **Library** / Recipes / Saved meals / Quick add, plus the online databases (Open Food Facts, USDA, optional FatSecret). Tick several rows to add them in one go at their default serving, or tap a row to pick a serving ("1 large egg", "1 cup", grams…) and quantity. `/` focuses search, `Enter` picks the first match, `Esc` closes.
+- **Food library** — ~280 built-in staples (meat, fish, dairy, grains, legumes, vegetables, fruit, nuts, Levantine basics, fast food, drinks) with USDA-based per-100 g values and household servings. Source of truth is `prisma/library/foods.ts`; edit it and run `node prisma/library/generate-migration.mjs` to produce idempotent SQL for a new migration. Every food (yours or built-in) can carry several named servings; nutrition always derives from grams.
+- **History** — month calendar with logged / partial / empty days.
+- **Analytics** — 7/30/90-day averages, adherence, most-logged foods, weight trend.
+- **Weight** — daily weigh-ins with a 7-day average trend, InBody scans kept separately.
+- **Settings → Your data** — JSON/CSV export and validated, additive JSON import.
+
+Writes are optimistic and queued in `localStorage`; if the network or server fails they retry automatically (a badge in the sidebar shows pending changes). Validation errors are reported, never swallowed.
+
+## Development
 
 ```bash
+npm install
+cp .env.example .env            # fill DATABASE_URL (+ PRISMA_DATABASE_URL) etc.
+npx prisma migrate deploy       # apply migrations (never `db push` against real data)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Script | What it does |
+|---|---|
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint |
+| `npm test` | unit tests (calculations, dates, validation, trends) |
+| `npm run test:api` | API integration tests — needs a running server (`TEST_BASE_URL`, default `http://localhost:3100`) and the test account below |
+| `npm run test:e2e` | Playwright critical flow on desktop + iPhone viewports (same prerequisites) |
+| `npm run prisma:status` | migration status against `DATABASE_URL` |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Test account for `test:api` / `test:e2e`: `node scratch/create-test-user.mjs` creates `e2e-test@mealprep.local` (password in the script, override with `TEST_EMAIL` / `TEST_PASSWORD`); `node scratch/create-test-user.mjs delete` removes it. Tests only write to dates in 2001 and clean up after themselves.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Schema changes
 
-## Learn More
+Edit `prisma/schema.prisma`, then generate a migration from the live database and review it before deploying:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/<n>_<name>/migration.sql
+npx prisma migrate deploy
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`prisma/migrations/0_baseline` is the schema as it existed on 2026-10-03 (marked applied, never run); `1_personal_tracker` adds favorites/usage, saved meals and goals; `2_food_servings_library` adds `FoodServing` and seeds the library. `20260913000000_init` is a stale SQLite-era folder also marked applied; it can be deleted.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Layout
 
-## Deploy on Vercel
+```
+src/lib/nutrition/core.ts     all nutrient arithmetic (scale, sum, round, per-100g ↔ serving)
+src/lib/dates.ts              local calendar-date helpers; the server never computes "today"
+src/lib/validation.ts         zod schemas for every API boundary
+src/lib/services/*            data access (food log, weight, templates)
+src/lib/api/route.ts          withAuth() wrapper → consistent JSON errors
+src/lib/client/day-store.ts   client cache + persistent write queue
+src/components/day/*          dashboard UI
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Secondary features (meal plan, meal prep, shopping list, pantry, barcode/label scanners, McDonald's calculator, Ollama recipe parsing, multi-user admin) are kept under **More** in the navigation and were not reworked.

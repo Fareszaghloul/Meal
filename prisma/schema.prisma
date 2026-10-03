@@ -33,6 +33,7 @@ model User {
   customFoods           Food[]
   foodLogEntries        FoodLogEntry[]
   waterLogEntries       WaterLogEntry[]
+  mealTemplates         MealTemplate[]
 }
 
 model VerificationToken {
@@ -114,6 +115,10 @@ model Food {
   sourceUrl             String?
   importedAt            DateTime?
   lastSyncedAt          DateTime?
+  isFavorite            Boolean            @default(false)
+  lastUsedAt            DateTime?
+  useCount              Int                @default(0)
+  servings              FoodServing[]
   recipeIngredients  RecipeIngredient[]
   pantryItems        PantryItem[]
   foodLogEntries     FoodLogEntry[]
@@ -122,8 +127,37 @@ model Food {
 
   @@unique([userId, name])
   @@index([userId])
+  @@index([userId, lastUsedAt])
   @@index([barcode])
   @@index([externalId])
+}
+
+// A named portion of a food ("1 egg" = 50 g, "1 cup" = 240 g). Nutrition always derives from grams.
+model FoodServing {
+  id        String  @id @default(cuid())
+  foodId    String
+  food      Food    @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  label     String  // "1 egg", "1 cup", "1 slice", "1 tbsp"
+  grams     Float   // weight of one such serving
+  isDefault Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  @@index([foodId])
+}
+
+// A saved meal (e.g. "Usual breakfast") that can be logged again in one tap.
+// Items are a JSON snapshot of FoodLogEntry-shaped rows; validated by zod at the API boundary.
+model MealTemplate {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  items     Json
+  useCount  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Recipe {
@@ -318,6 +352,8 @@ model UserSettings {
   dailyProtein               Float    @default(180)
   dailyCarbs                 Float    @default(220)
   dailyFat                   Float    @default(70)
+  dailyFiber                 Float?                      // optional target, g
+  dailySodium                Float?                      // optional ceiling, mg
   defaultServings            Int      @default(4)
   measurementSystem          String   @default("metric") // "metric" | "imperial"
   theme                      String   @default("system")

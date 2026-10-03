@@ -30,6 +30,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Item name is required" }, { status: 400 });
     }
 
+    if (foodId) {
+      const food = await prisma.food.findFirst({
+        where: { id: foodId, OR: [{ userId: null }, { userId: user.id }] },
+        select: { id: true },
+      });
+      if (!food) {
+        return NextResponse.json({ error: "Food not found" }, { status: 404 });
+      }
+    }
+
     const item = await prisma.pantryItem.create({
       data: {
         userId: user.id,

@@ -47,8 +47,11 @@ export class LocalFoodProvider implements FoodDatabaseProvider {
 
   async getById(id: string, options?: ProviderSearchOptions): Promise<NormalizedFood | null> {
     const cleanId = id.startsWith("local-") ? id.slice(6) : id;
-    const record = await prisma.food.findUnique({
-      where: { id: cleanId },
+    const record = await prisma.food.findFirst({
+      where: {
+        id: cleanId,
+        OR: [{ userId: null }, ...(options?.userId ? [{ userId: options.userId }] : [])],
+      },
     });
     if (!record) return null;
     return this.normalizeFood(record);

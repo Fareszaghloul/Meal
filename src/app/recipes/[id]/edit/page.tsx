@@ -1,14 +1,17 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth/session";
 import { RecipeEditForm } from "@/components/recipes/RecipeEditForm";
 
 export default async function RecipeEditPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
+  const user = await getCurrentUser();
+  if (!user) redirect(`/login?from=/recipes/${id}/edit`);
 
-  const recipe = await prisma.recipe.findUnique({
-    where: { id },
+  const recipe = await prisma.recipe.findFirst({
+    where: { id, userId: user.id },
     include: {
       tags: { include: { tag: true } },
       ingredients: {

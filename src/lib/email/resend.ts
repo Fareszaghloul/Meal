@@ -4,6 +4,11 @@ const resendApiKey = process.env.RESEND_API_KEY?.trim().replace(/^["']|["']$/g, 
 export const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 const DEFAULT_FROM = process.env.EMAIL_FROM || "MealPrep <onboarding@resend.dev>";
+
+/** User-controlled text is escaped before it is interpolated into email HTML. */
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+}
 const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 interface SendEmailParams {
@@ -69,7 +74,7 @@ export async function sendVerificationEmail(to: string, displayName: string, tok
             <div class="logo-badge">MealPrep</div>
             <h1>Verify your email address</h1>
           </div>
-          <p>Hi ${displayName || "there"},</p>
+          <p>Hi ${escapeHtml(displayName) || "there"},</p>
           <p>Thanks for joining MealPrep! Please click the button below to verify your email address and secure your account.</p>
           <div class="btn-wrapper">
             <a href="${verifyUrl}" class="btn" target="_blank">Verify Email Address</a>
@@ -122,7 +127,7 @@ export async function sendPasswordResetEmail(to: string, displayName: string, to
             <div class="logo-badge">MealPrep</div>
             <h1>Reset your password</h1>
           </div>
-          <p>Hi ${displayName || "there"},</p>
+          <p>Hi ${escapeHtml(displayName) || "there"},</p>
           <p>We received a request to reset the password for your MealPrep account. Click the button below to choose a new password:</p>
           <div class="btn-wrapper">
             <a href="${resetUrl}" class="btn" target="_blank">Reset Password</a>

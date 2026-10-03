@@ -53,3 +53,7 @@ prisma/*.db
 
 # Scratch directory
 scratch/
+
+# test artefacts
+/test-results/
+/playwright-report/

@@ -39,6 +39,7 @@ import {
   WorkoutRoutineInput,
 } from "@/lib/nutrition/tdee";
 import { cn } from "@/lib/utils";
+import { DataSection } from "@/components/settings/DataSection";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -50,6 +51,9 @@ export default function SettingsPage() {
   const [dailyProtein, setDailyProtein] = useState<number | string>(180);
   const [dailyCarbs, setDailyCarbs] = useState<number | string>(220);
   const [dailyFat, setDailyFat] = useState<number | string>(70);
+  const [dailyFiber, setDailyFiber] = useState<string>("");
+  const [dailySodium, setDailySodium] = useState<string>("");
+  const [dailyWaterGoalMl, setDailyWaterGoalMl] = useState<number | string>(2500);
   const [defaultServings, setDefaultServings] = useState<number>(4);
   const [measurementSystem, setMeasurementSystem] = useState("metric");
 
@@ -107,6 +111,9 @@ export default function SettingsPage() {
           setDailyProtein(data.dailyProtein ?? 180);
           setDailyCarbs(data.dailyCarbs ?? 220);
           setDailyFat(data.dailyFat ?? 70);
+          setDailyFiber(data.dailyFiber === null || data.dailyFiber === undefined ? "" : String(data.dailyFiber));
+          setDailySodium(data.dailySodium === null || data.dailySodium === undefined ? "" : String(data.dailySodium));
+          setDailyWaterGoalMl(data.dailyWaterGoalMl ?? 2500);
           setDefaultServings(data.defaultServings ?? 4);
           setMeasurementSystem(data.measurementSystem ?? "metric");
 
@@ -318,6 +325,9 @@ export default function SettingsPage() {
           dailyProtein: Number(dailyProtein),
           dailyCarbs: Number(dailyCarbs),
           dailyFat: Number(dailyFat),
+          dailyFiber: dailyFiber === "" ? null : Number(dailyFiber),
+          dailySodium: dailySodium === "" ? null : Number(dailySodium),
+          dailyWaterGoalMl: Number(dailyWaterGoalMl) || 0,
           defaultServings: Number(defaultServings),
           measurementSystem,
           theme,
@@ -933,7 +943,47 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">Fiber (g, optional)</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  placeholder="e.g. 30"
+                  value={dailyFiber}
+                  onChange={(e) => setDailyFiber(e.target.value)}
+                  className="input tabular"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">Sodium limit (mg, optional)</label>
+                <input
+                  type="number"
+                  step="50"
+                  min="0"
+                  placeholder="e.g. 2300"
+                  value={dailySodium}
+                  onChange={(e) => setDailySodium(e.target.value)}
+                  className="input tabular"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-normal text-[var(--text-secondary)] mb-1.5">Water (ml)</label>
+                <input
+                  type="number"
+                  step="250"
+                  min="0"
+                  value={dailyWaterGoalMl}
+                  onChange={(e) => setDailyWaterGoalMl(e.target.value)}
+                  className="input tabular"
+                />
+              </div>
+            </div>
           </div>
+
+          <DataSection />
 
           {/* Card 4: Preferences & Units */}
           <div className="p-6 rounded-3xl bg-[var(--surface)] space-y-5">

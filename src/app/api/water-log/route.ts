@@ -1,128 +1,46 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAuth } from "@/lib/auth/session";
+import { HttpError, json, parseBody, parseQuery, withAuth } from "@/lib/api/route";
+import { dayQuery, waterInput } from "@/lib/validation";
+import { z } from "zod";
 
-export async function GET(request: Request) {
-  try {
-    const user = await requireAuth(request);
-    const { searchParams } = new URL(request.url);
-    const date = searchParams.get("date") || new Date().toISOString().split("T")[0];
-
-    const [entries, settings] = await Promise.all([
-      prisma.waterLogEntry.findMany({
-        where: {
-          userId: user.id,
-          date,
-        },
-        orderBy: { loggedAt: "asc" },
-      }),
-      prisma.userSettings.findUnique({
-        where: { userId: user.id },
-        select: { dailyWaterGoalMl: true },
-      }),
-    ]);
-
-    const totalMl = entries.reduce((sum, e) => sum + (e.amountMl || 0), 0);
-    const goalMl = settings?.dailyWaterGoalMl || 2500;
-
-    return NextResponse.json({
-      date,
-      totalMl,
-      goalMl,
-      entries,
-    });
-  } catch (error: any) {
-    if (error.name === "AuthError") {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("GET /api/water-log error:", error);
-    return NextResponse.json({ error: "Failed to fetch water log" }, { status: 500 });
-  }
+async function totalFor(userId: string, date: string) {
+  const agg = await prisma.waterLogEntry.aggregate({ where: { userId, date }, _sum: { amountMl: true } });
+  return agg._sum.amountMl ?? 0;
 }
 
-export async function POST(request: Request) {
-  try {
-    const user = await requireAuth(request);
-    const body = await request.json();
-    const {
-      date = new Date().toISOString().split("T")[0],
-      amountMl = 250,
-      action,
-    } = body;
+export const GET = withAuth(async (req, user) => {
+  const { date } = parseQuery(req, dayQuery);
+  const [entries, settings] = await Promise.all([
+    prisma.waterLogEntry.findMany({ where: { userId: user.id, date }, orderBy: { loggedAt: "asc" } }),
+    prisma.userSettings.findUnique({ where: { userId: user.id }, select: { dailyWaterGoalMl: true } }),
+  ]);
+  const totalMl = entries.reduce((s, e) => s + e.amountMl, 0);
+  return json({ date, totalMl, goalMl: settings?.dailyWaterGoalMl ?? 2500, entries });
+});
 
-    // Reset daily water
-    if (action === "reset") {
-      await prisma.waterLogEntry.deleteMany({
-        where: {
-          userId: user.id,
-          date,
-        },
-      });
+export const POST = withAuth(async (req, user) => {
+  const { date, amountMl } = await parseBody(req, waterInput);
+  const entry = await prisma.waterLogEntry.create({ data: { userId: user.id, date, amountMl } });
+  return json({ entry, totalMl: await totalFor(user.id, date) }, { status: 201 });
+});
 
-      return NextResponse.json({ success: true, totalMl: 0, date });
-    }
+const deleteQuery = z.object({ id: z.string().optional(), date: dayQuery.shape.date.optional() });
 
-    if (!amountMl || Number(amountMl) <= 0) {
-      return NextResponse.json({ error: "Positive water amount is required" }, { status: 400 });
-    }
-
-    const entry = await prisma.waterLogEntry.create({
-      data: {
-        userId: user.id,
-        date,
-        amountMl: Math.round(Number(amountMl)),
-      },
-    });
-
-    const entries = await prisma.waterLogEntry.findMany({
+/** `?id=` removes one entry; `?date=` removes the most recent entry of that day (undo). */
+export const DELETE = withAuth(async (req, user) => {
+  const { id, date } = parseQuery(req, deleteQuery);
+  if (id) {
+    const { count } = await prisma.waterLogEntry.deleteMany({ where: { id, userId: user.id } });
+    if (count === 0) throw new HttpError(404, "Entry not found.", "not_found");
+    return json({ success: true });
+  }
+  if (date) {
+    const last = await prisma.waterLogEntry.findFirst({
       where: { userId: user.id, date },
+      orderBy: { loggedAt: "desc" },
     });
-    const totalMl = entries.reduce((sum, e) => sum + (e.amountMl || 0), 0);
-
-    return NextResponse.json({
-      entry,
-      totalMl,
-    }, { status: 201 });
-  } catch (error: any) {
-    if (error.name === "AuthError") {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("POST /api/water-log error:", error);
-    return NextResponse.json({ error: "Failed to log water" }, { status: 500 });
+    if (last) await prisma.waterLogEntry.delete({ where: { id: last.id } });
+    return json({ success: true, totalMl: await totalFor(user.id, date) });
   }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const user = await requireAuth(request);
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-    const date = searchParams.get("date");
-
-    if (id) {
-      const existing = await prisma.waterLogEntry.findFirst({
-        where: { id, userId: user.id },
-      });
-      if (!existing) {
-        return NextResponse.json({ error: "Entry not found" }, { status: 404 });
-      }
-      await prisma.waterLogEntry.delete({ where: { id } });
-      return NextResponse.json({ success: true });
-    }
-
-    if (date) {
-      await prisma.waterLogEntry.deleteMany({
-        where: { userId: user.id, date },
-      });
-      return NextResponse.json({ success: true });
-    }
-
-    return NextResponse.json({ error: "id or date is required" }, { status: 400 });
-  } catch (error: any) {
-    if (error.name === "AuthError") {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("DELETE /api/water-log error:", error);
-    return NextResponse.json({ error: "Failed to delete water log entry" }, { status: 500 });
-  }
-}
+  throw new HttpError(400, "id or date is required.", "validation");
+});

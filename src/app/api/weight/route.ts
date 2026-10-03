@@ -5,6 +5,7 @@ import {
   processWeightEntries,
   calculateWeightAnalytics,
 } from "@/lib/nutrition/weight-analytics";
+import { isDateString } from "@/lib/dates";
 
 export async function GET(request: Request) {
   try {
@@ -71,10 +72,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
-    const targetDate = date || todayStr;
-    const nowTimeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-    const targetTime = time || nowTimeStr;
+    // The client always sends its local date; the server has no idea what "today" is for the user.
+    if (!isDateString(date)) {
+      return NextResponse.json({ error: "A valid date (YYYY-MM-DD) is required" }, { status: 400 });
+    }
+    const targetDate = date;
+    const targetTime = typeof time === "string" && /^\d{2}:\d{2}$/.test(time) ? time : null;
     const safeWeight = Number(weightKg);
 
     const computedEntryType = entryType === "inbody" ? "inbody" : "daily";
@@ -124,21 +127,19 @@ export async function POST(request: Request) {
       });
     }
 
-    // Also update UserSettings to keep in sync
-    const settingsUpdate: Record<string, any> = { currentWeightKg: safeWeight };
-    if (!isDaily && safeBodyFat !== null) {
-      settingsUpdate.currentBodyFatPct = safeBodyFat;
-    }
-    if (!isDaily && safeSmm !== null) {
-      settingsUpdate.currentSmmKg = safeSmm;
-    }
-    if (!isDaily && safeBmi !== null) {
-      settingsUpdate.currentBmi = safeBmi;
-    }
-    await prisma.userSettings.updateMany({
-      where: { userId: user.id },
-      data: settingsUpdate,
+    // Keep the profile's "current weight" in sync, but only when this is the newest reading
+    // (a back-dated entry must not overwrite a more recent weigh-in).
+    const newer = await prisma.weightEntry.findFirst({
+      where: { userId: user.id, date: { gt: targetDate } },
+      select: { id: true },
     });
+    if (!newer) {
+      const settingsUpdate: Record<string, any> = { currentWeightKg: safeWeight };
+      if (!isDaily && safeBodyFat !== null) settingsUpdate.currentBodyFatPct = safeBodyFat;
+      if (!isDaily && safeSmm !== null) settingsUpdate.currentSmmKg = safeSmm;
+      if (!isDaily && safeBmi !== null) settingsUpdate.currentBmi = safeBmi;
+      await prisma.userSettings.updateMany({ where: { userId: user.id }, data: settingsUpdate });
+    }
 
     return NextResponse.json(entry);
   } catch (error: any) {

@@ -10,63 +10,44 @@ interface ThemeContextType {
   isDark: boolean;
 }
 
-const ThemeContext = createContext<ThemeContextType>({
-  theme: "dark",
-  setTheme: () => {},
-  isDark: true,
-});
+const ThemeContext = createContext<ThemeContextType>({ theme: "system", setTheme: () => {}, isDark: false });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
-  const [isDark, setIsDark] = useState<boolean>(true);
+  const [theme, setThemeState] = useState<Theme>("system");
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const saved = (localStorage.getItem("mealprep-theme") as Theme) || "dark";
-    setThemeState(saved);
+    try {
+      setThemeState((localStorage.getItem("mealprep-theme") as Theme) || "system");
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
     const root = document.documentElement;
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const applyTheme = () => {
-      let dark = true;
-      if (theme === "dark") {
-        dark = true;
-      } else if (theme === "light") {
-        dark = false;
-      } else {
-        // System preference, default to dark if not explicitly specified
-        dark = mediaQuery.matches;
-      }
-
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      const dark = theme === "dark" || (theme === "system" && mq.matches);
       setIsDark(dark);
-      if (dark) {
-        root.classList.add("dark");
-        root.classList.remove("light");
-      } else {
-        root.classList.remove("dark");
-        root.classList.add("light");
-      }
+      root.classList.toggle("dark", dark);
+      root.classList.toggle("light", !dark);
     };
-
-    applyTheme();
-    mediaQuery.addEventListener("change", applyTheme);
-    return () => mediaQuery.removeEventListener("change", applyTheme);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
   }, [theme]);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem("mealprep-theme", newTheme);
+  const setTheme = (t: Theme) => {
+    setThemeState(t);
+    try {
+      localStorage.setItem("mealprep-theme", t);
+    } catch {
+      /* ignore */
+    }
   };
 
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme, isDark }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, setTheme, isDark }}>{children}</ThemeContext.Provider>;
 }
 
-export function useTheme() {
-  return useContext(ThemeContext);
-}
+export const useTheme = () => useContext(ThemeContext);

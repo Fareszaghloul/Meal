@@ -1,6 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/session";
+import { HttpError, json, parseBody, withAuth } from "@/lib/api/route";
+import { foodPatch, servingsInput } from "@/lib/validation";
+import { servingRows } from "@/lib/services/servings";
+
+/** Small flag updates (favorite). Works on the user's own foods and on global foods. */
+export const PATCH = withAuth<{ id: string }>(async (req, user, { id }) => {
+  const patch = await parseBody(req, foodPatch);
+  const food = await prisma.food.findFirst({ where: { id, OR: [{ userId: user.id }, { userId: null }] } });
+  if (!food) throw new HttpError(404, "Food not found.", "not_found");
+  const updated = await prisma.food.update({ where: { id }, data: patch });
+  return json(updated);
+});
 
 export async function PUT(
   request: Request,
@@ -47,11 +59,11 @@ export async function PUT(
       return NextResponse.json({ error: "Food item not found" }, { status: 404 });
     }
 
-    // Creator of the food, admin, or user editing an imported/standard item (userId === null) can modify it
-    const canModify = existingFood.userId === user.id || existingFood.userId === null || user.role === "admin";
+    // Only the creator (or an admin, for shared/global foods) may modify a food.
+    const canModify = existingFood.userId === user.id || user.role === "admin";
     if (!canModify) {
       return NextResponse.json(
-        { error: "You do not have permission to modify other users' food items" },
+        { error: "You do not have permission to modify this food item" },
         { status: 403 }
       );
     }
@@ -63,10 +75,27 @@ export async function PUT(
       return isNaN(n) ? null : Math.round(n * 10) / 10;
     };
 
+    const parsedServings = body.servings !== undefined ? servingsInput.safeParse(body.servings) : null;
+    if (parsedServings && !parsedServings.success) {
+      return NextResponse.json({ error: parsedServings.error.issues[0]?.message ?? "Invalid servings" }, { status: 400 });
+    }
+
     const updated = await prisma.food.update({
       where: { id },
+      include: { servings: { orderBy: { sortOrder: "asc" } } },
       data: {
-        ...(existingFood.userId === null && user.role !== "admin" ? { user: { connect: { id: user.id } } } : {}),
+        ...(parsedServings?.success
+          ? {
+              servings: {
+                deleteMany: {},
+                create: servingRows(parsedServings.data, {
+                  servingSize: servingSize !== undefined ? Number(servingSize) : existingFood.servingSize,
+                  servingUnit: servingUnit !== undefined ? servingUnit : existingFood.servingUnit,
+                  servingWeightGrams: servingWeightGrams !== undefined ? Number(servingWeightGrams) : existingFood.servingWeightGrams,
+                }),
+              },
+            }
+          : {}),
         name: name ? name.trim() : undefined,
         brand: brand !== undefined ? (brand ? String(brand).trim() : null) : undefined,
         category,

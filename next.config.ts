@@ -20,21 +20,9 @@ const nextConfig: NextConfig = {
   },
   headers: async () => [
     {
-      source: "/:path*",
-      headers: [
-        {
-          key: "Cache-Control",
-          value: "no-cache, no-store, must-revalidate",
-        },
-        {
-          key: "Pragma",
-          value: "no-cache",
-        },
-        {
-          key: "Expires",
-          value: "0",
-        },
-      ],
+      // Personal data must never be cached by proxies or the browser; static assets keep Next's defaults.
+      source: "/api/:path*",
+      headers: [{ key: "Cache-Control", value: "no-store" }],
     },
   ],
 };

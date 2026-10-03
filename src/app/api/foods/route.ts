@@ -1,43 +1,50 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/session";
+import { json, parseQuery, withAuth } from "@/lib/api/route";
+import { foodsQuery, servingsInput } from "@/lib/validation";
+import { servingRows } from "@/lib/services/servings";
 
-export async function GET(request: Request) {
-  try {
-    const user = await requireAuth(request);
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q")?.trim().toLowerCase() || "";
-    const category = searchParams.get("category")?.trim() || "";
-
-    const filterConditions: any[] = [
-      {
-        OR: [{ userId: null }, { userId: user.id }],
-      },
-    ];
-
-    if (query) {
-      filterConditions.push({ name: { contains: query } });
-    }
-    if (category && category !== "All") {
-      filterConditions.push({ category });
-    }
-
-    const foods = await prisma.food.findMany({
-      where: {
-        AND: filterConditions,
-      },
-      orderBy: { name: "asc" },
+/**
+ * Personal food database. `view` picks the ranking:
+ *  recent    – most recently logged first
+ *  frequent  – most often logged first
+ *  favorites – starred foods
+ *  mine      – foods this user created (excludes global/system foods)
+ *  all       – alphabetical
+ * `q` matches name or brand, case-insensitively, on any word prefix or substring.
+ */
+export const GET = withAuth(async (req, user) => {
+  const { q, view, category, limit } = parseQuery(req, foodsQuery);
+  const where: Prisma.FoodWhereInput = {
+    OR: [{ userId: null }, { userId: user.id }],
+  };
+  const and: Prisma.FoodWhereInput[] = [];
+  if (q) {
+    and.push({
+      OR: [{ name: { contains: q, mode: "insensitive" } }, { brand: { contains: q, mode: "insensitive" } }],
     });
-
-    return NextResponse.json(foods);
-  } catch (error: any) {
-    if (error.name === "AuthError") {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("GET /api/foods error:", error);
-    return NextResponse.json({ error: "Failed to fetch foods" }, { status: 500 });
   }
-}
+  if (category && category !== "All") and.push({ category });
+  if (view === "favorites") and.push({ isFavorite: true });
+  if (view === "recent" || view === "frequent") and.push({ lastUsedAt: { not: null } });
+  if (view === "mine") where.OR = [{ userId: user.id }];
+  if (view === "library") where.OR = [{ userId: null }];
+  if (and.length) where.AND = and;
+
+  const orderBy: Prisma.FoodOrderByWithRelationInput[] =
+    view === "recent"
+      ? [{ lastUsedAt: "desc" }]
+      : view === "frequent"
+        ? [{ useCount: "desc" }, { lastUsedAt: "desc" }]
+        : view === "favorites"
+          ? [{ useCount: "desc" }, { name: "asc" }]
+          : [{ name: "asc" }];
+
+  const foods = await prisma.food.findMany({ where, orderBy, take: limit, include: { servings: { orderBy: { sortOrder: "asc" } } } });
+  return json(foods);
+});
 
 export async function POST(request: Request) {
   try {
@@ -79,6 +86,12 @@ export async function POST(request: Request) {
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Food name is required" }, { status: 400 });
+    }
+
+    // Named servings ("1 egg" = 50 g). Falls back to the legacy single serving when none are sent.
+    const parsedServings = body.servings !== undefined ? servingsInput.safeParse(body.servings) : null;
+    if (parsedServings && !parsedServings.success) {
+      return NextResponse.json({ error: parsedServings.error.issues[0]?.message ?? "Invalid servings" }, { status: 400 });
     }
 
     const cleanName = name.trim();
@@ -222,7 +235,9 @@ export async function POST(request: Request) {
         saturatedFatPerServing: satFatPair.perServing,
         transFatPerServing: transFatPair.perServing,
         sodiumPerServing: sodiumPair.perServing,
+        servings: { create: servingRows(parsedServings?.success ? parsedServings.data : null, { servingSize: safeServingSize, servingUnit: servingUnit || "g", servingWeightGrams: safeServingWeight }) },
       },
+      include: { servings: { orderBy: { sortOrder: "asc" } } },
     });
 
     return NextResponse.json(food, { status: 201 });

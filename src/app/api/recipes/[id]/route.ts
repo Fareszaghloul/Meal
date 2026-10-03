@@ -76,10 +76,9 @@ export async function PUT(
       nutrition,
     } = body;
 
-    // Remove old tags, ingredients, instructions
-    await prisma.recipeTag.deleteMany({ where: { recipeId: id } });
-    await prisma.recipeIngredient.deleteMany({ where: { recipeId: id } });
-    await prisma.recipeStep.deleteMany({ where: { recipeId: id } });
+    if (!name || !String(name).trim()) {
+      return NextResponse.json({ error: "Recipe name is required" }, { status: 400 });
+    }
 
     // Connect/create tags
     const tagConnects: Array<{ tag: { connect: { id: string } } }> = [];
@@ -96,7 +95,7 @@ export async function PUT(
       }
     }
 
-    const allFoods = await prisma.food.findMany();
+    const allFoods = await prisma.food.findMany({ where: { OR: [{ userId: null }, { userId: user.id }] } });
     const ingredientsWithFood = ingredients.map(
       (
         ing: { rawName: string; quantity: number; unit: string; notes?: string; foodId?: string },
@@ -148,17 +147,22 @@ export async function PUT(
       isNutritionCalculated = false;
     }
 
-    const updated = await prisma.recipe.update({
+    // Replace children and update the recipe atomically so a failed save can't leave an empty recipe.
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.recipeTag.deleteMany({ where: { recipeId: id } });
+      await tx.recipeIngredient.deleteMany({ where: { recipeId: id } });
+      await tx.recipeStep.deleteMany({ where: { recipeId: id } });
+      return tx.recipe.update({
       where: { id },
       data: {
-        name: name.trim(),
+        name: String(name).trim(),
         description: description?.trim() || null,
         servings: safeServings,
         prepTimeMinutes: prepTimeMinutes ? Number(prepTimeMinutes) : null,
         cookTimeMinutes: cookTimeMinutes ? Number(cookTimeMinutes) : null,
         imageUrl: imageUrl || null,
-        sourceUrl: sourceUrl || null,
-        sourcePlatform: sourcePlatform || "Manual",
+        sourceUrl: sourceUrl === undefined ? existingRecipe.sourceUrl : sourceUrl || null,
+        sourcePlatform: sourcePlatform === undefined ? existingRecipe.sourcePlatform : sourcePlatform || "Manual",
         isFavorite: isFavorite !== undefined ? Boolean(isFavorite) : undefined,
         caloriesPerServing,
         proteinPerServing,
@@ -196,6 +200,7 @@ export async function PUT(
         ingredients: { include: { food: true } },
         instructions: true,
       },
+      });
     });
 
     return NextResponse.json({

@@ -30,8 +30,6 @@ export async function POST(request: Request) {
       where: { email },
     });
 
-    let devResetUrl: string | undefined = undefined;
-
     if (user && user.status === "active") {
       // Invalidate existing unused tokens for this user
       await prisma.passwordResetToken.deleteMany({
@@ -55,16 +53,12 @@ export async function POST(request: Request) {
       sendPasswordResetEmail(user.email, user.displayName, rawToken).catch((err) => {
         console.error("Failed to send password reset email:", err);
       });
-
-      devResetUrl = `/reset-password?token=${rawToken}`;
     }
 
-    // Generic response to prevent user enumeration
+    // Generic response to prevent user enumeration. The token is only ever sent by email.
     return NextResponse.json({
       success: true,
-      message: "If an account exists with that email address, password reset instructions have been generated.",
-      resetToken: process.env.NODE_ENV !== "production" ? devResetUrl?.split("token=")[1] : undefined,
-      devResetUrl: process.env.NODE_ENV !== "production" ? devResetUrl : undefined,
+      message: "If an account exists with that email address, password reset instructions have been sent.",
     });
   } catch (error) {
     console.error("POST /api/auth/forgot-password error:", error);

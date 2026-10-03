@@ -134,8 +134,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Match ingredients with foods in DB if foodId is not provided
-    const allFoods = await prisma.food.findMany();
+    // Match ingredients with foods this user can see (own + global) if foodId is not provided
+    const allFoods = await prisma.food.findMany({ where: { OR: [{ userId: null }, { userId: user.id }] } });
     const ingredientsWithFood = ingredients.map(
       (
         ing: { rawName: string; quantity: number; unit: string; notes?: string; foodId?: string },

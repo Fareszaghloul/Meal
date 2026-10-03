@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
+import type { UserSettings, WorkoutRoutineEntry } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/session";
+
+/** Secrets never leave the server; the client only learns whether a key is set. */
+function publicSettings(settings: UserSettings, workouts: WorkoutRoutineEntry[]) {
+  const { cloudApiKey, usdaApiKey, ...safe } = settings;
+  return {
+    ...safe,
+    workouts,
+    hasCloudApiKey: Boolean(cloudApiKey),
+    hasUsdaApiKey: Boolean(usdaApiKey),
+  };
+}
+
+const optionalNumber = (v: unknown) => (v === null || v === "" || v === undefined ? null : Number(v));
 
 export async function GET(request: Request) {
   try {
@@ -44,22 +58,7 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "asc" },
     });
 
-    const maskedApiKey = settings.cloudApiKey
-      ? `${settings.cloudApiKey.slice(0, 4)}...${settings.cloudApiKey.slice(-4)}`
-      : "";
-
-    const maskedUsdaKey = settings.usdaApiKey
-      ? `${settings.usdaApiKey.slice(0, 4)}...${settings.usdaApiKey.slice(-4)}`
-      : "";
-
-    return NextResponse.json({
-      ...settings,
-      workouts,
-      cloudApiKeyMasked: maskedApiKey,
-      hasCloudApiKey: Boolean(settings.cloudApiKey),
-      usdaApiKeyMasked: maskedUsdaKey,
-      hasUsdaApiKey: Boolean(settings.usdaApiKey),
-    });
+    return NextResponse.json(publicSettings(settings, workouts));
   } catch (error: any) {
     if (error.name === "AuthError") {
       return NextResponse.json({ error: error.message }, { status: error.status });
@@ -111,6 +110,9 @@ export async function PUT(request: Request) {
     if (dailyProtein !== undefined) dataToUpdate.dailyProtein = Number(dailyProtein);
     if (dailyCarbs !== undefined) dataToUpdate.dailyCarbs = Number(dailyCarbs);
     if (dailyFat !== undefined) dataToUpdate.dailyFat = Number(dailyFat);
+    if (body.dailyFiber !== undefined) dataToUpdate.dailyFiber = optionalNumber(body.dailyFiber);
+    if (body.dailySodium !== undefined) dataToUpdate.dailySodium = optionalNumber(body.dailySodium);
+    if (body.dailyWaterGoalMl !== undefined) dataToUpdate.dailyWaterGoalMl = Math.max(0, Math.round(Number(body.dailyWaterGoalMl) || 0));
     if (defaultServings !== undefined) dataToUpdate.defaultServings = Number(defaultServings);
     if (measurementSystem !== undefined) dataToUpdate.measurementSystem = measurementSystem;
     if (theme !== undefined) dataToUpdate.theme = theme;
@@ -180,18 +182,7 @@ export async function PUT(request: Request) {
       orderBy: { createdAt: "asc" },
     });
 
-    return NextResponse.json({
-      ...updated,
-      workouts,
-      hasCloudApiKey: Boolean(updated.cloudApiKey),
-      cloudApiKeyMasked: updated.cloudApiKey
-        ? `${updated.cloudApiKey.slice(0, 4)}...${updated.cloudApiKey.slice(-4)}`
-        : "",
-      hasUsdaApiKey: Boolean(updated.usdaApiKey),
-      usdaApiKeyMasked: updated.usdaApiKey
-        ? `${updated.usdaApiKey.slice(0, 4)}...${updated.usdaApiKey.slice(-4)}`
-        : "",
-    });
+    return NextResponse.json(publicSettings(updated, workouts));
   } catch (error: any) {
     if (error.name === "AuthError") {
       return NextResponse.json({ error: error.message }, { status: error.status });

@@ -10,7 +10,9 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const from = searchParams.get("from") || "/";
+  const rawFrom = searchParams.get("from") || "/";
+  // Only same-site paths; "//evil.com" and absolute URLs fall back to home.
+  const from = rawFrom.startsWith("/") && !rawFrom.startsWith("//") ? rawFrom : "/";
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
