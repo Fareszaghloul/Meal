@@ -15,7 +15,6 @@ model User {
   displayName           String
   role                  String                @default("user") // "user" | "admin"
   status                String                @default("active") // "active" | "suspended"
-  emailVerified         DateTime?             // Timestamp when email was verified
   lastLoginAt           DateTime?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
@@ -28,23 +27,10 @@ model User {
   workoutRoutineEntries WorkoutRoutineEntry[]
   settings              UserSettings?
   sessions              Session[]
-  passwordResetTokens   PasswordResetToken[]
-  verificationTokens    VerificationToken[]
   customFoods           Food[]
   foodLogEntries        FoodLogEntry[]
   waterLogEntries       WaterLogEntry[]
   mealTemplates         MealTemplate[]
-}
-
-model VerificationToken {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String   @unique // SHA-256 hash of single-use verification token
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([userId])
 }
 
 model Session {
@@ -60,18 +46,6 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
-}
-
-model PasswordResetToken {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String    @unique // SHA-256 hash of single-use reset token
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  @@index([userId])
 }
 
 model Food {

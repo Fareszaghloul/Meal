@@ -6,6 +6,8 @@ import { requireAdmin, invalidateAllUserSessions } from "@/lib/auth/session";
 const patchUserSchema = z.object({
   status: z.enum(["active", "suspended"]).optional(),
   role: z.enum(["user", "admin"]).optional(),
+  // There is no email flow: the administrator sets a new password directly.
+  password: z.string().min(8, "Password must be at least 8 characters").max(128).optional(),
 });
 
 export async function PATCH(
@@ -33,8 +35,8 @@ export async function PATCH(
       );
     }
 
-    const { status, role } = parseResult.data;
-    if (!status && !role) {
+    const { status, role, password } = parseResult.data;
+    if (!status && !role && !password) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
 
@@ -43,11 +45,14 @@ export async function PATCH(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const passwordHash = password ? await (await import("@/lib/auth/password")).hashPassword(password) : undefined;
+
     const updated = await prisma.user.update({
       where: { id },
       data: {
         ...(status ? { status } : {}),
         ...(role ? { role } : {}),
+        ...(passwordHash ? { passwordHash } : {}),
       },
       select: {
         id: true,
@@ -59,8 +64,8 @@ export async function PATCH(
       },
     });
 
-    // If user suspended, immediately revoke all their active sessions
-    if (status === "suspended") {
+    // Suspension or a password reset immediately revokes all their active sessions
+    if (status === "suspended" || passwordHash) {
       await invalidateAllUserSessions(id);
     }
 

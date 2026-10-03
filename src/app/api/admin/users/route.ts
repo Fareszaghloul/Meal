@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     await requireAdmin(request);
 
     const body = await request.json().catch(() => ({}));
-    const { email, displayName, password, role = "user", emailVerified = true } = body;
+    const { email, displayName, password, role = "user" } = body;
 
     if (!email || typeof email !== "string" || !email.includes("@")) {
       return NextResponse.json({ error: "A valid email address is required" }, { status: 400 });
@@ -112,7 +112,6 @@ export async function POST(request: Request) {
         passwordHash,
         role: cleanRole,
         status: "active",
-        emailVerified: emailVerified ? new Date() : null,
         settings: {
           create: {
             dailyCalories: 2300,
@@ -142,7 +141,6 @@ export async function POST(request: Request) {
         displayName: true,
         role: true,
         status: true,
-        emailVerified: true,
         createdAt: true,
         _count: {
           select: {

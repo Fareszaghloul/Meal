@@ -12,6 +12,8 @@ A private, single-household meal and nutrition tracker. Next.js 16 (App Router) 
 - **Weight** — daily weigh-ins with a 7-day average trend, InBody scans kept separately.
 - **Settings → Your data** — JSON/CSV export and validated, additive JSON import.
 
+**Accounts.** There is no self-service sign-up, email verification or password reset by email (no Resend). An administrator creates accounts and sets passwords under *More → Accounts*; the first admin comes from `prisma/seed.mjs` or a direct database insert.
+
 Writes are optimistic and queued in `localStorage`; if the network or server fails they retry automatically (a badge in the sidebar shows pending changes). Validation errors are reported, never swallowed.
 
 ## Development
@@ -43,7 +45,7 @@ npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/
 npx prisma migrate deploy
 ```
 
-`prisma/migrations/0_baseline` is the schema as it existed on 2026-10-03 (marked applied, never run); `1_personal_tracker` adds favorites/usage, saved meals and goals; `2_food_servings_library` adds `FoodServing` and seeds the library. `20260913000000_init` is a stale SQLite-era folder also marked applied; it can be deleted.
+`prisma/migrations/0_baseline` is the schema as it existed on 2026-10-03 (marked applied, never run); `1_personal_tracker` adds favorites/usage, saved meals and goals; `2_food_servings_library` adds `FoodServing` and seeds the library; `3_remove_email_flows` drops the verification/reset token tables. `20260913000000_init` is a stale SQLite-era folder also marked applied; it can be deleted.
 
 ## Layout
 

@@ -12,7 +12,6 @@ export interface SafeUser {
   displayName: string;
   role: "user" | "admin";
   status: "active" | "suspended";
-  emailVerified: Date | null;
   lastLoginAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

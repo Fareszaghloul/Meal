@@ -6,6 +6,7 @@ import {
   ShieldAlert,
   Users,
   Key,
+  RotateCcw,
   Trash2,
   CheckCircle2,
   AlertCircle,
@@ -100,7 +101,7 @@ export default function AdminPage() {
   }
 
   const handleToggleStatus = async (targetUser: AdminUserItem) => {
-    const newStatus = targetUser.status === "active" ? "disabled" : "active";
+    const newStatus = targetUser.status === "active" ? "suspended" : "active";
     setOperatingId(targetUser.id);
     setActionError(null);
     setActionSuccess(null);
@@ -121,6 +122,32 @@ export default function AdminPage() {
       }
     } catch {
       setActionError("Network error while updating user");
+    } finally {
+      setOperatingId(null);
+    }
+  };
+
+  const handleResetPassword = async (targetUser: AdminUserItem) => {
+    const password = window.prompt(`New password for ${targetUser.email} (at least 8 characters). Their other sessions will be signed out.`);
+    if (password === null) return;
+    if (password.length < 8) {
+      setActionError("Password must be at least 8 characters");
+      return;
+    }
+    setOperatingId(targetUser.id);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const res = await fetch(`/api/admin/users/${targetUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (!res.ok) setActionError(data.error || "Failed to reset password");
+      else setActionSuccess(`Password updated for ${targetUser.email}`);
+    } catch {
+      setActionError("Network error while resetting password");
     } finally {
       setOperatingId(null);
     }
@@ -467,6 +494,16 @@ export default function AdminPage() {
                             title="Toggle role (user/admin)"
                           >
                             <Key className="w-4 h-4" />
+                          </button>
+
+                          {/* Reset password */}
+                          <button
+                            onClick={() => handleResetPassword(u)}
+                            disabled={isBusy}
+                            className="w-8 h-8 rounded-full bg-[var(--background)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition cursor-pointer disabled:opacity-30"
+                            title="Set a new password"
+                          >
+                            <RotateCcw className="w-4 h-4" />
                           </button>
 
                           {/* Delete User */}

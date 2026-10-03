@@ -397,17 +397,6 @@ export default function ProfilePage() {
               <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] capitalize">
                 {user?.role || "Member"}
               </span>
-              {user?.emailVerified ? (
-                <span className="inline-flex items-center space-x-1 text-xs font-semibold text-[var(--accent)] bg-[var(--accent-subtle)] px-3 py-1 rounded-full">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Verified</span>
-                </span>
-              ) : (
-                <span className="inline-flex items-center space-x-1 text-xs font-semibold text-[var(--macro-carbs)] bg-[var(--macro-carbs-bg)] px-3 py-1 rounded-full">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Unverified</span>
-                </span>
-              )}
             </div>
             <div className="mt-1 text-sm text-[var(--text-secondary)]">{user?.email}</div>
 

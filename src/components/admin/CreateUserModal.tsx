@@ -33,7 +33,6 @@ export function CreateUserModal({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"user" | "admin">("user");
-  const [emailVerified, setEmailVerified] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -78,7 +77,6 @@ export function CreateUserModal({
           email: email.trim().toLowerCase(),
           password,
           role,
-          emailVerified,
         }),
       });
 
@@ -106,7 +104,6 @@ export function CreateUserModal({
     setEmail("");
     setPassword("");
     setRole("user");
-    setEmailVerified(true);
     setCreatedCredentials(null);
     setErrorMsg(null);
     onClose();
@@ -273,8 +270,7 @@ export function CreateUserModal({
               </div>
             </div>
 
-            {/* Role and Verified Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="grid grid-cols-1 gap-3 pt-1">
               <div>
                 <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                   Account role
@@ -287,18 +283,6 @@ export function CreateUserModal({
                   <option value="user">Standard User</option>
                   <option value="admin">Administrator</option>
                 </select>
-              </div>
-
-              <div className="flex flex-col justify-end">
-                <label className="flex items-center space-x-2 text-xs text-[var(--text-primary)] cursor-pointer py-3">
-                  <input
-                    type="checkbox"
-                    checked={emailVerified}
-                    onChange={(e) => setEmailVerified(e.target.checked)}
-                    className="w-4 h-4 rounded-md accent-[var(--accent)] cursor-pointer"
-                  />
-                  <span className="text-xs font-medium">Pre-verify account</span>
-                </label>
               </div>
             </div>
 

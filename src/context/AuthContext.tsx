@@ -8,7 +8,6 @@ export interface AuthUser {
   email: string;
   displayName: string;
   role: "user" | "admin";
-  emailVerified?: string | null;
   createdAt?: string;
 }
 
@@ -22,7 +21,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const PUBLIC_AUTH_PATHS = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+const PUBLIC_AUTH_PATHS = ["/login"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);

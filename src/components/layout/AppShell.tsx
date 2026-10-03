@@ -29,7 +29,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useSyncStatus } from "@/lib/client/day-store";
 import { cn } from "@/lib/utils";
 
-const AUTH_PATHS = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+const AUTH_PATHS = ["/login"];
 
 const PRIMARY = [
   { label: "Today", href: "/", icon: Sunrise },

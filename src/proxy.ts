@@ -2,13 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Public paths that do not require authentication
-const PUBLIC_PATHS = [
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-email",
-];
+// Accounts are created by an administrator; sign-in is the only public page.
+const PUBLIC_PATHS = ["/login"];
 
 // Static asset prefixes that should bypass auth and header rewriting
 const STATIC_PREFIXES = [

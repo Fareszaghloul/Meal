@@ -55,18 +55,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Require email verification (allow admin role or verified users)
-    if (!user.emailVerified && user.role !== "admin") {
-      return NextResponse.json(
-        {
-          error: "Please verify your email address before logging in. Check your inbox for the verification link.",
-          needsEmailVerification: true,
-          email: user.email,
-        },
-        { status: 403 }
-      );
-    }
-
     // Update lastLoginAt
     await prisma.user.update({
       where: { id: user.id },
