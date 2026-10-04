@@ -1,6 +1,8 @@
 /**
  * Calendar-date helpers. Every "day" in this app is a local calendar date
- * ("YYYY-MM-DD") chosen on the client; the server never guesses "today".
+ * ("YYYY-MM-DD") chosen on the client. When the server needs "today" (future-date
+ * checks, defaults) it uses the user's stored tracking timezone, never its own clock's zone.
+ * Date strings are never shifted when the timezone changes.
  */
 
 export type DateString = string; // "YYYY-MM-DD"
@@ -119,12 +121,52 @@ export function formatDisplayDate(date: DateString): string {
   return relativeDayLabel(date);
 }
 
+let knownZones: Set<string> | null = null;
+
+/**
+ * Canonical IANA name for a timezone ("asia/amman" -> "Asia/Amman", "US/Eastern" -> "America/New_York"),
+ * or null when it isn't a real IANA zone. Offsets like "+03:00" and free text like "GMT+3" are rejected.
+ */
+export function canonicalTimezone(tz: unknown): string | null {
+  if (typeof tz !== "string" || !tz.trim() || tz.length > 64) return null;
+  let resolved: string;
+  try {
+    resolved = new Intl.DateTimeFormat("en-US", { timeZone: tz.trim() }).resolvedOptions().timeZone;
+  } catch {
+    return null;
+  }
+  knownZones ??= new Set(Intl.supportedValuesOf("timeZone"));
+  return resolved === "UTC" || knownZones.has(resolved) ? resolved : null;
+}
+
+export function isValidTimezone(tz: unknown): tz is string {
+  return canonicalTimezone(tz) !== null;
+}
+
+/** Calendar date ("YYYY-MM-DD") at `now` in an IANA timezone. Invalid or missing zone: the host's local date. */
+export function todayInTimezone(tz?: string | null, now: Date = new Date()): DateString {
+  const zone = canonicalTimezone(tz);
+  if (!zone) return toDateString(now);
+  // en-CA formats as YYYY-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
 /**
  * The latest calendar date that can be "today" anywhere on Earth right now (UTC+14).
- * The server has no per-user timezone, so this is the strictest honest bound for
- * "not in the future": a date beyond it is in the future for every user.
- * Known limitation: a user west of UTC+14 may log up to a day ahead until a timezone setting exists.
+ * Only a fallback for users who have no timezone stored yet.
  */
 export function latestPossibleLocalDate(now: Date = new Date()): DateString {
   return new Date(now.getTime() + 14 * 3_600_000).toISOString().slice(0, 10);
+}
+
+/** "Today" for a user: in their tracking timezone when set, else the global UTC+14 envelope (never rejects a real today). */
+export function latestLocalDateForUser(tz?: string | null, now: Date = new Date()): DateString {
+  return canonicalTimezone(tz) ? todayInTimezone(tz, now) : latestPossibleLocalDate(now);
+}
+
+/** Whole years between a birth date and a reference date, both "YYYY-MM-DD". */
+export function ageOn(birthDate: DateString, on: DateString): number {
+  const [by, bm, bd] = birthDate.split("-").map(Number);
+  const [y, m, d] = on.split("-").map(Number);
+  return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
 }

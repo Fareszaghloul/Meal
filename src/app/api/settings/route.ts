@@ -1,202 +1,68 @@
-import { NextResponse } from "next/server";
-import type { UserSettings, WorkoutRoutineEntry } from "@prisma/client";
+import type { GoalRevision, UserSettings, WorkoutRoutineEntry } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireAuth } from "@/lib/auth/session";
+import { HttpError, json, withAuth } from "@/lib/api/route";
+import type { SafeUser } from "@/lib/auth/session";
+import { ADMIN_SETTINGS_FIELDS, settingsPatch } from "@/lib/validation";
+import { applySettingsPatch, ensureSettings, toGoalRevisionDto } from "@/lib/services/settings";
 
-/** Secrets never leave the server; the client only learns whether a key is set. */
-function publicSettings(settings: UserSettings, workouts: WorkoutRoutineEntry[], currentWeightFromLog: boolean) {
-  const { cloudApiKey, usdaApiKey, ...safe } = settings;
+/** Shown in Settings; older revisions stay in the database and in backups. */
+const GOAL_HISTORY_LIMIT = 24;
+
+/** Secrets and server configuration never leave the server; the client only learns whether a key is set. */
+function publicSettings(
+  s: UserSettings,
+  user: SafeUser,
+  extra: { workouts: WorkoutRoutineEntry[]; currentWeightFromLog: boolean; goalHistory: GoalRevision[]; firstGoalDate: string | null }
+) {
+  const { cloudApiKey, usdaApiKey, ollamaUrl, ollamaModel, screenshotMethod, id, userId, ...safe } = s;
+  void id;
+  void userId;
   return {
     ...safe,
-    workouts,
-    /** True once a daily weigh-in exists: currentWeightKg is then derived from the log and read-only here. */
-    currentWeightFromLog,
-    hasCloudApiKey: Boolean(cloudApiKey),
-    hasUsdaApiKey: Boolean(usdaApiKey),
+    workouts: extra.workouts,
+    /** currentWeightKg is derived from the latest daily weigh-in and is read-only here. */
+    currentWeightFromLog: extra.currentWeightFromLog,
+    goalHistory: extra.goalHistory.map(toGoalRevisionDto),
+    /** Earliest date with a known target; Analytics treats earlier dates as "target unknown". */
+    firstGoalDate: extra.firstGoalDate,
+    ...(user.role === "admin"
+      ? { ollamaUrl, ollamaModel, screenshotMethod, hasCloudApiKey: Boolean(cloudApiKey), hasUsdaApiKey: Boolean(usdaApiKey) }
+      : {}),
   };
 }
 
-const hasDailyWeight = async (userId: string) => (await prisma.weightEntry.count({ where: { userId, entryType: "daily" } })) > 0;
-
-const optionalNumber = (v: unknown) => (v === null || v === "" || v === undefined ? null : Number(v));
-
-export async function GET(request: Request) {
-  try {
-    const user = await requireAuth(request);
-
-    let settings = await prisma.userSettings.findUnique({
-      where: { userId: user.id },
-    });
-
-    if (!settings) {
-      settings = await prisma.userSettings.create({
-        data: {
-          userId: user.id,
-          dailyCalories: 2300,
-          dailyProtein: 180,
-          dailyCarbs: 220,
-          dailyFat: 70,
-          defaultServings: 4,
-          measurementSystem: "metric",
-          theme: "system",
-          sex: "male",
-          age: 28,
-          heightCm: 178,
-          currentWeightKg: null,
-          goalType: "lose",
-          goalWeeklyRateKg: 0.5,
-          goalWeightKg: 72,
-          avgDailySteps: 8000,
-          useSimpleActivityMode: false,
-          simpleActivityLevel: "moderate",
-          useThermicEffectAdjustment: true,
-          ollamaUrl: "http://localhost:11434",
-          ollamaModel: "qwen2.5:7b",
-          screenshotMethod: "ocr_local",
-        },
-      });
-    }
-
-    const workouts = await prisma.workoutRoutineEntry.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "asc" },
-    });
-
-    return NextResponse.json(publicSettings(settings, workouts, await hasDailyWeight(user.id)));
-  } catch (error: any) {
-    if (error.name === "AuthError") {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("GET /api/settings error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch settings" },
-      { status: 500 }
-    );
-  }
+async function respond(s: UserSettings, user: SafeUser) {
+  const [workouts, dailyWeights, goalHistory, first] = await Promise.all([
+    prisma.workoutRoutineEntry.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
+    prisma.weightEntry.count({ where: { userId: user.id, entryType: "daily" } }),
+    prisma.goalRevision.findMany({ where: { userId: user.id }, orderBy: { effectiveDate: "desc" }, take: GOAL_HISTORY_LIMIT }),
+    prisma.goalRevision.findFirst({ where: { userId: user.id }, orderBy: { effectiveDate: "asc" }, select: { effectiveDate: true } }),
+  ]);
+  return json(publicSettings(s, user, { workouts, currentWeightFromLog: dailyWeights > 0, goalHistory, firstGoalDate: first?.effectiveDate ?? null }));
 }
 
-export async function PUT(request: Request) {
+export const GET = withAuth(async (_req, user) => respond(await ensureSettings(user.id), user));
+
+/** Partial update: only supplied fields change. Unknown fields (including currentWeightKg) are rejected. */
+async function patch(req: Request, user: SafeUser) {
+  let raw: unknown;
   try {
-    const user = await requireAuth(request);
-    const body = await request.json();
-    const {
-      dailyCalories,
-      dailyProtein,
-      dailyCarbs,
-      dailyFat,
-      defaultServings,
-      measurementSystem,
-      theme,
-      sex,
-      birthDate,
-      age,
-      heightCm,
-      currentWeightKg,
-      currentBodyFatPct,
-      currentSmmKg,
-      currentBmi,
-      goalType,
-      goalWeeklyRateKg,
-      goalWeightKg,
-      avgDailySteps,
-      useSimpleActivityMode,
-      simpleActivityLevel,
-      useThermicEffectAdjustment,
-      ollamaUrl,
-      ollamaModel,
-      screenshotMethod,
-      cloudApiKey,
-      usdaApiKey,
-    } = body;
-
-    const dataToUpdate: Record<string, unknown> = {};
-    if (dailyCalories !== undefined) dataToUpdate.dailyCalories = Number(dailyCalories);
-    if (dailyProtein !== undefined) dataToUpdate.dailyProtein = Number(dailyProtein);
-    if (dailyCarbs !== undefined) dataToUpdate.dailyCarbs = Number(dailyCarbs);
-    if (dailyFat !== undefined) dataToUpdate.dailyFat = Number(dailyFat);
-    if (body.dailyFiber !== undefined) dataToUpdate.dailyFiber = optionalNumber(body.dailyFiber);
-    if (body.dailySodium !== undefined) dataToUpdate.dailySodium = optionalNumber(body.dailySodium);
-    if (body.dailyWaterGoalMl !== undefined) dataToUpdate.dailyWaterGoalMl = Math.max(0, Math.round(Number(body.dailyWaterGoalMl) || 0));
-    if (defaultServings !== undefined) dataToUpdate.defaultServings = Number(defaultServings);
-    if (measurementSystem !== undefined) dataToUpdate.measurementSystem = measurementSystem;
-    if (theme !== undefined) dataToUpdate.theme = theme;
-
-    if (sex !== undefined) dataToUpdate.sex = sex;
-    if (birthDate !== undefined) {
-      dataToUpdate.birthDate = birthDate ? String(birthDate).trim() : null;
-      if (birthDate) {
-        // Automatically calculate exact current age from birthday
-        const birth = new Date(birthDate);
-        const today = new Date();
-        let calculatedAge = today.getFullYear() - birth.getFullYear();
-        const m = today.getMonth() - birth.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-          calculatedAge--;
-        }
-        if (calculatedAge > 0 && calculatedAge < 125) {
-          dataToUpdate.age = calculatedAge;
-        }
-      }
-    }
-    if (age !== undefined && dataToUpdate.age === undefined) dataToUpdate.age = Number(age);
-    if (heightCm !== undefined) dataToUpdate.heightCm = Number(heightCm);
-    // With weigh-ins logged, current weight is derived from them (syncCurrentWeight); a manual value would just diverge.
-    const weightFromLog = await hasDailyWeight(user.id);
-    if (currentWeightKg !== undefined && !weightFromLog) dataToUpdate.currentWeightKg = optionalNumber(currentWeightKg);
-    if (currentBodyFatPct !== undefined) {
-      dataToUpdate.currentBodyFatPct = currentBodyFatPct !== null && currentBodyFatPct !== "" ? Number(currentBodyFatPct) : null;
-    }
-    if (currentSmmKg !== undefined) {
-      dataToUpdate.currentSmmKg = currentSmmKg !== null && currentSmmKg !== "" ? Number(currentSmmKg) : null;
-    }
-    if (currentBmi !== undefined) {
-      dataToUpdate.currentBmi = currentBmi !== null && currentBmi !== "" ? Number(currentBmi) : null;
-    }
-    if (goalType !== undefined) dataToUpdate.goalType = goalType;
-    if (goalWeeklyRateKg !== undefined) dataToUpdate.goalWeeklyRateKg = Number(goalWeeklyRateKg);
-    if (goalWeightKg !== undefined) dataToUpdate.goalWeightKg = goalWeightKg ? Number(goalWeightKg) : null;
-    if (avgDailySteps !== undefined) dataToUpdate.avgDailySteps = Number(avgDailySteps);
-    if (useSimpleActivityMode !== undefined) dataToUpdate.useSimpleActivityMode = Boolean(useSimpleActivityMode);
-    if (simpleActivityLevel !== undefined) dataToUpdate.simpleActivityLevel = simpleActivityLevel;
-    if (useThermicEffectAdjustment !== undefined)
-      dataToUpdate.useThermicEffectAdjustment = Boolean(useThermicEffectAdjustment);
-
-    const isAdmin = user.role === "admin";
-    if (isAdmin) {
-      if (ollamaUrl !== undefined) dataToUpdate.ollamaUrl = String(ollamaUrl).trim();
-      if (ollamaModel !== undefined) dataToUpdate.ollamaModel = String(ollamaModel).trim();
-      if (screenshotMethod !== undefined) dataToUpdate.screenshotMethod = screenshotMethod;
-      if (cloudApiKey !== undefined && cloudApiKey !== null) {
-        dataToUpdate.cloudApiKey = String(cloudApiKey).trim() || null;
-      }
-      if (usdaApiKey !== undefined && usdaApiKey !== null) {
-        dataToUpdate.usdaApiKey = String(usdaApiKey).trim() || null;
-      }
-    }
-
-    const updated = await prisma.userSettings.upsert({
-      where: { userId: user.id },
-      update: dataToUpdate,
-      create: {
-        userId: user.id,
-        ...dataToUpdate,
-      },
-    });
-
-    const workouts = await prisma.workoutRoutineEntry.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "asc" },
-    });
-
-    return NextResponse.json(publicSettings(updated, workouts, weightFromLog));
-  } catch (error: any) {
-    if (error.name === "AuthError") {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("PUT /api/settings error:", error);
-    return NextResponse.json(
-      { error: "Failed to update settings" },
-      { status: 500 }
-    );
+    raw = await req.json();
+  } catch {
+    throw new HttpError(400, "Request body must be JSON.", "bad_json");
   }
+  if (raw && typeof raw === "object" && "currentWeightKg" in raw) {
+    throw new HttpError(400, "Current weight comes from your weight log. Log a weigh-in to change it.", "derived_field");
+  }
+  const input = settingsPatch.parse(raw);
+  if (user.role !== "admin" && ADMIN_SETTINGS_FIELDS.some((k) => input[k] !== undefined)) {
+    throw new HttpError(403, "Only an admin can change server settings.", "forbidden");
+  }
+  // Settings row + goal revision change together or not at all.
+  const { settings } = await prisma.$transaction((tx) => applySettingsPatch(user.id, input, tx));
+  return respond(settings, user);
 }
+
+export const PATCH = withAuth(patch);
+/** Same partial semantics as PATCH, kept for existing callers. */
+export const PUT = withAuth(patch);

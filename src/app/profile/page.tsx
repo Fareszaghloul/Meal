@@ -226,10 +226,6 @@ export default function ProfilePage() {
     setBodyLoading(true);
 
     try {
-      const finalWeightKg = currentWeightInput !== "" && !isNaN(Number(currentWeightInput)) && Number(currentWeightInput) > 0
-        ? toKg(Number(currentWeightInput), weightUnit)
-        : null;
-
       const parsedSmm = smmInput !== "" ? Number(smmInput) : null;
       const finalSmmKg = parsedSmm !== null && !isNaN(parsedSmm)
         ? toKg(parsedSmm, weightUnit)
@@ -246,7 +242,6 @@ export default function ProfilePage() {
           birthDate: birthDate || null,
           age: computedAgeFromBirthDate,
           heightCm: resolvedHeightCm,
-          ...(weightFromLog ? {} : { currentWeightKg: finalWeightKg }),
           currentBodyFatPct: bodyFatPct !== "" ? Number(bodyFatPct) : null,
           currentSmmKg: finalSmmKg,
           currentBmi: finalBmi,
@@ -662,27 +657,16 @@ export default function ProfilePage() {
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                 Current weight ({weightUnit})
               </label>
-              <input
-                type="number"
-                step="0.1"
-                min={30}
-                max={400}
-                value={currentWeightInput}
-                onChange={(e) => setCurrentWeightInput(e.target.value)}
-                readOnly={weightFromLog}
-                placeholder={weightFromLog ? undefined : "No weight logged"}
-                aria-describedby={weightFromLog ? "profile-weight-hint" : undefined}
-                className="w-full px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] read-only:opacity-70"
-              />
-              {weightFromLog ? (
-                <p id="profile-weight-hint" className="mt-1 text-xs text-[var(--text-muted)]">
-                  From your latest weigh-in.
-                </p>
-              ) : (
-                <p className="mt-1 text-xs text-[var(--text-muted)]">
-                  No weigh-in logged yet. Log your weight on the Weight page.
-                </p>
-              )}
+              {/* Derived from the latest daily weigh-in; changed only by logging weight. */}
+              <div className="flex min-h-[44px] items-center justify-between gap-2 rounded-2xl bg-[var(--background)] px-4" data-testid="profile-current-weight">
+                <span className="text-sm font-semibold font-tabular text-[var(--text-primary)]">
+                  {currentWeightInput !== "" ? currentWeightInput : <span className="font-normal text-[var(--text-muted)]">No weigh-in yet</span>}
+                </span>
+                <Link href="/weight" className="text-xs font-medium text-[var(--accent)] hover:underline">
+                  {weightFromLog ? "Manage" : "Log weight"}
+                </Link>
+              </div>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">From your latest daily weigh-in.</p>
             </div>
 
             {/* Body Fat % (InBody scan) */}

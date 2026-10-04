@@ -25,6 +25,7 @@ model User {
   pantryItems           PantryItem[]
   weightEntries         WeightEntry[]
   workoutRoutineEntries WorkoutRoutineEntry[]
+  goalRevisions         GoalRevision[]
   settings              UserSettings?
   sessions              Session[]
   customFoods           Food[]
@@ -348,6 +349,7 @@ model UserSettings {
   dailySodium                Float?                      // optional ceiling, mg
   defaultServings            Int      @default(4)
   measurementSystem          String   @default("metric") // "metric" | "imperial"
+  timezone                   String?                     // IANA tracking timezone, e.g. "Asia/Amman"; null until first chosen
   theme                      String   @default("system")
   
   // Body Profile & TDEE Inputs
@@ -361,7 +363,7 @@ model UserSettings {
   currentBmi                 Float?                      // Body Mass Index (from InBody or calculated)
   goalType                   String   @default("lose")   // "lose" | "maintain" | "gain"
   goalWeeklyRateKg           Float    @default(0.5)      // e.g. 0.25, 0.5, 0.75, 1.0 kg/week
-  goalWeightKg               Float?   @default(72)
+  goalWeightKg               Float?                      // null = no goal weight
   avgDailySteps              Int      @default(8000)
   useSimpleActivityMode      Boolean  @default(false)
   simpleActivityLevel        String?  @default("moderate") // "sedentary" | "light" | "moderate" | "very" | "extra"
@@ -380,6 +382,24 @@ model UserSettings {
   dailyWaterGoalMl           Int      @default(2500)
   
   updatedAt                  DateTime @updatedAt
+}
+
+model GoalRevision {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  effectiveDate     String   // "YYYY-MM-DD" in the user's timezone — first day these targets apply
+  dailyCalories     Float
+  dailyProtein      Float
+  dailyCarbs        Float
+  dailyFat          Float
+  dailyFiber        Float?   // null = no target
+  goalWeightKg      Float?
+  goalType          String?  // "lose" | "maintain" | "gain"
+  goalWeeklyRateKg  Float?
+  createdAt         DateTime @default(now())
+
+  @@unique([userId, effectiveDate]) // one revision per day: a later same-day edit updates it
 }
 
 model FoodLogEntry {

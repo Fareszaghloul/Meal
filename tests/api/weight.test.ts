@@ -48,9 +48,7 @@ async function wipe(c: string) {
     if (data.entries.length + data.inbody.length === all.length) break;
     all = [...data.entries, ...data.inbody];
   }
-  if (data.entries.length === 0) {
-    await req(c, "/api/settings", { method: "PUT", json: { currentWeightKg: null } });
-  }
+  // No manual reset: deleting the last daily reading re-derives currentWeightKg (null), and Settings can't write it.
 }
 
 const TODAY = todayLocal();
@@ -214,16 +212,18 @@ describe("current weight synchronization", () => {
     for (const e of [first, second, timed]) await del(cookieA, e.body.id);
   });
 
-  it("a manual settings edit is ignored while weigh-ins exist, and honoured when none do", async () => {
+  // Phase 9: WeightEntry is the only source of truth. Settings can never write the derived value, with or without weigh-ins.
+  it("a manual settings edit of current weight is refused, with or without weigh-ins", async () => {
     const r = await post(cookieA, { date: TODAY, weightKg: 77 });
-    const blocked = await req<{ currentWeightKg: number; currentWeightFromLog: boolean }>(cookieA, "/api/settings", { method: "PUT", json: { currentWeightKg: 55 } });
-    expect(blocked.body.currentWeightKg).toBe(77);
-    expect(blocked.body.currentWeightFromLog).toBe(true);
+    const blocked = await req<{ code: string }>(cookieA, "/api/settings", { method: "PUT", json: { currentWeightKg: 55 } });
+    expect(blocked.status).toBe(400);
+    expect(blocked.body.code).toBe("derived_field");
+    expect(await currentKg(cookieA)).toBe(77);
     await del(cookieA, r.body.id);
-    const free = await req<{ currentWeightKg: number; currentWeightFromLog: boolean }>(cookieA, "/api/settings", { method: "PUT", json: { currentWeightKg: 79 } });
-    expect(free.body.currentWeightKg).toBe(79);
-    expect(free.body.currentWeightFromLog).toBe(false);
-    await req(cookieA, "/api/settings", { method: "PUT", json: { currentWeightKg: null } });
+    expect(await currentKg(cookieA)).toBeNull();
+    const free = await req(cookieA, "/api/settings", { method: "PUT", json: { currentWeightKg: 79 } });
+    expect(free.status).toBe(400);
+    expect(await currentKg(cookieA)).toBeNull();
   });
 });
 

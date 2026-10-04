@@ -11,19 +11,25 @@ export const rangeFrom = (range: WeightRange): DateString | undefined => (range 
 // One cached payload per range, with in-flight de-duplication. Cleared by invalidateAll() (weight edits, imports).
 const cache = new Map<WeightRange, WeightPageData>();
 const inflight = new Map<WeightRange, Promise<WeightPageData>>();
+let latestRequest = 0;
 
+/**
+ * A forced fetch (after a write) never reuses a request that started before the write: that response could predate
+ * the change. Only the newest request may fill the cache.
+ */
 export function fetchWeight(range: WeightRange, force = false): Promise<WeightPageData> {
   const hit = cache.get(range);
   if (hit && !force) return Promise.resolve(hit);
   const pending = inflight.get(range);
-  if (pending) return pending;
+  if (pending && !force) return pending;
   const from = rangeFrom(range);
+  const id = ++latestRequest;
   const p = api<WeightPageData>(`/api/weight${from ? `?from=${from}` : ""}`)
     .then((data) => {
-      cache.set(range, data);
+      if (id === latestRequest) cache.set(range, data);
       return data;
     })
-    .finally(() => inflight.delete(range));
+    .finally(() => inflight.get(range) === p && inflight.delete(range));
   inflight.set(range, p);
   return p;
 }
@@ -33,17 +39,19 @@ export function useWeightData(range: WeightRange) {
   const [data, setData] = useState<WeightPageData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const current = useRef(range);
+  const seq = useRef(0);
 
   const load = useCallback(
     (force = false) => {
       current.current = range;
+      const mine = ++seq.current; // a slower, older load must not overwrite a newer one
       setError(null);
       fetchWeight(range, force)
         .then((d) => {
-          if (current.current === range) setData(d);
+          if (current.current === range && mine === seq.current) setData(d);
         })
         .catch((e) => {
-          if (current.current === range) setError(e instanceof Error ? e.message : "Failed to load");
+          if (current.current === range && mine === seq.current) setError(e instanceof Error ? e.message : "Failed to load");
         });
     },
     [range]

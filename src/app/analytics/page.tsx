@@ -222,7 +222,7 @@ export default function AnalyticsPage() {
           {/* Lower Two-Column Section: Macros & Meal Patterns, Frequent Foods */}
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-6">
-              <MacroBreakdownCard stats={data.stats} goals={data.goals} />
+              <MacroBreakdownCard stats={data.stats} goals={data.goals} goalHistoryFrom={data.goalHistoryFrom} />
               <MealPatternsCard distribution={data.mealDistribution} daysLogged={data.stats.daysLogged} />
             </div>
 

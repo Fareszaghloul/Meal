@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/db";
-import { HttpError, json, parseQuery, withAuth } from "@/lib/api/route";
+import { json, parseQuery, withAuth } from "@/lib/api/route";
 import { z } from "zod";
-import { addDays, isDateString, todayLocal, type DateString } from "@/lib/dates";
+import { addDays, isDateString, type DateString } from "@/lib/dates";
 import { goalsFor } from "@/lib/services/food-log";
+import { ensureGoalAnchor, ensureSettings, goalOn, listGoalRevisions, todayFor } from "@/lib/services/settings";
 import { round } from "@/lib/nutrition/core";
 import { summarize, withTrend } from "@/lib/nutrition/weight-trend";
 import {
@@ -43,11 +44,12 @@ function resolvePeriod(period?: string, days?: number): PeriodId {
 
 export const GET = withAuth(async (req, user) => {
   const q = parseQuery(req, querySchema);
-  const to: DateString = q.to ?? todayLocal();
+  const settings = await ensureSettings(user.id);
+  const to: DateString = q.to ?? todayFor(settings);
   const periodId = resolvePeriod(q.period, q.days);
   const periodDates = computePeriodDates(to, periodId);
 
-  const [entries, goals, weights] = await Promise.all([
+  const [entries, goals, storedRevisions, weights] = await Promise.all([
     prisma.foodLogEntry.findMany({
       where: {
         userId: user.id,
@@ -75,6 +77,7 @@ export const GET = withAuth(async (req, user) => {
       orderBy: { date: "asc" },
     }),
     goalsFor(user.id),
+    listGoalRevisions(user.id),
     prisma.weightEntry.findMany({
       where: {
         userId: user.id,
@@ -85,6 +88,13 @@ export const GET = withAuth(async (req, user) => {
       orderBy: { date: "asc" },
     }),
   ]);
+
+  // Accounts created before goal history get their anchor (current targets, effective today) on first use.
+  let revisions = storedRevisions;
+  if (revisions.length === 0) {
+    await ensureGoalAnchor(settings);
+    revisions = await listGoalRevisions(user.id);
+  }
 
   const rawEntries: RawFoodLogItem[] = entries.map((e) => ({
     id: e.id,
@@ -104,23 +114,18 @@ export const GET = withAuth(async (req, user) => {
 
   const dailyMap = groupEntriesByDay(rawEntries);
 
-  const currentStats = calculateNutritionStats(
-    dailyMap,
-    periodDates.current.from,
-    periodDates.current.to,
-    periodDates.totalDays,
-    goals
-  );
+  // Each date is compared with the goal revision in effect on it. Dates before the first revision have
+  // no known target: they're excluded from adherence instead of being judged against today's goal.
+  const goalForDate = (date: DateString) => {
+    const r = goalOn(revisions, date);
+    return r && { calories: r.dailyCalories, protein: r.dailyProtein, carbs: r.dailyCarbs, fat: r.dailyFat, fiber: r.dailyFiber };
+  };
 
-  const prevStats = calculateNutritionStats(
-    dailyMap,
-    periodDates.previous.from,
-    periodDates.previous.to,
-    periodDates.totalDays,
-    goals
-  );
+  const currentStats = calculateNutritionStats(dailyMap, periodDates.current.from, periodDates.current.to, periodDates.totalDays, goalForDate);
+  const prevStats = calculateNutritionStats(dailyMap, periodDates.previous.from, periodDates.previous.to, periodDates.totalDays, goalForDate);
 
   const deltas = calculateDeltas(currentStats, prevStats);
+
 
   const dailyIntake = buildDailyIntakePoints(
     dailyMap,
@@ -187,10 +192,12 @@ export const GET = withAuth(async (req, user) => {
       })),
     },
     goals,
+    /** First date with a known target; null if none. */
+    goalHistoryFrom: revisions[0]?.effectiveDate ?? null,
     // Backwards-compatibility fields for any existing components/callers
     from: periodDates.current.from,
     to: periodDates.current.to,
-    week: calculateNutritionStats(dailyMap, addDays(to, -6), to, 7, goals),
+    week: calculateNutritionStats(dailyMap, addDays(to, -6), to, 7, goalForDate),
     daily: dailyIntake
       .filter((d) => d.logged)
       .map((d) => ({

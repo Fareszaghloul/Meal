@@ -34,6 +34,8 @@ export interface AnalyticsData {
     measurementSystem: string;
     goalWeightKg: number | null;
   };
+  /** First date with a recorded goal revision (null: none yet). */
+  goalHistoryFrom: DateString | null;
   from: DateString;
   to: DateString;
 }

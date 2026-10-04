@@ -40,22 +40,42 @@ const DEFAULT_GOALS: NutritionGoals = {
   waterMl: 2500,
 };
 
-export async function goalsFor(userId: string): Promise<NutritionGoals & { measurementSystem: string; goalWeightKg: number | null }> {
-  const s = await prisma.userSettings.findUnique({
-    where: { userId },
-    select: {
-      dailyCalories: true,
-      dailyProtein: true,
-      dailyCarbs: true,
-      dailyFat: true,
-      dailyFiber: true,
-      dailySodium: true,
-      dailyWaterGoalMl: true,
-      measurementSystem: true,
-      goalWeightKg: true,
-    },
-  });
+export async function goalsFor(userId: string, date?: DateString): Promise<NutritionGoals & { measurementSystem: string; goalWeightKg: number | null }> {
+  // A viewed day shows the nutrition targets that applied on it (read in parallel with settings).
+  // Days before goal history began show the current targets.
+  const [s, rev] = await Promise.all([
+    prisma.userSettings.findUnique({
+      where: { userId },
+      select: {
+        dailyCalories: true,
+        dailyProtein: true,
+        dailyCarbs: true,
+        dailyFat: true,
+        dailyFiber: true,
+        dailySodium: true,
+        dailyWaterGoalMl: true,
+        measurementSystem: true,
+        goalWeightKg: true,
+      },
+    }),
+    date ? prisma.goalRevision.findFirst({ where: { userId, effectiveDate: { lte: date } }, orderBy: { effectiveDate: "desc" } }) : null,
+  ]);
   if (!s) return { ...DEFAULT_GOALS, measurementSystem: "metric", goalWeightKg: null };
+
+  if (rev) {
+    return {
+      calories: rev.dailyCalories,
+      protein: rev.dailyProtein,
+      carbs: rev.dailyCarbs,
+      fat: rev.dailyFat,
+      fiber: rev.dailyFiber,
+      sodium: s.dailySodium,
+      waterMl: s.dailyWaterGoalMl,
+      measurementSystem: s.measurementSystem,
+      goalWeightKg: s.goalWeightKg, // the weight goal shown is always the current one
+    };
+  }
+
   return {
     calories: s.dailyCalories,
     protein: s.dailyProtein,
@@ -73,9 +93,10 @@ export async function getDay(userId: string, date: DateString): Promise<DayData>
   const [rows, water, goals, weight] = await Promise.all([
     prisma.foodLogEntry.findMany({ where: { userId, date }, orderBy: { loggedAt: "asc" } }),
     prisma.waterLogEntry.aggregate({ where: { userId, date }, _sum: { amountMl: true } }),
-    goalsFor(userId),
+    goalsFor(userId, date),
     weightSummary(userId, date),
   ]);
+
   const entries = rows.map(toMealItem);
   const { measurementSystem, goalWeightKg, ...nutritionGoals } = goals;
   return {

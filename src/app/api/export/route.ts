@@ -2,20 +2,24 @@ import { prisma } from "@/lib/db";
 import { parseQuery, withAuth } from "@/lib/api/route";
 import { z } from "zod";
 import { toMealItem } from "@/lib/services/food-log";
+import { todayFor } from "@/lib/services/settings";
+import { kgToLb } from "@/lib/weight-units";
+import { toCsv } from "@/lib/csv";
 import type { ExportFile } from "@/lib/validation";
 
-const query = z.object({ format: z.enum(["json", "csv"]).default("json"), table: z.enum(["entries", "foods", "weight", "water"]).optional() });
+/**
+ * Human-readable exports of the signed-in user's own data (never another user's: every query is scoped to the session).
+ * - `?format=csv&table=food-log` (alias `entries`): one row per logged item, from its stored nutrition snapshot.
+ * - `?format=csv&table=weight`: every weigh-in and InBody scan, canonical kg (+ lb when the user displays pounds).
+ * - `?format=csv&table=foods|water`: custom foods, water log.
+ * - default (JSON, legacy v1): the additive /api/import format. The full restorable backup is /api/backup.
+ */
+const query = z.object({
+  format: z.enum(["json", "csv"]).default("json"),
+  table: z.enum(["food-log", "entries", "weight", "foods", "water"]).optional(),
+});
 
-function csv(rows: Record<string, unknown>[]): string {
-  if (rows.length === 0) return "";
-  const cols = Object.keys(rows[0]);
-  const esc = (v: unknown) => {
-    if (v === null || v === undefined) return "";
-    const s = v instanceof Date ? v.toISOString() : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  return [cols.join(","), ...rows.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
-}
+const r1 = (n: number | null) => (n === null ? null : Math.round(n * 10) / 10);
 
 const FOOD_FIELDS = {
   name: true, brand: true, category: true, rawOrCooked: true, defaultUnit: true, servingSize: true, servingUnit: true,
@@ -26,41 +30,76 @@ const FOOD_FIELDS = {
   totalSugarsPerServing: true, addedSugarsPerServing: true, saturatedFatPerServing: true, transFatPerServing: true, sodiumPerServing: true,
 } as const;
 
-/** Full personal data export. `?format=csv&table=entries|foods|weight|water` for one CSV table. */
+async function csvTable(userId: string, table: "food-log" | "weight" | "foods" | "water", imperial: boolean) {
+  const where = { userId };
+  if (table === "food-log") {
+    // Nutrition comes from each entry's own snapshot, never from the current food or recipe.
+    const rows = await prisma.foodLogEntry.findMany({
+      where,
+      orderBy: [{ date: "asc" }, { loggedAt: "asc" }, { id: "asc" }],
+      select: {
+        date: true, mealCategory: true, name: true, servings: true, servingUnit: true, calories: true, protein: true, carbs: true,
+        fat: true, fiber: true, totalSugars: true, sodium: true, food: { select: { brand: true } }, recipeId: true,
+      },
+    });
+    return toCsv(
+      ["date", "meal", "food", "brand", "source", "servings", "serving_unit", "calories_kcal", "protein_g", "carbs_g", "fat_g", "fiber_g", "sugars_g", "sodium_mg"],
+      rows.map((e) => [
+        e.date, e.mealCategory, e.name, e.food?.brand ?? null, e.recipeId ? "recipe" : "food", e.servings, e.servingUnit,
+        e.calories, e.protein, e.carbs, e.fat, e.fiber, e.totalSugars, e.sodium,
+      ])
+    );
+  }
+  if (table === "weight") {
+    const rows = await prisma.weightEntry.findMany({ where, orderBy: [{ date: "asc" }, { time: { sort: "asc", nulls: "first" } }, { createdAt: "asc" }] });
+    return toCsv(
+      ["date", "time", "entry_type", "weight_kg", ...(imperial ? ["weight_lb"] : []), "body_fat_pct", "smm_kg", "bmi", "notes"],
+      rows.map((w) => [w.date, w.time, w.entryType, w.weightKg, ...(imperial ? [r1(kgToLb(w.weightKg))] : []), w.bodyFatPct, w.smmKg, w.bmi, w.notes])
+    );
+  }
+  if (table === "water") {
+    const rows = await prisma.waterLogEntry.findMany({ where, orderBy: [{ date: "asc" }, { loggedAt: "asc" }] });
+    return toCsv(["date", "amount_ml", "logged_at"], rows.map((w) => [w.date, w.amountMl, w.loggedAt]));
+  }
+  const foods = await prisma.food.findMany({ where, select: { ...FOOD_FIELDS, servings: { select: { label: true, grams: true }, orderBy: { sortOrder: "asc" } } }, orderBy: { name: "asc" } });
+  const cols = Object.keys(FOOD_FIELDS);
+  return toCsv([...cols, "servings"], foods.map((f) => [...cols.map((c) => f[c as keyof typeof FOOD_FIELDS]), f.servings.map((s) => `${s.label}=${s.grams}g`).join("; ")]));
+}
+
 export const GET = withAuth(async (req, user) => {
   const { format, table } = parseQuery(req, query);
   const where = { userId: user.id };
-  const [settings, foods, entries, water, weight, templates] = await Promise.all([
-    prisma.userSettings.findUnique({ where, select: { dailyCalories: true, dailyProtein: true, dailyCarbs: true, dailyFat: true, dailyFiber: true, dailySodium: true, dailyWaterGoalMl: true } }),
+  const settings = await prisma.userSettings.findUnique({ where });
+  const stamp = todayFor(settings);
+
+  if (format === "csv") {
+    const name = !table || table === "entries" ? "food-log" : table;
+    return new Response(await csvTable(user.id, name, settings?.measurementSystem === "imperial"), {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="meal-${name}-${stamp}.csv"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  const [foods, entries, water, weight, templates] = await Promise.all([
     prisma.food.findMany({ where, select: { id: true, ...FOOD_FIELDS, servings: { select: { label: true, grams: true, isDefault: true }, orderBy: { sortOrder: "asc" } } }, orderBy: { name: "asc" } }),
     prisma.foodLogEntry.findMany({ where, orderBy: [{ date: "asc" }, { loggedAt: "asc" }] }),
     prisma.waterLogEntry.findMany({ where, orderBy: { loggedAt: "asc" }, select: { date: true, amountMl: true } }),
     prisma.weightEntry.findMany({ where, orderBy: [{ date: "asc" }, { time: "asc" }], select: { date: true, time: true, entryType: true, weightKg: true, bodyFatPct: true, smmKg: true, bmi: true, notes: true } }),
     prisma.mealTemplate.findMany({ where, select: { name: true, items: true } }),
   ]);
-
-  const stamp = new Date().toISOString().slice(0, 10);
-  if (format === "csv") {
-    const tables: Record<string, Record<string, unknown>[]> = {
-      entries: entries.map((e) => ({ ...toMealItem(e) })),
-      foods: foods.map(({ servings, ...f }) => ({ ...f, servings: servings.map((s) => `${s.label}=${s.grams}g`).join("; ") })),
-      weight,
-      water,
-    };
-    const name = table ?? "entries";
-    return new Response(csv(tables[name]), {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="mealprep-${name}-${stamp}.csv"`,
-      },
-    });
-  }
-
   const file: ExportFile = {
     app: "mealprep",
     version: 1,
     exportedAt: new Date().toISOString(),
-    goals: settings ?? undefined,
+    goals: settings
+      ? {
+          dailyCalories: settings.dailyCalories, dailyProtein: settings.dailyProtein, dailyCarbs: settings.dailyCarbs, dailyFat: settings.dailyFat,
+          dailyFiber: settings.dailyFiber, dailySodium: settings.dailySodium, dailyWaterGoalMl: settings.dailyWaterGoalMl,
+        }
+      : undefined,
     foods,
     entries: entries.map((e) => {
       const { loggedAt, ...rest } = toMealItem(e);
@@ -74,7 +113,8 @@ export const GET = withAuth(async (req, user) => {
   return new Response(JSON.stringify(file, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Content-Disposition": `attachment; filename="mealprep-export-${stamp}.json"`,
+      "Content-Disposition": `attachment; filename="meal-export-${stamp}.json"`,
+      "Cache-Control": "no-store",
     },
   });
 });

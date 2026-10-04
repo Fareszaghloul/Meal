@@ -127,6 +127,16 @@ export function invalidateAll() {
   }
 }
 
+/**
+ * After a full backup restore, queued writes target data that no longer exists: drop them with the cache.
+ * Part of the single restore invalidation path (see lib/client/restore.ts).
+ */
+export function discardOutbox() {
+  outbox = [];
+  saveOutbox();
+  cache.clear();
+}
+
 export function prefetchDay(date: DateString) {
   if (!cache.has(date) && !inflight.has(date)) void fetchDay(date).catch(() => undefined);
 }

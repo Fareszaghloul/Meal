@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { SETTINGS_DEFAULTS } from "@/lib/services/settings";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
 
@@ -112,28 +113,8 @@ export async function POST(request: Request) {
         passwordHash,
         role: cleanRole,
         status: "active",
-        settings: {
-          create: {
-            dailyCalories: 2300,
-            dailyProtein: 180,
-            dailyCarbs: 220,
-            dailyFat: 70,
-            defaultServings: 4,
-            measurementSystem: "metric",
-            theme: "system",
-            sex: "male",
-            age: 28,
-            heightCm: 178,
-            currentWeightKg: null,
-            goalType: "lose",
-            goalWeeklyRateKg: 0.5,
-            goalWeightKg: 72,
-            avgDailySteps: 8000,
-            useSimpleActivityMode: false,
-            simpleActivityLevel: "moderate",
-            useThermicEffectAdjustment: true,
-          },
-        },
+        // Shared defaults: no invented goal weight; timezone is set from the browser on first Settings visit.
+        settings: { create: { ...SETTINGS_DEFAULTS } },
       },
       select: {
         id: true,

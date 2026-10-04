@@ -10,7 +10,8 @@ A private, single-household meal and nutrition tracker. Next.js 16 (App Router) 
 - **History** — month calendar with logged / partial / empty days.
 - **Analytics** — 7/30/90-day averages, adherence, most-logged foods, weight trend.
 - **Weight** — daily weigh-ins with a 7-day average trend, InBody scans kept separately.
-- **Settings → Your data** — JSON/CSV export and validated, additive JSON import.
+- **Settings** — units (display only; storage is always kg/cm), tracking **timezone** (IANA; decides "today" for weigh-ins and goal dates, never moves logged days), nutrition targets with **goal history** (a change is a revision effective today; Analytics judges each day against the goal in effect then and ignores days before history began), weight goal, and a target calculator whose output is only applied when you save. Current weight is read-only: it comes from the latest daily weigh-in.
+- **Settings → Your data** — **Backup** (`/api/backup`, versioned `meal-backup` JSON: every user-owned record, no secrets/auth/derived values), **Export** (food-log and weight CSV), **Restore** (validate → preview → confirm → replace all domain data in one transaction; ids are regenerated so a file restores into any account). The older additive JSON import (`/api/import`, v1 export files) still works.
 
 **Accounts.** There is no self-service sign-up, email verification or password reset by email (no Resend). An administrator creates accounts and sets passwords under *More → Accounts*; the first admin comes from `prisma/seed.mjs` or a direct database insert.
 

@@ -90,6 +90,9 @@ const todayWeight = (page: Page) => page.locator('section[aria-label="Daily nutr
 const summary = (page: Page) => page.locator('section[aria-label="Weight summary"]');
 
 test.beforeEach(async ({ page }) => {
+  // Weight writes for one user are serialised (Phase 9 row lock that keeps currentWeightKg from going stale under
+  // concurrent writes), so the parallel wipe below of up to ~50 rows takes longer against the remote test database.
+  test.setTimeout(150_000);
   await signIn(page);
   await wipeWeights(page);
   await setUnits(page, "metric");

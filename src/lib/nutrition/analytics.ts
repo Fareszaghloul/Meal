@@ -85,6 +85,9 @@ export interface NutritionAverages {
   totalCalories: number;
   daysInCalorieRange: number | null;
   daysMeetingProtein: number | null;
+  /** Logged days that had a known calorie / protein target (the adherence denominators). */
+  daysWithCalorieGoal: number;
+  daysWithProteinGoal: number;
 }
 
 export interface MealDistributionItem {
@@ -156,6 +159,8 @@ export function groupEntriesByDay(entries: RawFoodLogItem[]): Map<DateString, Da
   return byDay;
 }
 
+export type GoalResolver = Partial<NutritionGoals> | null | ((date: DateString) => Partial<NutritionGoals> | null);
+
 /**
  * Compute descriptive nutrition statistics over a period.
  * Missing days are explicitly NOT treated as 0 kcal/protein.
@@ -165,7 +170,7 @@ export function calculateNutritionStats(
   from: DateString,
   to: DateString,
   totalDays: number,
-  goals?: Partial<NutritionGoals> | null
+  goals?: GoalResolver
 ): NutritionAverages {
   const loggedDays = [...dailyMap.values()].filter((d) => d.date >= from && d.date <= to);
   const count = loggedDays.length;
@@ -183,6 +188,8 @@ export function calculateNutritionStats(
       totalCalories: 0,
       daysInCalorieRange: null,
       daysMeetingProtein: null,
+      daysWithCalorieGoal: 0,
+      daysWithProteinGoal: 0,
     };
   }
 
@@ -192,16 +199,26 @@ export function calculateNutritionStats(
   const sumFat = loggedDays.reduce((s, d) => s + d.fat, 0);
   const sumFib = loggedDays.reduce((s, d) => s + d.fiber, 0);
 
-  const calGoal = goals?.calories && goals.calories > 0 ? goals.calories : null;
-  const proGoal = goals?.protein && goals.protein > 0 ? goals.protein : null;
-
-  const daysInRange = calGoal !== null
-    ? loggedDays.filter((d) => Math.abs(d.calories - calGoal) <= calGoal * 0.1).length
-    : null;
-
-  const daysMetProtein = proGoal !== null
-    ? loggedDays.filter((d) => d.protein >= proGoal).length
-    : null;
+  // Each day is judged against the goal in effect on that day. A day with no known goal
+  // (before goal history began) is excluded from the adherence denominator, never scored against today's goal.
+  const getGoal = typeof goals === "function" ? goals : () => goals;
+  let calGoalDays = 0;
+  let proGoalDays = 0;
+  let inRangeCount = 0;
+  let metProteinCount = 0;
+  for (const d of loggedDays) {
+    const dayGoal = getGoal(d.date);
+    const calGoal = dayGoal?.calories && dayGoal.calories > 0 ? dayGoal.calories : null;
+    const proGoal = dayGoal?.protein && dayGoal.protein > 0 ? dayGoal.protein : null;
+    if (calGoal !== null) {
+      calGoalDays++;
+      if (Math.abs(d.calories - calGoal) <= calGoal * 0.1) inRangeCount++;
+    }
+    if (proGoal !== null) {
+      proGoalDays++;
+      if (d.protein >= proGoal) metProteinCount++;
+    }
+  }
 
   return {
     daysLogged: count,
@@ -213,8 +230,10 @@ export function calculateNutritionStats(
     avgFat: round(sumFat / count, 1),
     avgFiber: round(sumFib / count, 1),
     totalCalories: Math.round(sumCal),
-    daysInCalorieRange: daysInRange,
-    daysMeetingProtein: daysMetProtein,
+    daysInCalorieRange: calGoalDays ? inRangeCount : null,
+    daysMeetingProtein: proGoalDays ? metProteinCount : null,
+    daysWithCalorieGoal: calGoalDays,
+    daysWithProteinGoal: proGoalDays,
   };
 }
 

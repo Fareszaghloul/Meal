@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isDateString, latestPossibleLocalDate } from "@/lib/dates";
+import { canonicalTimezone, isDateString, latestPossibleLocalDate } from "@/lib/dates";
 import { MEAL_CATEGORIES } from "@/lib/domain";
 
 export const dateString = z
@@ -116,15 +116,6 @@ export const templateInput = z.object({
 
 export const templateLogInput = z.object({ date: dateString, mealCategory });
 
-export const goalsPatch = z.object({
-  dailyCalories: z.coerce.number().min(500).max(20_000).optional(),
-  dailyProtein: z.coerce.number().min(0).max(1_000).optional(),
-  dailyCarbs: z.coerce.number().min(0).max(2_000).optional(),
-  dailyFat: z.coerce.number().min(0).max(1_000).optional(),
-  dailyFiber: optionalNonNegative.optional(),
-  dailySodium: optionalNonNegative.optional(),
-  dailyWaterGoalMl: z.coerce.number().int().min(0).max(20_000).optional(),
-});
 
 /* ───────── weight ───────── */
 
@@ -177,12 +168,109 @@ export type WeightPatch = z.infer<typeof weightPatch>;
 export const weightListQuery = z.object({ from: dateString.optional() });
 export const weightIdQuery = z.object({ id: idString });
 
-/** Export file shape (also what import accepts). */
+/* ───────── settings ───────── */
+
+/** A real IANA zone, stored canonically ("asia/amman" -> "Asia/Amman"). Offsets and free text are rejected. */
+export const timezoneString = z
+  .string()
+  .max(64)
+  .transform((v, ctx) => {
+    const tz = canonicalTimezone(v);
+    if (!tz) {
+      ctx.addIssue({ code: "custom", message: "Choose a timezone from the list, like Asia/Amman or America/New_York" });
+      return z.NEVER;
+    }
+    return tz;
+  });
+
+// Strict numbers: no coercion from strings or booleans, no NaN/Infinity (JSON can't carry them anyway).
+const num = (min: number, max: number, what: string) =>
+  z.number({ error: `${what} must be a number` }).finite().min(min, `${what} must be at least ${min}`).max(max, `${what} must be at most ${max}`);
+/** null = "no target". 0 is not a target, so it's rejected rather than silently meaning "unset". */
+const optionalTarget = (min: number, max: number, what: string) => num(min, max, what).nullable();
+
+/** The nutrition goal fields tracked by GoalRevision. Bounds are broad: they catch typos, not unusual diets. */
+export const nutritionTargetsShape = {
+  dailyCalories: num(500, 15_000, "Calories"),
+  dailyProtein: num(0, 1_000, "Protein"),
+  dailyCarbs: num(0, 2_000, "Carbs"),
+  dailyFat: num(0, 1_000, "Fat"),
+  dailyFiber: optionalTarget(1, 300, "Fiber"),
+};
+
+export const weightGoalShape = {
+  goalWeightKg: optionalTarget(WEIGHT_KG_MIN, WEIGHT_KG_MAX, "Goal weight"),
+  goalType: z.enum(["lose", "maintain", "gain"]),
+  goalWeeklyRateKg: num(0, 1.5, "Weekly rate"),
+};
+
+/** Fields that define a goal revision. Changing any of them (to a different value) records one. */
+export const GOAL_REVISION_FIELDS = [...Object.keys(nutritionTargetsShape), ...Object.keys(weightGoalShape)] as Array<
+  keyof typeof nutritionTargetsShape | keyof typeof weightGoalShape
+>;
+
+/** User-owned preferences (also what a backup carries). Excludes derived currentWeightKg and server configuration. */
+export const userSettingsShape = {
+    ...nutritionTargetsShape,
+    ...weightGoalShape,
+    dailySodium: optionalTarget(1, 20_000, "Sodium limit"),
+    dailyWaterGoalMl: num(0, 20_000, "Water goal").int(),
+    measurementSystem: z.enum(["metric", "imperial"]),
+    timezone: timezoneString,
+    theme: z.enum(["system", "light", "dark"]),
+    defaultServings: num(1, 100, "Default servings").int(),
+    // Calculator inputs
+    sex: z.enum(["male", "female"]),
+    birthDate: dateString.nullable(),
+    age: num(13, 120, "Age").int(),
+    heightCm: num(50, 275, "Height"),
+    currentBodyFatPct: num(3, 60, "Body fat").nullable(),
+    currentSmmKg: num(5, 200, "Skeletal muscle mass").nullable(),
+    currentBmi: num(10, 60, "BMI").nullable(),
+    avgDailySteps: num(0, 100_000, "Daily steps").int(),
+    useSimpleActivityMode: z.boolean(),
+    simpleActivityLevel: z.enum(["sedentary", "light", "moderate", "very", "extra"]),
+    useThermicEffectAdjustment: z.boolean(),
+};
+
+/**
+ * PATCH /api/settings. Every field optional (only supplied fields change); unknown fields are rejected,
+ * which also rejects currentWeightKg: it is derived from daily WeightEntry rows and can't be set here.
+ */
+export const settingsPatch = z
+  .object({
+    ...userSettingsShape,
+    // Admin-only server configuration (rejected for other users by the route)
+    ollamaUrl: z.string().trim().url().max(500),
+    ollamaModel: z.string().trim().min(1).max(100),
+    screenshotMethod: z.enum(["ocr_local", "vision_local", "cloud_vision"]),
+    cloudApiKey: z.string().trim().max(500).nullable(),
+    usdaApiKey: z.string().trim().max(500).nullable(),
+  })
+  .partial()
+  .strict()
+  .refine((v) => Object.keys(v).length > 0, "Nothing to update");
+export type SettingsPatch = z.infer<typeof settingsPatch>;
+
+export const ADMIN_SETTINGS_FIELDS = ["ollamaUrl", "ollamaModel", "screenshotMethod", "cloudApiKey", "usdaApiKey"] as const;
+
+/** Nutrition goals inside a legacy (v1) export file. */
+export const legacyGoals = z.object({
+  dailyCalories: z.coerce.number().min(500).max(15_000).optional(),
+  dailyProtein: z.coerce.number().min(0).max(1_000).optional(),
+  dailyCarbs: z.coerce.number().min(0).max(2_000).optional(),
+  dailyFat: z.coerce.number().min(0).max(1_000).optional(),
+  dailyFiber: optionalNonNegative.optional(),
+  dailySodium: optionalNonNegative.optional(),
+  dailyWaterGoalMl: z.coerce.number().int().min(0).max(20_000).optional(),
+});
+
+/** Legacy export file shape (v1), still accepted by the additive /api/import. Full restore uses the meal-backup format. */
 export const exportFile = z.object({
   app: z.literal("mealprep"),
   version: z.literal(1),
   exportedAt: z.string(),
-  goals: goalsPatch.optional(),
+  goals: legacyGoals.optional(),
   foods: z.array(z.record(z.string(), z.unknown())).default([]),
   entries: z.array(mealItemInput.omit({ id: true }).extend({ id: z.string().optional() })).default([]),
   water: z.array(waterInput).default([]),

@@ -4,13 +4,16 @@ import React from "react";
 import { fmt } from "@/components/ui/primitives";
 import type { NutritionAverages } from "@/lib/nutrition/analytics";
 import type { NutritionGoals } from "@/lib/domain";
+import { formatDate, type DateString } from "@/lib/dates";
 
 interface MacroBreakdownCardProps {
   stats: NutritionAverages;
   goals: Partial<NutritionGoals> | null;
+  /** First date with a recorded target; earlier days have no known target. */
+  goalHistoryFrom?: DateString | null;
 }
 
-export function MacroBreakdownCard({ stats, goals }: MacroBreakdownCardProps) {
+export function MacroBreakdownCard({ stats, goals, goalHistoryFrom }: MacroBreakdownCardProps) {
   const p = stats.avgProtein ?? 0;
   const c = stats.avgCarbs ?? 0;
   const f = stats.avgFat ?? 0;
@@ -75,7 +78,7 @@ export function MacroBreakdownCard({ stats, goals }: MacroBreakdownCardProps) {
                     Target {fmt.g(pGoal)} g
                     {stats.daysMeetingProtein !== null && (
                       <span className="block text-fg-2 font-medium">
-                        {stats.daysMeetingProtein} / {stats.daysLogged} days met target
+                        {stats.daysMeetingProtein} / {stats.daysWithProteinGoal} days met target
                       </span>
                     )}
                   </>
@@ -116,10 +119,12 @@ export function MacroBreakdownCard({ stats, goals }: MacroBreakdownCardProps) {
             </div>
           </div>
 
-          {/* Footnote on current target assumption */}
+          {/* Adherence uses the target in effect on each day; days before goal history began are excluded. */}
           {pGoal !== null && (
-            <p className="text-[11px] text-fg-3">
-              * Targets reflect current configured settings.
+            <p className="text-xs text-fg-3" data-testid="goal-history-note">
+              Targets shown are current. Days met uses each day&apos;s own target
+              {goalHistoryFrom ? `; targets are known from ${formatDate(goalHistoryFrom, { month: "short", day: "numeric", year: "numeric" })}` : ""}
+              {stats.daysLogged > stats.daysWithProteinGoal ? `, so ${stats.daysLogged - stats.daysWithProteinGoal} earlier logged day${stats.daysLogged - stats.daysWithProteinGoal === 1 ? " is" : "s are"} not counted` : ""}.
             </p>
           )}
         </div>

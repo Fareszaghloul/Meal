@@ -1,6 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { addDays, latestPossibleLocalDate, type DateString } from "@/lib/dates";
+import { addDays, latestLocalDateForUser, latestPossibleLocalDate, type DateString } from "@/lib/dates";
+import { HttpError } from "@/lib/api/route";
+import { ensureSettings } from "@/lib/services/settings";
 import type { WeightEntry, WeightPageData, WeightSummary } from "@/lib/domain";
 import { summarize } from "@/lib/nutrition/weight-trend";
 import { weightUnitFor } from "@/lib/weight-units";
@@ -45,8 +47,9 @@ export function toWeightEntry(r: {
  * InBody metrics follow the latest scan that has them.
  * Call inside the same transaction as the write so the two can't diverge.
  */
-export async function syncCurrentWeight(userId: string, db: Db = prisma) {
-  const notFuture = { lte: latestPossibleLocalDate() };
+export async function syncCurrentWeight(userId: string, db: Db = prisma, lockedTimezone?: string | null) {
+  const tz = lockedTimezone !== undefined ? lockedTimezone : await lockSettings(userId, db);
+  const notFuture = { lte: latestLocalDateForUser(tz) };
   const [daily, scan] = await Promise.all([
     db.weightEntry.findFirst({ where: { userId, entryType: "daily", date: notFuture }, orderBy: LATEST_FIRST, select: { weightKg: true } }),
     db.weightEntry.findFirst({ where: { userId, entryType: "inbody", date: notFuture }, orderBy: LATEST_FIRST, select: { bodyFatPct: true, smmKg: true, bmi: true } }),
@@ -58,9 +61,35 @@ export async function syncCurrentWeight(userId: string, db: Db = prisma) {
   await db.userSettings.updateMany({ where: { userId }, data });
 }
 
+/**
+ * Locks the user's settings row until commit and returns their timezone, in one round trip.
+ * Serialises weight writes per user: otherwise two concurrent writes could each read the other's soon-deleted row
+ * and the last sync would leave a stale currentWeightKg. A write takes the lock first, so its sync sees every commit.
+ */
+async function lockSettings(userId: string, db: Db): Promise<string | null> {
+  const lock = () => db.$queryRaw<{ timezone: string | null }[]>`SELECT "timezone" FROM "UserSettings" WHERE "userId" = ${userId} FOR UPDATE`;
+  let rows = await lock();
+  if (rows.length === 0) {
+    // A weigh-in can arrive before the settings row exists (new account); create it so the value isn't dropped.
+    await ensureSettings(userId, db);
+    rows = await lock();
+  }
+  return rows[0]?.timezone ?? null;
+}
+
+/** Weight writes wait for the per-user sync lock; give them room beyond Prisma's 5 s default on a remote database. */
+const WRITE_TX = { timeout: 15_000, maxWait: 10_000 };
+
+/** Schema validation only knows the global UTC+14 bound; this enforces "not after today" in the user's own timezone. */
+function assertNotFuture(date: DateString | undefined, timezone: string | null) {
+  if (date && date > latestLocalDateForUser(timezone)) throw new HttpError(400, "A weigh-in can't be dated in the future", "validation");
+}
+
 export async function createWeight(userId: string, input: WeightInput): Promise<WeightEntry> {
   const isDaily = input.entryType === "daily";
   return prisma.$transaction(async (tx) => {
+    const tz = await lockSettings(userId, tx);
+    assertNotFuture(input.date, tz);
     const row = await tx.weightEntry.create({
       data: {
         userId,
@@ -74,16 +103,18 @@ export async function createWeight(userId: string, input: WeightInput): Promise<
         notes: input.notes || null,
       },
     });
-    await syncCurrentWeight(userId, tx);
+    await syncCurrentWeight(userId, tx, tz);
     return toWeightEntry(row);
-  });
+  }, WRITE_TX);
 }
 
 /** Returns null when the entry doesn't exist or isn't the user's. Absent fields are left untouched. */
 export async function updateWeight(userId: string, id: string, patch: WeightPatch): Promise<WeightEntry | null> {
   return prisma.$transaction(async (tx) => {
+    const tz = await lockSettings(userId, tx);
     const existing = await tx.weightEntry.findFirst({ where: { id, userId } });
     if (!existing) return null;
+    assertNotFuture(patch.date, tz);
     const entryType = patch.entryType ?? existing.entryType;
     const isDaily = entryType === "daily";
     const row = await tx.weightEntry.update({
@@ -99,19 +130,20 @@ export async function updateWeight(userId: string, id: string, patch: WeightPatc
         notes: patch.notes === undefined ? undefined : patch.notes || null,
       },
     });
-    await syncCurrentWeight(userId, tx);
+    await syncCurrentWeight(userId, tx, tz);
     return toWeightEntry(row);
-  });
+  }, WRITE_TX);
 }
 
 /** Returns false when the entry doesn't exist or isn't the user's. */
 export async function deleteWeight(userId: string, id: string): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
+    const tz = await lockSettings(userId, tx);
     const { count } = await tx.weightEntry.deleteMany({ where: { id, userId } });
     if (count === 0) return false;
-    await syncCurrentWeight(userId, tx);
+    await syncCurrentWeight(userId, tx, tz);
     return true;
-  });
+  }, WRITE_TX);
 }
 
 const emptySummary = { latestKg: null, latestDate: null, avg7Kg: null, change7Kg: null, change30Kg: null, startKg: null };
@@ -124,6 +156,7 @@ const emptySummary = { latestKg: null, latestDate: null, avg7Kg: null, change7Kg
 export async function weightSummary(userId: string, asOf?: DateString) {
   const where = { userId, entryType: "daily" };
   const latest = await prisma.weightEntry.findFirst({
+    // Display bound only: writes already refuse dates after "today" in the user's timezone, so no extra query here.
     where: { ...where, date: { lte: asOf ?? latestPossibleLocalDate() } },
     orderBy: LATEST_FIRST,
     select: { date: true },

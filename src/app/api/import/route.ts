@@ -4,6 +4,7 @@ import { z } from "zod";
 import { exportFile, servingsInput } from "@/lib/validation";
 import { servingRows } from "@/lib/services/servings";
 import { syncCurrentWeight } from "@/lib/services/weight";
+import { applySettingsPatch, latestAllowedDate } from "@/lib/services/settings";
 import { roundNutrients, toNutrients } from "@/lib/nutrition/core";
 
 const query = z.object({ dryRun: z.enum(["true", "false"]).default("true") });
@@ -11,7 +12,7 @@ const query = z.object({ dryRun: z.enum(["true", "false"]).default("true") });
 const MAX_BYTES = 25 * 1024 * 1024;
 
 /**
- * Restore from a MealPrep export. Default is a dry run that only validates and
+ * Legacy additive IMPORT of a v1 MealPrep export (not the full-backup restore, which is /api/backup/restore). Default is a dry run that only validates and
  * reports counts; `?dryRun=false` writes. Imports are additive and skip rows that
  * already exist (entries by id, foods by name, weight by date+time+type, water by date+amount).
  */
@@ -26,6 +27,8 @@ export const POST = withAuth(async (req, user) => {
     throw new HttpError(400, "That file is not valid JSON.", "bad_json");
   }
   const file = exportFile.parse(parsed);
+  const latest = await latestAllowedDate(user.id);
+  if (file.weight.some((w) => w.date > latest)) throw new HttpError(400, "A weigh-in can't be dated in the future", "validation");
 
   const summary = { foods: 0, entries: 0, water: 0, weight: 0, templates: 0, goals: file.goals ? 1 : 0, skipped: 0 };
 
@@ -141,7 +144,13 @@ export const POST = withAuth(async (req, user) => {
       await tx.mealTemplate.create({ data: { userId: user.id, name: t.name, items: t.items } });
     }
     if (file.goals) {
-      await tx.userSettings.upsert({ where: { userId: user.id }, update: file.goals, create: { userId: user.id, ...file.goals } });
+      // Same path as Settings: records a goal revision when a target actually changes. Legacy 0 meant "no target".
+      const { dailyFiber, dailySodium, ...rest } = file.goals;
+      await applySettingsPatch(
+        user.id,
+        { ...rest, ...(dailyFiber !== undefined && { dailyFiber: dailyFiber || null }), ...(dailySodium !== undefined && { dailySodium: dailySodium || null }) },
+        tx
+      );
     }
   });
 

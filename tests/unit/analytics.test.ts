@@ -140,6 +140,8 @@ describe("Analytics Core Math & Utilities", () => {
       totalCalories: 52320,
       daysInCalorieRange: 18,
       daysMeetingProtein: 15,
+      daysWithCalorieGoal: 24,
+      daysWithProteinGoal: 24,
     };
     const prevStats = {
       daysLogged: 20,
@@ -153,6 +155,8 @@ describe("Analytics Core Math & Utilities", () => {
       totalCalories: 42120,
       daysInCalorieRange: 14,
       daysMeetingProtein: 16,
+      daysWithCalorieGoal: 20,
+      daysWithProteinGoal: 20,
     };
 
     const deltas = calculateDeltas(currStats, prevStats);
