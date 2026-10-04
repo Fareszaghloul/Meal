@@ -110,7 +110,7 @@ test("E2E Phase 4: Create food, edit master, log entry, verify snapshot immutabi
 
   const addSearch = addFoodModal.getByLabel(/search foods/i);
   await addSearch.fill(testFoodName);
-  const searchResult = addFoodModal.getByRole("button").filter({ hasText: testFoodName });
+  const searchResult = addFoodModal.getByRole("button").filter({ hasText: testFoodName }).first();
   await expect(searchResult).toBeVisible();
   await expect(searchResult).toContainText("170");
 

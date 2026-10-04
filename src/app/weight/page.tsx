@@ -1,25 +1,18 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
-import { api } from "@/lib/client/api";
 import { formatDate } from "@/lib/dates";
 import type { WeightEntry } from "@/lib/domain";
-import { summarize } from "@/lib/nutrition/weight-trend";
-import { EmptyState, Menu, fmt } from "@/components/ui/primitives";
+import { compareReadings } from "@/lib/nutrition/weight-trend";
+import { EmptyState, Menu, fmt, useConfirm } from "@/components/ui/primitives";
 import { WeightChart } from "@/components/weight/WeightChart";
 import { LogWeightModal } from "@/components/weight/LogWeightModal";
 import { invalidateAll } from "@/lib/client/day-store";
+import { api } from "@/lib/client/api";
 import { toast } from "@/components/ui/Toast";
-import type { RawWeightEntry } from "@/lib/nutrition/weight-analytics";
-
-interface WeightResponse {
-  dailyEntries: WeightEntry[];
-  inbodyEntries: WeightEntry[];
-  analytics: { goalWeightKg: number | null };
-  measurementSystem: string;
-  userHeightCm: number | null;
-}
+import { rangeFrom, useWeightData, type WeightRange } from "@/lib/client/weight-store";
+import { fromKg, weightUnitFor } from "@/lib/weight-units";
 
 function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
@@ -32,49 +25,48 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
 }
 
 export default function WeightPage() {
-  const [data, setData] = useState<WeightResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [modal, setModal] = useState<{ open: boolean; entry: RawWeightEntry | null; type: "daily" | "inbody" }>({ open: false, entry: null, type: "daily" });
+  const [range, setRange] = useState<WeightRange>("90");
+  const { data, error, reload } = useWeightData(range);
+  const [modal, setModal] = useState<{ open: boolean; entry: WeightEntry | null; type: "daily" | "inbody" }>({ open: false, entry: null, type: "daily" });
   const [showAll, setShowAll] = useState(false);
+  const confirm = useConfirm();
 
-  const load = useCallback(() => {
-    setError(null);
-    api<WeightResponse>("/api/weight")
-      .then(setData)
-      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"));
-  }, []);
-  useEffect(load, [load]);
+  const unit = weightUnitFor(data?.measurementSystem);
+  const conv = (kg: number | null) => (kg === null ? null : fromKg(kg, unit));
+  const from = rangeFrom(range);
+  const s = data?.summary;
 
-  const unit: "kg" | "lbs" = data?.measurementSystem === "imperial" ? "lbs" : "kg";
-  const conv = (kg: number | null) => (kg === null ? null : unit === "lbs" ? kg * 2.20462 : kg);
-  const daily = useMemo(() => [...(data?.dailyEntries ?? [])].sort((a, b) => b.date.localeCompare(a.date) || (b.time ?? "").localeCompare(a.time ?? "")), [data]);
-  const s = useMemo(() => summarize(daily), [daily]);
-  const goal = data?.analytics.goalWeightKg ?? null;
-  const total = s.latestKg !== null && s.startKg !== null ? s.latestKg - s.startKg : null;
-  const toGoal = goal !== null && s.avg7Kg !== null ? s.avg7Kg - goal : null;
+  // Newest first, only the readings inside the chosen range (the payload also carries a 6-day trend lead-in).
+  const readings = useMemo(
+    () => (data?.entries ?? []).filter((e) => !from || e.date >= from).sort((a, b) => compareReadings(b, a)),
+    [data, from]
+  );
+  const visible = showAll ? readings : readings.slice(0, 14);
+  const goal = s?.goalKg ?? null;
+  const sinceStart = s && s.latestKg !== null && s.startKg !== null ? s.latestKg - s.startKg : null;
+  const fromGoal = goal !== null && s?.avg7Kg != null ? s.avg7Kg - goal : null;
 
   const remove = async (e: WeightEntry) => {
-    if (!window.confirm(`Delete the ${e.weightKg} kg entry from ${e.date}?`)) return;
+    if (!confirm(`Delete the ${fromKg(e.weightKg, unit).toFixed(1)} ${unit} entry from ${e.date}?`)) return;
     try {
       await api(`/api/weight?id=${e.id}`, { method: "DELETE" });
       invalidateAll();
-      load();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Couldn't delete", { kind: "error" });
     }
   };
 
-  const visible = showAll ? daily : daily.slice(0, 14);
+  const openLog = (type: "daily" | "inbody" = "daily") => setModal({ open: true, entry: null, type });
 
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-lg font-semibold">Weight</h1>
         <div className="flex gap-2">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setModal({ open: true, entry: null, type: "inbody" })}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => openLog("inbody")}>
             Add InBody scan
           </button>
-          <button type="button" className="btn btn-primary" onClick={() => setModal({ open: true, entry: null, type: "daily" })}>
+          <button type="button" className="btn btn-primary" onClick={() => openLog()}>
             <Plus className="h-4 w-4" /> Log weight
           </button>
         </div>
@@ -82,38 +74,47 @@ export default function WeightPage() {
 
       {error && (
         <div className="card flex items-center justify-between px-4 py-3 text-sm text-fg-2" role="alert">
-          Couldn't load: {error}
-          <button type="button" className="btn btn-secondary btn-sm" onClick={load}>
+          Couldn&apos;t load: {error}
+          <button type="button" className="btn btn-secondary btn-sm" onClick={reload}>
             Retry
           </button>
         </div>
       )}
       {!data && !error && <div className="skeleton h-72" aria-busy="true" />}
 
-      {data && (
+      {data && s && (
         <>
-          <section className="card overflow-hidden">
-            <div className="grid grid-cols-2 gap-px bg-line sm:grid-cols-5 [&>*]:bg-surface">
-              <Stat label="Current (7-day avg)" value={s.avg7Kg !== null ? conv(s.avg7Kg)!.toFixed(1) : "—"} sub={s.latestKg !== null ? `latest ${conv(s.latestKg)!.toFixed(1)} ${unit} · ${formatDate(s.latestDate!)}` : unit} />
+          <section className="card overflow-hidden" aria-label="Weight summary">
+            <div className="grid grid-cols-2 gap-px bg-line sm:grid-cols-3 lg:grid-cols-6 [&>*]:bg-surface">
+              <Stat label="Latest" value={s.latestKg !== null ? conv(s.latestKg)!.toFixed(1) : "—"} sub={s.latestDate ? `${unit} · ${formatDate(s.latestDate)}` : unit} />
+              <Stat label="7-day average" value={s.avg7Kg !== null ? conv(s.avg7Kg)!.toFixed(1) : "—"} sub={unit} />
               <Stat label="Change · 7 days" value={s.change7Kg !== null ? fmt.signed(conv(s.change7Kg)!) : "—"} sub={unit} />
               <Stat label="Change · 30 days" value={s.change30Kg !== null ? fmt.signed(conv(s.change30Kg)!) : "—"} sub={unit} />
-              <Stat label="Since start" value={total !== null ? fmt.signed(conv(total)!) : "—"} sub={s.startKg !== null ? `from ${conv(s.startKg)!.toFixed(1)} ${unit}` : unit} />
-              <Stat label="Goal" value={goal !== null ? conv(goal)!.toFixed(1) : "—"} sub={toGoal !== null ? `${Math.abs(conv(toGoal)!).toFixed(1)} ${unit} to go` : "set in Settings"} />
+              <Stat label="Since first entry" value={sinceStart !== null ? fmt.signed(conv(sinceStart)!) : "—"} sub={s.startKg !== null ? `from ${conv(s.startKg)!.toFixed(1)} ${unit}` : unit} />
+              <Stat label="Goal" value={goal !== null ? conv(goal)!.toFixed(1) : "—"} sub={fromGoal !== null ? `${Math.abs(conv(fromGoal)!).toFixed(1)} ${unit} from goal` : goal === null ? "set in Settings" : unit} />
             </div>
             <div className="border-t border-line">
-              <WeightChart points={daily} goalKg={goal} unit={unit} />
+              <WeightChart entries={data.entries} from={from} goalKg={goal} unit={unit} range={range} onRangeChange={setRange} />
             </div>
           </section>
 
           <section className="card overflow-hidden">
             <h2 className="border-b border-line px-4 py-2.5 text-sm font-semibold">Weigh-ins</h2>
-            {daily.length === 0 ? (
-              <EmptyState title="No weigh-ins yet" description="Weigh yourself at the same time each day; the 7-day average smooths the noise." action={<button type="button" className="btn btn-primary btn-sm" onClick={() => setModal({ open: true, entry: null, type: "daily" })}>Log weight</button>} />
+            {readings.length === 0 ? (
+              <EmptyState
+                title={s.latestKg === null ? "No weigh-ins yet" : "No weigh-ins in this range"}
+                description="Weigh yourself at the same time each day; the 7-day average smooths the noise."
+                action={
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => openLog()}>
+                    Log weight
+                  </button>
+                }
+              />
             ) : (
               <>
                 <ul className="divide-y divide-line">
                   {visible.map((e) => (
-                    <li key={e.id} className="flex items-center gap-3 py-2 pl-4 pr-1">
+                    <li key={e.id} className="flex items-center gap-3 py-2 pl-4 pr-1" data-testid="weigh-in-row">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-3">
                           <span className="text-sm text-fg">{formatDate(e.date, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</span>
@@ -131,50 +132,52 @@ export default function WeightPage() {
                           { label: "Edit", onClick: () => setModal({ open: true, entry: e, type: "daily" }) },
                           { label: "Delete", danger: true, onClick: () => void remove(e) },
                         ]}
-                        label={`Actions for ${e.date}`}
+                        label={`Actions for ${e.date}${e.time ? ` ${e.time}` : ""}`}
                       />
                     </li>
                   ))}
                 </ul>
-                {daily.length > 14 && (
-                  <button type="button" className="w-full border-t border-line py-2 text-xs text-fg-2 hover:bg-surface-2" onClick={() => setShowAll((v) => !v)}>
-                    {showAll ? "Show fewer" : `Show all ${daily.length}`}
+                {readings.length > 14 && (
+                  <button type="button" className="w-full border-t border-line py-2.5 text-xs text-fg-2 hover:bg-surface-2" onClick={() => setShowAll((v) => !v)}>
+                    {showAll ? "Show fewer" : `Show all ${readings.length}`}
                   </button>
                 )}
               </>
             )}
           </section>
 
-          {data.inbodyEntries.length > 0 && (
+          {data.inbody.length > 0 && (
             <section className="card overflow-hidden">
               <h2 className="border-b border-line px-4 py-2.5 text-sm font-semibold">InBody scans</h2>
               <ul className="divide-y divide-line">
-                {[...data.inbodyEntries]
-                  .sort((a, b) => b.date.localeCompare(a.date))
-                  .map((e) => (
-                    <li key={e.id} className="flex items-center gap-3 py-2 pl-4 pr-1">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-3 text-sm">
-                          <span className="text-fg">{formatDate(e.date, { month: "short", day: "numeric", year: "numeric" })}</span>
-                          <span className="font-medium tabular text-fg">
-                            {conv(e.weightKg)!.toFixed(1)} {unit}
-                          </span>
-                        </div>
-                        <div className="text-xs tabular text-fg-3">
-                          {e.bodyFatPct !== null && <>Body fat {e.bodyFatPct}% · </>}
-                          {e.smmKg !== null && <>SMM {conv(e.smmKg)!.toFixed(1)} {unit} · </>}
-                          {e.bmi !== null && <>BMI {e.bmi}</>}
-                        </div>
+                {data.inbody.map((e) => (
+                  <li key={e.id} className="flex items-center gap-3 py-2 pl-4 pr-1" data-testid="inbody-row">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-3 text-sm">
+                        <span className="text-fg">{formatDate(e.date, { month: "short", day: "numeric", year: "numeric" })}</span>
+                        <span className="font-medium tabular text-fg">
+                          {conv(e.weightKg)!.toFixed(1)} {unit}
+                        </span>
                       </div>
-                      <Menu
-                        items={[
-                          { label: "Edit", onClick: () => setModal({ open: true, entry: e, type: "inbody" }) },
-                          { label: "Delete", danger: true, onClick: () => void remove(e) },
-                        ]}
-                        label={`Actions for scan ${e.date}`}
-                      />
-                    </li>
-                  ))}
+                      <div className="text-xs tabular text-fg-3">
+                        {[
+                          e.bodyFatPct != null && `Body fat ${e.bodyFatPct}%`,
+                          e.smmKg != null && `SMM ${conv(e.smmKg)!.toFixed(1)} ${unit}`,
+                          e.bmi != null && `BMI ${e.bmi}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
+                    </div>
+                    <Menu
+                      items={[
+                        { label: "Edit", onClick: () => setModal({ open: true, entry: e, type: "inbody" }) },
+                        { label: "Delete", danger: true, onClick: () => void remove(e) },
+                      ]}
+                      label={`Actions for scan ${e.date}`}
+                    />
+                  </li>
+                ))}
               </ul>
             </section>
           )}
@@ -184,14 +187,10 @@ export default function WeightPage() {
       <LogWeightModal
         isOpen={modal.open}
         onClose={() => setModal((m) => ({ ...m, open: false }))}
-        onSuccess={() => {
-          invalidateAll();
-          load();
-        }}
+        onSuccess={invalidateAll}
         initialEntry={modal.entry}
         defaultType={modal.type}
         measurementSystem={data?.measurementSystem}
-        userHeightCm={data?.userHeightCm}
       />
     </div>
   );

@@ -265,17 +265,33 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal }: 
   }, [catalog, restaurantFoods, activeFilter, effectiveSearchQuery, onlineResults]);
 
   // Favorite toggle handler
-  const handleToggleFavorite = async (foodId: string, currentFav: boolean) => {
+  const handleToggleFavorite = async (id: string, currentFav: boolean, kind?: "food" | "recipe") => {
+    if (kind === "recipe") {
+      setCatalog((c) =>
+        c ? { ...c, recipes: c.recipes.map((r) => (r.id === id ? { ...r, isFavorite: !currentFav } : r)) } : null
+      );
+      try {
+        await api(`/api/recipes/${id}/favorite`, { method: "POST" });
+        invalidateCatalog();
+      } catch {
+        toast("Couldn't update recipe favorite", { kind: "error" });
+        setCatalog((c) =>
+          c ? { ...c, recipes: c.recipes.map((r) => (r.id === id ? { ...r, isFavorite: currentFav } : r)) } : null
+        );
+      }
+      return;
+    }
+
     setCatalog((c) =>
-      c ? { ...c, foods: c.foods.map((f) => (f.id === foodId ? { ...f, isFavorite: !currentFav } : f)) } : null
+      c ? { ...c, foods: c.foods.map((f) => (f.id === id ? { ...f, isFavorite: !currentFav } : f)) } : null
     );
     try {
-      await api(`/api/foods/${foodId}`, { method: "PATCH", json: { isFavorite: !currentFav } });
+      await api(`/api/foods/${id}`, { method: "PATCH", json: { isFavorite: !currentFav } });
       invalidateCatalog();
     } catch {
       toast("Couldn't update favorite", { kind: "error" });
       setCatalog((c) =>
-        c ? { ...c, foods: c.foods.map((f) => (f.id === foodId ? { ...f, isFavorite: currentFav } : f)) } : null
+        c ? { ...c, foods: c.foods.map((f) => (f.id === id ? { ...f, isFavorite: currentFav } : f)) } : null
       );
     }
   };

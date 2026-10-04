@@ -40,6 +40,7 @@ import {
 } from "@/lib/nutrition/tdee";
 import { cn } from "@/lib/utils";
 import { DataSection } from "@/components/settings/DataSection";
+import { toKg, weightInputValue, weightUnitFor } from "@/lib/weight-units";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -63,7 +64,8 @@ export default function SettingsPage() {
   const [heightInput, setHeightInput] = useState<number | string>(178); // cm or inches
   const [heightFeet, setHeightFeet] = useState<number | string>(5);
   const [heightInches, setHeightInches] = useState<number | string>(10);
-  const [currentWeightInput, setCurrentWeightInput] = useState<number | string>(78); // kg or lbs
+  const [currentWeightInput, setCurrentWeightInput] = useState<number | string>(""); // kg or lbs
+  const [weightFromLog, setWeightFromLog] = useState(false); // true once a weigh-in exists: the value is derived from it
   const [goalType, setGoalType] = useState<string>("lose"); // "lose" | "maintain" | "gain"
   const [goalWeeklyRateKg, setGoalWeeklyRateKg] = useState<number>(0.5);
   const [goalWeightInput, setGoalWeightInput] = useState<number | string>(72);
@@ -131,20 +133,18 @@ export default function SettingsPage() {
             setHeightInput(hCm);
           }
 
-          const curWKg = data.currentWeightKg ?? 78;
-          setCurrentWeightInput(
-            isImp ? Math.round(curWKg * 2.20462 * 10) / 10 : curWKg
-          );
+          if (data.currentWeightKg != null) {
+            setCurrentWeightInput(weightInputValue(data.currentWeightKg, weightUnitFor(data.measurementSystem)));
+          } else {
+            setCurrentWeightInput("");
+          }
+          setWeightFromLog(Boolean(data.currentWeightFromLog));
 
           setGoalType(data.goalType ?? "lose");
           setGoalWeeklyRateKg(data.goalWeeklyRateKg ?? 0.5);
 
           if (data.goalWeightKg) {
-            setGoalWeightInput(
-              isImp
-                ? Math.round(data.goalWeightKg * 2.20462 * 10) / 10
-                : data.goalWeightKg
-            );
+            setGoalWeightInput(weightInputValue(data.goalWeightKg, weightUnitFor(data.measurementSystem)));
           } else {
             setGoalWeightInput("");
           }
@@ -180,18 +180,18 @@ export default function SettingsPage() {
   }, [isImperial, heightFeet, heightInches, heightInput]);
 
   const calculatedWeightKg = useMemo(() => {
-    const rawVal = Number(currentWeightInput) || 78;
-    return isImperial ? Math.round((rawVal / 2.20462) * 10) / 10 : rawVal;
+    if (!currentWeightInput || isNaN(Number(currentWeightInput)) || Number(currentWeightInput) <= 0) return null;
+    return toKg(Number(currentWeightInput), weightUnitFor(isImperial ? "imperial" : "metric"));
   }, [isImperial, currentWeightInput]);
 
   const calculatedGoalWeightKg = useMemo(() => {
     if (!goalWeightInput) return null;
-    const rawVal = Number(goalWeightInput);
-    return isImperial ? Math.round((rawVal / 2.20462) * 10) / 10 : rawVal;
+    return toKg(Number(goalWeightInput), weightUnitFor(isImperial ? "imperial" : "metric"));
   }, [isImperial, goalWeightInput]);
 
   // Live Component-Based TDEE Calculation (Section 38b)
   const tdeeBreakdown = useMemo(() => {
+    if (!calculatedWeightKg) return null;
     return calculateTDEEAndTarget({
       sex,
       age: Number(age) || 28,
@@ -221,6 +221,7 @@ export default function SettingsPage() {
 
   // Apply suggested targets to the nutrition targets inputs
   const handleApplySuggestedTarget = () => {
+    if (!tdeeBreakdown) return;
     setDailyCalories(tdeeBreakdown.targetCalories);
     setDailyProtein(tdeeBreakdown.suggestedMacros.protein);
     setDailyCarbs(tdeeBreakdown.suggestedMacros.carbs);
@@ -524,11 +525,22 @@ export default function SettingsPage() {
                   step="0.1"
                   min={30}
                   max={400}
-                  required
                   value={currentWeightInput}
                   onChange={(e) => setCurrentWeightInput(e.target.value)}
-                  className="w-full px-4 py-2.5 text-xs font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition"
+                  readOnly={weightFromLog}
+                  placeholder={weightFromLog ? undefined : "No weight logged"}
+                  aria-describedby={weightFromLog ? "current-weight-hint" : undefined}
+                  className="w-full px-4 py-2.5 text-xs font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] min-h-[44px] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] transition read-only:opacity-70"
                 />
+                {weightFromLog ? (
+                  <p id="current-weight-hint" className="mt-1 text-xs text-[var(--text-muted)]">
+                    From your latest weigh-in. Log a new weight on the Weight page to change it.
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                    No weigh-in logged yet. Log your weight on the Weight page.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -649,7 +661,7 @@ export default function SettingsPage() {
                       Average daily steps (NEAT movement)
                     </span>
                     <span className="text-xs font-tabular font-semibold text-[var(--accent)]">
-                      {Number(avgDailySteps).toLocaleString()} steps (~{tdeeBreakdown.stepCalories} kcal/day)
+                      {Number(avgDailySteps).toLocaleString()} steps{tdeeBreakdown ? ` (~${tdeeBreakdown.stepCalories} kcal/day)` : ""}
                     </span>
                   </div>
 
@@ -694,7 +706,7 @@ export default function SettingsPage() {
                         Weekly workout routines
                       </span>
                       <span className="text-xs text-[var(--text-muted)]">
-                        ~{tdeeBreakdown.dailyExerciseCalories} kcal/day averaged across the week
+                        {tdeeBreakdown ? `~${tdeeBreakdown.dailyExerciseCalories} kcal/day averaged across the week` : "Log weight to estimate exercise calories"}
                       </span>
                     </div>
 
@@ -723,10 +735,10 @@ export default function SettingsPage() {
                     <div className="space-y-2.5">
                       {workouts.map((w, idx) => {
                         const met = MET_TABLE[w.workoutType]?.met || 5.0;
-                        const sessionKcal = Math.round(
-                          met * calculatedWeightKg * (w.durationMinutes / 60)
-                        );
-                        const weeklyKcal = sessionKcal * (w.sessionsPerWeek || 0);
+                        const sessionKcal = calculatedWeightKg
+                          ? Math.round(met * calculatedWeightKg * (w.durationMinutes / 60))
+                          : null;
+                        const weeklyKcal = sessionKcal !== null ? sessionKcal * (w.sessionsPerWeek || 0) : null;
 
                         return (
                           <div
@@ -806,10 +818,10 @@ export default function SettingsPage() {
                             <div className="flex items-center justify-between sm:justify-end space-x-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border)]">
                               <div className="text-right font-tabular">
                                 <span className="block font-semibold text-[var(--text-primary)]">
-                                  ~{sessionKcal} kcal/ses
+                                  {sessionKcal !== null ? `~${sessionKcal} kcal/ses` : "—"}
                                 </span>
                                 <span className="text-xs text-[var(--text-muted)]">
-                                  {weeklyKcal} kcal/wk
+                                  {weeklyKcal !== null ? `${weeklyKcal} kcal/wk` : "Weight required"}
                                 </span>
                               </div>
 
@@ -1345,80 +1357,96 @@ export default function SettingsPage() {
               </h3>
             </div>
 
-            {/* Suggested Target Big Number */}
-            <div className="space-y-1">
-              <span className="text-xs text-[var(--hero-muted)] block">Suggested daily intake</span>
-              <div className="flex items-baseline space-x-2">
-                <span className="text-4xl font-bold tracking-tight text-[var(--hero-text)] font-tabular">
-                  {tdeeBreakdown.targetCalories.toLocaleString()}
-                </span>
-                <span className="text-sm text-[var(--hero-muted)]">kcal/day</span>
-              </div>
-              {tdeeBreakdown.deficitOrSurplus !== 0 && (
-                <div className="mt-1">
-                  <span className="inline-block text-xs px-2.5 py-0.5 rounded-full bg-[var(--hero-track)] text-[var(--hero-text)] font-tabular font-medium">
-                    {tdeeBreakdown.deficitOrSurplus > 0 ? "+" : ""}
-                    {tdeeBreakdown.deficitOrSurplus} kcal {goalType === "lose" ? "deficit" : goalType === "gain" ? "surplus" : "maintenance"}
-                  </span>
+            {tdeeBreakdown ? (
+              <>
+                {/* Suggested Target Big Number */}
+                <div className="space-y-1">
+                  <span className="text-xs text-[var(--hero-muted)] block">Suggested daily intake</span>
+                  <div className="flex items-baseline space-x-2">
+                    <span className="text-4xl font-bold tracking-tight text-[var(--hero-text)] font-tabular">
+                      {tdeeBreakdown.targetCalories.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-[var(--hero-muted)]">kcal/day</span>
+                  </div>
+                  {tdeeBreakdown.deficitOrSurplus !== 0 && (
+                    <div className="mt-1">
+                      <span className="inline-block text-xs px-2.5 py-0.5 rounded-full bg-[var(--hero-track)] text-[var(--hero-text)] font-tabular font-medium">
+                        {tdeeBreakdown.deficitOrSurplus > 0 ? "+" : ""}
+                        {tdeeBreakdown.deficitOrSurplus} kcal {goalType === "lose" ? "deficit" : goalType === "gain" ? "surplus" : "maintenance"}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* TDEE Component Breakdown */}
-            <div className="divide-y divide-[var(--hero-track)] text-xs font-tabular">
-              <div className="flex items-center justify-between py-2.5">
-                <span className="text-[var(--hero-muted)]">Basal metabolic rate (BMR)</span>
-                <span className="font-semibold text-[var(--hero-text)]">{tdeeBreakdown.bmr} kcal</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5">
-                <span className="text-[var(--hero-muted)]">NEAT steps movement</span>
-                <span className="font-semibold text-[var(--hero-text)]">+{tdeeBreakdown.stepCalories} kcal</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5">
-                <span className="text-[var(--hero-muted)]">Structured exercise workouts</span>
-                <span className="font-semibold text-[var(--hero-text)]">+{tdeeBreakdown.dailyExerciseCalories} kcal</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5">
-                <span className="text-[var(--hero-muted)] font-medium">Maintenance TDEE</span>
-                <span className="font-bold text-[var(--lime)]">{tdeeBreakdown.tdee} kcal</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5">
-                <span className="text-[var(--hero-muted)]">Goal adjustment</span>
-                <span className="font-semibold text-[var(--hero-text)]">
-                  {tdeeBreakdown.deficitOrSurplus > 0 ? "+" : ""}
-                  {tdeeBreakdown.deficitOrSurplus} kcal
-                </span>
-              </div>
-            </div>
+                {/* TDEE Component Breakdown */}
+                <div className="divide-y divide-[var(--hero-track)] text-xs font-tabular">
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-[var(--hero-muted)]">Basal metabolic rate (BMR)</span>
+                    <span className="font-semibold text-[var(--hero-text)]">{tdeeBreakdown.bmr} kcal</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-[var(--hero-muted)]">NEAT steps movement</span>
+                    <span className="font-semibold text-[var(--hero-text)]">+{tdeeBreakdown.stepCalories} kcal</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-[var(--hero-muted)]">Structured exercise workouts</span>
+                    <span className="font-semibold text-[var(--hero-text)]">+{tdeeBreakdown.dailyExerciseCalories} kcal</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-[var(--hero-muted)] font-medium">Maintenance TDEE</span>
+                    <span className="font-bold text-[var(--lime)]">{tdeeBreakdown.tdee} kcal</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-[var(--hero-muted)]">Goal adjustment</span>
+                    <span className="font-semibold text-[var(--hero-text)]">
+                      {tdeeBreakdown.deficitOrSurplus > 0 ? "+" : ""}
+                      {tdeeBreakdown.deficitOrSurplus} kcal
+                    </span>
+                  </div>
+                </div>
 
-            {/* Macro Split Preview */}
-            <div className="pt-2 border-t border-[var(--hero-track)] space-y-2 text-xs">
-              <p className="text-[var(--hero-muted)] font-normal">Suggested macro split:</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5 font-tabular text-xs">
-                <span className="flex items-center text-[var(--hero-text)]">
-                  <span className="w-2 h-2 rounded-full bg-[var(--macro-protein)] mr-1.5 shrink-0" />
-                  {tdeeBreakdown.suggestedMacros.protein}g Protein
-                </span>
-                <span className="flex items-center text-[var(--hero-text)]">
-                  <span className="w-2 h-2 rounded-full bg-[var(--macro-carbs)] mr-1.5 shrink-0" />
-                  {tdeeBreakdown.suggestedMacros.carbs}g Carbs
-                </span>
-                <span className="flex items-center text-[var(--hero-text)]">
-                  <span className="w-2 h-2 rounded-full bg-[var(--macro-fat)] mr-1.5 shrink-0" />
-                  {tdeeBreakdown.suggestedMacros.fat}g Fat
-                </span>
-              </div>
-            </div>
+                {/* Macro Split Preview */}
+                <div className="pt-2 border-t border-[var(--hero-track)] space-y-2 text-xs">
+                  <p className="text-[var(--hero-muted)] font-normal">Suggested macro split:</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1.5 font-tabular text-xs">
+                    <span className="flex items-center text-[var(--hero-text)]">
+                      <span className="w-2 h-2 rounded-full bg-[var(--macro-protein)] mr-1.5 shrink-0" />
+                      {tdeeBreakdown.suggestedMacros.protein}g Protein
+                    </span>
+                    <span className="flex items-center text-[var(--hero-text)]">
+                      <span className="w-2 h-2 rounded-full bg-[var(--macro-carbs)] mr-1.5 shrink-0" />
+                      {tdeeBreakdown.suggestedMacros.carbs}g Carbs
+                    </span>
+                    <span className="flex items-center text-[var(--hero-text)]">
+                      <span className="w-2 h-2 rounded-full bg-[var(--macro-fat)] mr-1.5 shrink-0" />
+                      {tdeeBreakdown.suggestedMacros.fat}g Fat
+                    </span>
+                  </div>
+                </div>
 
-            {/* Apply Suggested Target Lime Button */}
-            <button
-              type="button"
-              onClick={handleApplySuggestedTarget}
-              className="w-full py-3 px-4 rounded-full bg-[var(--lime)] hover:bg-[var(--accent-hover)] text-[var(--on-lime)] font-semibold text-sm transition cursor-pointer min-h-[44px] flex items-center justify-center space-x-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Apply suggested target</span>
-            </button>
+                {/* Apply Suggested Target Lime Button */}
+                <button
+                  type="button"
+                  onClick={handleApplySuggestedTarget}
+                  className="w-full py-3 px-4 rounded-full bg-[var(--lime)] hover:bg-[var(--accent-hover)] text-[var(--on-lime)] font-semibold text-sm transition cursor-pointer min-h-[44px] flex items-center justify-center space-x-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Apply suggested target</span>
+                </button>
+              </>
+            ) : (
+              <div className="space-y-4 py-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-[var(--hero-track)] flex items-center justify-center mx-auto text-[var(--hero-muted)]">
+                  <Scale className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[var(--hero-text)]">Weight required for TDEE</p>
+                  <p className="text-xs text-[var(--hero-muted)] max-w-xs mx-auto">
+                    Log a weigh-in on the Weight page or enter your current weight to calculate your personalized energy targets.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

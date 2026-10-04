@@ -140,7 +140,9 @@ model Recipe {
   user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   name                  String
   description           String?
-  servings              Int                @default(4)
+  servings              Float              @default(4)
+  servingLabel          String?            // "serving", "slice", "muffin", "bowl", "jar"
+  yieldWeightGrams      Float?             // Optional final cooked weight in grams
   prepTimeMinutes       Int?
   cookTimeMinutes       Int?
   imageUrl              String?
@@ -183,6 +185,22 @@ model RecipeIngredient {
   unit        String   // "g", "kg", "ml", "l", "tbsp", "tsp", "cup", "piece", "egg", "slice", "scoop", "oz"
   notes       String?  // e.g. "diced", "extra virgin"
   sortOrder   Int      @default(0)
+
+  // Nutrient snapshot columns (preserves ingredient nutrition if source food changes/is deleted)
+  grams       Float?
+  calories    Float?
+  protein     Float?
+  carbs       Float?
+  fat         Float?
+  fiber       Float?
+  totalSugars Float?
+  addedSugars Float?
+  saturatedFat Float?
+  transFat    Float?
+  sodium      Float?
+
+  @@index([recipeId])
+  @@index([foodId])
 }
 
 model RecipeStep {
@@ -337,7 +355,7 @@ model UserSettings {
   birthDate                  String?                     // "YYYY-MM-DD"
   age                        Int      @default(28)       // Auto-calculated from birthDate if provided
   heightCm                   Float    @default(178)
-  currentWeightKg            Float    @default(78)
+  currentWeightKg            Float?
   currentBodyFatPct          Float?                      // Monthly InBody percentage
   currentSmmKg               Float?                      // Skeletal Muscle Mass in kg (from InBody)
   currentBmi                 Float?                      // Body Mass Index (from InBody or calculated)

@@ -59,6 +59,33 @@ export function daysInMonth(date: DateString): number {
   return new Date(y, m, 0).getDate();
 }
 
+/** Pure integer arithmetic to add/subtract months without Date object DST or leap issues. */
+export function shiftMonth(monthStr: string, by: number): string {
+  const [y, m] = monthStr.slice(0, 7).split("-").map(Number);
+  const total = y * 12 + (m - 1) + by;
+  const newYear = Math.floor(total / 12);
+  const newMonth = ((total % 12) + 12) % 12 + 1;
+  return `${newYear}-${String(newMonth).padStart(2, "0")}`;
+}
+
+/** Format "YYYY-MM" to readable "October 2026". */
+export function formatMonth(monthStr: string, locale = "en-US"): string {
+  const [y, m] = monthStr.slice(0, 7).split("-").map(Number);
+  const d = new Date(y, m - 1, 15, 12, 0, 0, 0);
+  return d.toLocaleDateString(locale, { month: "long", year: "numeric" });
+}
+
+/** Returns the first day, last day, and day count of a given month string "YYYY-MM". */
+export function monthRange(monthStr: string): { from: DateString; to: DateString; daysCount: number } {
+  const m = monthStr.slice(0, 7);
+  const count = daysInMonth(`${m}-01`);
+  return {
+    from: `${m}-01`,
+    to: `${m}-${String(count).padStart(2, "0")}`,
+    daysCount: count,
+  };
+}
+
 export function formatDate(
   date: DateString,
   options: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", day: "numeric" },
@@ -90,4 +117,14 @@ export function isYesterday(date: DateString, today: DateString = todayLocal()):
 
 export function formatDisplayDate(date: DateString): string {
   return relativeDayLabel(date);
+}
+
+/**
+ * The latest calendar date that can be "today" anywhere on Earth right now (UTC+14).
+ * The server has no per-user timezone, so this is the strictest honest bound for
+ * "not in the future": a date beyond it is in the future for every user.
+ * Known limitation: a user west of UTC+14 may log up to a day ahead until a timezone setting exists.
+ */
+export function latestPossibleLocalDate(now: Date = new Date()): DateString {
+  return new Date(now.getTime() + 14 * 3_600_000).toISOString().slice(0, 10);
 }

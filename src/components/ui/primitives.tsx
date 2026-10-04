@@ -11,7 +11,11 @@ export const fmt = {
   g: (n: number) => (Math.abs(n) < 10 ? (Math.round(n * 10) / 10).toString() : Math.round(n).toString()),
   one: (n: number) => (Math.round(n * 10) / 10).toLocaleString("en-US", { maximumFractionDigits: 1 }),
   qty: (n: number) => (Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString()),
-  signed: (n: number, digits = 1) => `${n > 0 ? "+" : ""}${n.toFixed(digits)}`,
+  // Round first so a value that displays as 0.0 never shows a sign.
+  signed: (n: number, digits = 1) => {
+    const r = Number(n.toFixed(digits));
+    return `${r > 0 ? "+" : ""}${r.toFixed(digits)}`;
+  },
 };
 
 /* ───────── NumberField: decimals-friendly numeric input ───────── */
@@ -95,6 +99,7 @@ export function Segmented<T extends string>({
   onChange,
   options,
   className,
+  itemClassName,
   size = "md",
   ariaLabel,
 }: {
@@ -102,6 +107,7 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
   options: { value: T; label: React.ReactNode }[];
   className?: string;
+  itemClassName?: string;
   size?: "sm" | "md";
   ariaLabel?: string;
 }) {
@@ -116,8 +122,9 @@ export function Segmented<T extends string>({
           onClick={() => onChange(o.value)}
           className={cn(
             "flex-1 whitespace-nowrap rounded-[5px] font-medium transition-colors",
-            size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm",
-            value === o.value ? "bg-surface text-fg shadow-[0_1px_2px_rgba(0,0,0,0.06)]" : "text-fg-2 hover:text-fg"
+            size === "sm" ? "px-2.5 py-1 text-xs min-h-[28px]" : "px-3 py-1.5 text-sm min-h-[32px]",
+            value === o.value ? "bg-surface text-fg shadow-[0_1px_2px_rgba(0,0,0,0.06)]" : "text-fg-2 hover:text-fg",
+            itemClassName
           )}
         >
           {o.label}

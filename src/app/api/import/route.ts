@@ -3,6 +3,7 @@ import { HttpError, json, parseQuery, withAuth } from "@/lib/api/route";
 import { z } from "zod";
 import { exportFile, servingsInput } from "@/lib/validation";
 import { servingRows } from "@/lib/services/servings";
+import { syncCurrentWeight } from "@/lib/services/weight";
 import { roundNutrients, toNutrients } from "@/lib/nutrition/core";
 
 const query = z.object({ dryRun: z.enum(["true", "false"]).default("true") });
@@ -125,13 +126,15 @@ export const POST = withAuth(async (req, user) => {
         },
       });
     }
-    for (const w of newWeight) {
-      await tx.weightEntry.create({
-        data: {
+    // One statement: a per-row create over a remote database outgrows the transaction timeout on a long history.
+    if (newWeight.length) {
+      await tx.weightEntry.createMany({
+        data: newWeight.map((w) => ({
           userId: user.id, date: w.date, time: w.time ?? null, entryType: w.entryType, weightKg: w.weightKg,
           bodyFatPct: w.bodyFatPct ?? null, smmKg: w.smmKg ?? null, bmi: w.bmi ?? null, notes: w.notes ?? null,
-        },
+        })),
       });
+      await syncCurrentWeight(user.id, tx);
     }
     if (newWater.length) await tx.waterLogEntry.createMany({ data: newWater.map((w) => ({ ...w, userId: user.id })) });
     for (const t of file.templates) {

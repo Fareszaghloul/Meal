@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/session";
+import { toggleRecipeFavorite } from "@/lib/services/recipes";
 
 export async function POST(
   request: Request,
@@ -9,30 +9,20 @@ export async function POST(
   try {
     const user = await requireAuth(request);
     const { id } = await props.params;
-    const existing = await prisma.recipe.findFirst({
-      where: { id, userId: user.id },
-      select: { isFavorite: true },
-    });
-
-    if (!existing) {
-      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
-    }
-
-    const updated = await prisma.recipe.update({
-      where: { id },
-      data: { isFavorite: !existing.isFavorite },
-      select: { id: true, isFavorite: true },
-    });
-
+    const updated = await toggleRecipeFavorite(user.id, id);
     return NextResponse.json(updated);
   } catch (error: any) {
     if (error.name === "AuthError") {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    if (error.status) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("POST /api/recipes/[id]/favorite error:", error);
     return NextResponse.json(
-      { error: "Failed to toggle favorite" },
+      { error: error instanceof Error ? error.message : "Failed to toggle favorite" },
       { status: 500 }
     );
   }
 }
+

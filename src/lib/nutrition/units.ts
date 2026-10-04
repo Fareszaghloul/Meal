@@ -57,7 +57,12 @@ export function convertToGrams(
   const canonUnit = normalizeUnit(unit);
   const unitInfo = COMMON_UNITS[canonUnit];
 
-  // If unit matches food's default count unit (e.g. 1 piece, 1 scoop, 1 egg)
+  // If the unit is already grams, return quantity directly
+  if (canonUnit === "g") {
+    return quantity;
+  }
+
+  // If unit matches food's default count unit (e.g. 1 piece, 1 scoop, 1 egg, 1 serving)
   if (
     foodServingWeightGrams &&
     foodDefaultUnit &&

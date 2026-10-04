@@ -1,25 +1,39 @@
 import { convertToGrams } from "./units";
+import {
+  toNutrients,
+  scaleNutrients,
+  sumNutrients,
+  roundNutrients,
+  nutrientsForGrams,
+  ZERO_NUTRIENTS,
+  type Nutrients,
+} from "./core";
 
-export interface MacroNutrients {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
+export type MacroNutrients = Nutrients;
+
+export interface IngredientForCalculation {
+  id?: string;
+  rawName: string;
+  quantity: number;
+  unit: string;
+  notes?: string | null;
+  foodId?: string | null;
+  sortOrder?: number;
+  grams?: number | null;
+  calories?: number | null;
+  protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
+  fiber?: number | null;
   totalSugars?: number | null;
   addedSugars?: number | null;
   saturatedFat?: number | null;
   transFat?: number | null;
   sodium?: number | null;
-}
-
-export interface IngredientForCalculation {
-  rawName: string;
-  quantity: number;
-  unit: string;
   food?: {
     id: string;
     name: string;
+    brand?: string | null;
     caloriesPer100g: number;
     proteinPer100g: number;
     carbsPer100g: number;
@@ -35,116 +49,87 @@ export interface IngredientForCalculation {
   } | null;
 }
 
+export interface CalculatedRecipeNutrition {
+  total: Nutrients;
+  perServing: Nutrients;
+  per100g: Nutrients | null;
+  totalWeightGrams: number;
+  matchedCount: number;
+  totalIngredients: number;
+  resolvedIngredients: Array<IngredientForCalculation & Nutrients & { computedGrams: number }>;
+}
+
 /**
- * Calculates total and per-serving nutrition for a recipe
+ * Calculates total, per-serving, and optional per-100g nutrition for a recipe.
+ * Uses the authoritative core nutrition utilities without inline Atwater re-estimations.
  */
 export function calculateRecipeNutrition(
   ingredients: IngredientForCalculation[],
-  servings: number = 4
-): {
-  total: MacroNutrients;
-  perServing: MacroNutrients;
-  matchedCount: number;
-  totalIngredients: number;
-} {
-  const safeServings = Math.max(1, servings);
-  
-  let totalCalories = 0;
-  let totalProtein = 0;
-  let totalCarbs = 0;
-  let totalFat = 0;
-  let totalFiber = 0;
+  servings: number = 4,
+  yieldWeightGrams?: number | null
+): CalculatedRecipeNutrition {
+  const safeServings = typeof servings === "number" && Number.isFinite(servings) && servings > 0 ? servings : 1;
+  const safeYieldGrams =
+    typeof yieldWeightGrams === "number" && Number.isFinite(yieldWeightGrams) && yieldWeightGrams > 0
+      ? yieldWeightGrams
+      : null;
 
-  let totalSugarsSum = 0;
-  let hasTotalSugars = false;
-
-  let addedSugarsSum = 0;
-  let hasAddedSugars = false;
-
-  let saturatedFatSum = 0;
-  let hasSaturatedFat = false;
-
-  let transFatSum = 0;
-  let hasTransFat = false;
-
-  let sodiumSum = 0;
-  let hasSodium = false;
-
+  let totalWeightGrams = 0;
   let matchedCount = 0;
+  const resolvedList: Array<IngredientForCalculation & Nutrients & { computedGrams: number }> = [];
+  const nutrientsList: Nutrients[] = [];
 
   for (const item of ingredients) {
+    const qty = typeof item.quantity === "number" && Number.isFinite(item.quantity) && item.quantity > 0 ? item.quantity : 0;
+    const unit = item.unit || "g";
+    
+    // Determine ingredient grams
+    const computedGrams = convertToGrams(
+      qty,
+      unit,
+      item.food?.servingWeightGrams ?? (item.grams && qty > 0 ? item.grams / qty : null),
+      item.food?.defaultUnit
+    );
+    totalWeightGrams += computedGrams;
+
+    let itemNutrients: Nutrients;
     if (item.food) {
       matchedCount++;
-      const grams = convertToGrams(
-        item.quantity,
-        item.unit,
-        item.food.servingWeightGrams,
-        item.food.defaultUnit
-      );
-      
-      const multiplier = grams / 100;
-      totalCalories += (item.food.caloriesPer100g || 0) * multiplier;
-      totalProtein += (item.food.proteinPer100g || 0) * multiplier;
-      totalCarbs += (item.food.carbsPer100g || 0) * multiplier;
-      totalFat += (item.food.fatPer100g || 0) * multiplier;
-      totalFiber += (item.food.fiberPer100g || 0) * multiplier;
-
-      if (item.food.totalSugarsPer100g !== null && item.food.totalSugarsPer100g !== undefined) {
-        totalSugarsSum += item.food.totalSugarsPer100g * multiplier;
-        hasTotalSugars = true;
-      }
-      if (item.food.addedSugarsPer100g !== null && item.food.addedSugarsPer100g !== undefined) {
-        addedSugarsSum += item.food.addedSugarsPer100g * multiplier;
-        hasAddedSugars = true;
-      }
-      if (item.food.saturatedFatPer100g !== null && item.food.saturatedFatPer100g !== undefined) {
-        saturatedFatSum += item.food.saturatedFatPer100g * multiplier;
-        hasSaturatedFat = true;
-      }
-      if (item.food.transFatPer100g !== null && item.food.transFatPer100g !== undefined) {
-        transFatSum += item.food.transFatPer100g * multiplier;
-        hasTransFat = true;
-      }
-      if (item.food.sodiumPer100g !== null && item.food.sodiumPer100g !== undefined) {
-        sodiumSum += item.food.sodiumPer100g * multiplier;
-        hasSodium = true;
-      }
+      itemNutrients = nutrientsForGrams(item.food, computedGrams);
+    } else if (item.calories !== null && item.calories !== undefined) {
+      // Use existing snapshot if source food is unlinked or deleted
+      matchedCount++;
+      itemNutrients = toNutrients(item);
+    } else {
+      itemNutrients = { ...ZERO_NUTRIENTS };
     }
+
+    const roundedItem = roundNutrients(itemNutrients);
+    nutrientsList.push(itemNutrients);
+
+    resolvedList.push({
+      ...item,
+      quantity: qty,
+      unit,
+      computedGrams: Math.round(computedGrams * 10) / 10,
+      grams: Math.round(computedGrams * 10) / 10,
+      ...roundedItem,
+    });
   }
 
-  const round = (val: number) => Math.round(val * 10) / 10;
-
-  const total: MacroNutrients = {
-    calories: Math.round(totalCalories),
-    protein: round(totalProtein),
-    carbs: round(totalCarbs),
-    fat: round(totalFat),
-    fiber: round(totalFiber),
-    totalSugars: hasTotalSugars ? round(totalSugarsSum) : null,
-    addedSugars: hasAddedSugars ? round(addedSugarsSum) : null,
-    saturatedFat: hasSaturatedFat ? round(saturatedFatSum) : null,
-    transFat: hasTransFat ? round(transFatSum) : null,
-    sodium: hasSodium ? Math.round(sodiumSum) : null,
-  };
-
-  const perServing: MacroNutrients = {
-    calories: Math.round(totalCalories / safeServings),
-    protein: round(totalProtein / safeServings),
-    carbs: round(totalCarbs / safeServings),
-    fat: round(totalFat / safeServings),
-    fiber: round(totalFiber / safeServings),
-    totalSugars: hasTotalSugars ? round(totalSugarsSum / safeServings) : null,
-    addedSugars: hasAddedSugars ? round(addedSugarsSum / safeServings) : null,
-    saturatedFat: hasSaturatedFat ? round(saturatedFatSum / safeServings) : null,
-    transFat: hasTransFat ? round(transFatSum / safeServings) : null,
-    sodium: hasSodium ? Math.round(sodiumSum / safeServings) : null,
-  };
+  const rawTotal = sumNutrients(nutrientsList);
+  const total = roundNutrients(rawTotal);
+  const perServing = roundNutrients(scaleNutrients(rawTotal, 1 / safeServings));
+  const per100g = safeYieldGrams ? roundNutrients(scaleNutrients(rawTotal, 100 / safeYieldGrams)) : null;
 
   return {
     total,
     perServing,
+    per100g,
+    totalWeightGrams: Math.round(totalWeightGrams * 10) / 10,
     matchedCount,
     totalIngredients: ingredients.length,
+    resolvedIngredients: resolvedList,
   };
 }
 
@@ -163,9 +148,9 @@ export function scaleIngredients(
   baseServings: number,
   targetServings: number
 ) {
-  const factor = targetServings / Math.max(1, baseServings);
+  const factor = targetServings / (baseServings > 0 ? baseServings : 1);
   return ingredients.map((ing) => {
-    const scaledQty = Math.round(ing.quantity * factor * 10) / 10;
+    const scaledQty = Math.round(ing.quantity * factor * 100) / 100;
     return {
       ...ing,
       quantity: scaledQty,

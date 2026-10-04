@@ -42,7 +42,28 @@ export function FoodPortionEditor({
     if (item.kind === "food") {
       return servingOptions(item.food);
     } else if (item.kind === "recipe") {
-      return [{ id: "serving", label: "serving", grams: 0 }];
+      const r = item.recipe;
+      const servingLabel = r.servingLabel?.trim() || "serving";
+      const hasYield = Boolean(r.yieldWeightGrams && r.yieldWeightGrams > 0);
+      const perServingGrams = hasYield ? Math.round(r.yieldWeightGrams! / r.servings) : 0;
+
+      const opts: ServingOption[] = [
+        {
+          id: "serving",
+          label: servingLabel,
+          grams: perServingGrams,
+        },
+      ];
+
+      if (hasYield) {
+        opts.push({
+          id: "g",
+          label: "g",
+          grams: 1,
+        });
+      }
+
+      return opts;
     } else {
       // Online food
       const grams = item.food.servingWeightGrams || 100;
@@ -72,6 +93,9 @@ export function FoodPortionEditor({
       }
       return { option: def.option, quantity: initialQuantity || def.quantity };
     } else if (item.kind === "recipe") {
+      if (initialUnit === "g" && options.some((o) => o.id === "g")) {
+        return { option: options.find((o) => o.id === "g")!, quantity: initialQuantity || 100 };
+      }
       return { option: options[0], quantity: initialQuantity || 1 };
     } else {
       return { option: options[0], quantity: initialQuantity || 1 };
@@ -109,6 +133,14 @@ export function FoodPortionEditor({
         transFat: r.transFatPerServing,
         sodium: r.sodiumPerServing,
       });
+
+      if (isGrams && r.yieldWeightGrams && r.yieldWeightGrams > 0) {
+        // Gram-based logging: Total recipe nutrients / yieldWeightGrams * n
+        const totalRecipe = scaleNutrients(perServ, r.servings);
+        const perGram = scaleNutrients(totalRecipe, 1 / r.yieldWeightGrams);
+        return roundNutrients(scaleNutrients(perGram, n));
+      }
+
       return roundNutrients(scaleNutrients(perServ, n));
     } else if (item.kind === "food") {
       return roundNutrients(nutrientsForGrams(item.food, n * option.grams));
@@ -134,7 +166,7 @@ export function FoodPortionEditor({
           : scaleNutrients(base, 100 / (o.servingWeightGrams || 100));
       return roundNutrients(scaleNutrients(per100, gramsTotal / 100));
     }
-  }, [item, option, n]);
+  }, [item, option, n, isGrams]);
 
   const switchOption = (nextId: string) => {
     const next = options.find((o) => o.id === nextId);
@@ -142,23 +174,24 @@ export function FoodPortionEditor({
     const currentGrams = n * option.grams;
     setOptionId(nextId);
     if (next.id === "g") {
-      setQty(fmt.qty(Math.round(currentGrams)));
+      setQty(fmt.qty(Math.round(currentGrams) || 100));
     } else if (next.grams > 0) {
       setQty(fmt.qty(Math.round((currentGrams / next.grams) * 100) / 100 || 1));
     }
   };
 
-  const step = isGrams ? 25 : option.grams >= 100 ? 0.5 : 1;
+  const step = isGrams ? 25 : (item.kind === "recipe" ? 0.5 : option.grams >= 100 ? 0.5 : 1);
   const bump = (delta: number) => {
     setQty(fmt.qty(Math.max(0, Math.round((n + delta) * 100) / 100)));
   };
 
   const buildDraft = (): EntryDraft => {
     if (item.kind === "recipe") {
+      const servingLabel = item.recipe.servingLabel?.trim() || "serving";
       return {
         name: item.recipe.name,
         servings: n,
-        servingUnit: "serving",
+        servingUnit: isGrams ? "g" : servingLabel,
         foodId: null,
         recipeId: item.recipe.id,
         ...nutrients,
@@ -251,9 +284,9 @@ export function FoodPortionEditor({
           {/* Serving Unit Dropdown */}
           <div>
             <div className="relative">
-              {item.kind === "recipe" ? (
-                <div className="input h-10 flex items-center text-fg-2 bg-surface-2 text-sm">
-                  1 serving
+              {item.kind === "recipe" && options.length === 1 ? (
+                <div className="input h-10 flex items-center text-fg-2 bg-surface-2 text-sm font-medium">
+                  {options[0].label}
                 </div>
               ) : (
                 <select
@@ -266,6 +299,8 @@ export function FoodPortionEditor({
                     <option key={o.id} value={o.id}>
                       {o.id === "g"
                         ? "grams (g)"
+                        : item.kind === "recipe"
+                        ? `${o.label}${o.grams > 0 ? ` (~${fmt.qty(o.grams)}g)` : ""}`
                         : `${o.label}${/\(/.test(o.label) ? "" : ` (${fmt.qty(o.grams)}g)`}`}
                     </option>
                   ))}
@@ -275,10 +310,10 @@ export function FoodPortionEditor({
           </div>
         </div>
 
-        {/* Quick weight chips if grams unit selected */}
-        {isGrams && (
+        {/* Quick portion chips */}
+        {isGrams ? (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {[50, 100, 150, 200, 250, 300].map((g) => (
+            {[50, 100, 150, 200, 250, 300, 400].map((g) => (
               <button
                 key={g}
                 type="button"
@@ -294,7 +329,25 @@ export function FoodPortionEditor({
               </button>
             ))}
           </div>
-        )}
+        ) : item.kind === "recipe" ? (
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {[0.5, 1, 1.5, 2].map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs tabular font-medium transition-colors",
+                  n === s
+                    ? "bg-[var(--accent)] text-[var(--on-accent)]"
+                    : "bg-surface-2 text-fg-2 hover:bg-surface-3 hover:text-fg"
+                )}
+                onClick={() => setQty(String(s))}
+              >
+                {s} {item.recipe.servingLabel || "serving"}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {/* Live Macro Display - Unboxed, clean layout */}
@@ -326,11 +379,22 @@ export function FoodPortionEditor({
           </div>
         </div>
 
-        {/* Secondary Micronutrients */}
-        {(nutrients.fiber > 0 || nutrients.sodium || (item.kind === "food" && !isGrams && option.grams > 0)) && (
+        {/* Secondary Micronutrients & Recipe Yield context */}
+        {(nutrients.fiber > 0 || nutrients.sodium || (item.kind === "food" && !isGrams && option.grams > 0) || (item.kind === "recipe" && item.recipe.yieldWeightGrams)) && (
           <div className="flex flex-wrap items-center gap-x-2 text-[11px] tabular text-fg-3 pt-0.5">
             {item.kind === "food" && !isGrams && option.grams > 0 && (
               <span>Total weight: {fmt.qty(Math.round(n * option.grams))}g</span>
+            )}
+            {item.kind === "recipe" && item.recipe.yieldWeightGrams && (
+              <span>
+                Cooked yield: {fmt.qty(item.recipe.yieldWeightGrams)}g total (
+                {fmt.int(
+                  Math.round(
+                    ((item.recipe.caloriesPerServing * item.recipe.servings) / item.recipe.yieldWeightGrams) * 100
+                  )
+                )}{" "}
+                kcal/100g)
+              </span>
             )}
             {nutrients.fiber > 0 && <span>· Fiber {fmt.one(nutrients.fiber)}g</span>}
             {nutrients.sodium ? <span>· Sodium {fmt.int(nutrients.sodium)}mg</span> : null}

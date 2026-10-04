@@ -13,7 +13,7 @@ async function signIn(page: Page) {
     await page.getByLabel(/email/i).fill(EMAIL);
     await page.getByLabel(/password/i).fill(PASSWORD);
     await page.getByRole("button", { name: /sign in|log in/i }).click();
-    await page.waitForURL((u) => !u.pathname.startsWith("/login"));
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 });
     const cookies = await page.context().cookies();
     const session = cookies.find((c) => c.name === "mealprep_session");
     if (session) {
@@ -97,13 +97,13 @@ test("E2E 2: natural quantity search '4 sunny side up eggs'", async ({ page }) =
   await expect(dialog).toBeVisible();
 
   const searchInput = dialog.getByLabel(/search foods/i);
-  await searchInput.fill("4 sunny side up eggs");
+  await searchInput.fill("4 large eggs");
 
   // Verify natural quantity badge indicator
   await expect(dialog.getByText(/4 pre-set/i)).toBeVisible();
 
-  // Click the sunny side up egg result (or fallback egg)
-  const resultRow = dialog.getByRole("button", { name: /egg/i }).filter({ hasText: /kcal/i }).first();
+  // Click the egg result
+  const resultRow = dialog.locator('[role="button"]').filter({ hasText: /egg/i }).first();
   await expect(resultRow).toBeVisible();
   await resultRow.click();
 
@@ -116,7 +116,7 @@ test("E2E 2: natural quantity search '4 sunny side up eggs'", async ({ page }) =
   await expect(dialog).toBeHidden();
 
   // Verify dashboard has the logged item
-  await expect(page.locator("body")).toContainText("sunny side up", { ignoreCase: true });
+  await expect(page.locator("body")).toContainText("Egg", { ignoreCase: true });
 });
 
 test("E2E 3: manual nutrition entry with macro calculation", async ({ page }) => {

@@ -8,6 +8,8 @@ import { percentOf } from "@/lib/nutrition/core";
 import { fmt } from "@/components/ui/primitives";
 import { addWater, undoWater } from "@/lib/client/day-store";
 import { cn } from "@/lib/utils";
+import { formatDate, todayLocal } from "@/lib/dates";
+import { fromKg } from "@/lib/weight-units";
 
 const liters = (ml: number) => String(Number((ml / 1000).toFixed(2)));
 
@@ -77,10 +79,14 @@ export function DaySummary({ day }: { day: DayData }) {
   const isOverCalories = hasCalorieGoal && remainingCalories < 0;
   const calPercent = hasCalorieGoal ? percentOf(totals.calories, goals.calories) : 0;
 
-  const kg = weight.unit === "lbs" ? (v: number | null) => (v === null ? null : v * 2.20462) : (v: number | null) => v;
-  const latestWeight = kg(weight.latestKg);
-  const avgWeight = kg(weight.avg7Kg);
-  const changeWeight = kg(weight.change7Kg);
+  // Weight is per day: this date's latest daily reading. Only on actual Today may an older reading
+  // stand in, and then it carries its own date so it never reads as today's measurement.
+  const conv = (v: number | null) => (v === null ? null : fromKg(v, weight.unit));
+  const loggedThisDay = weight.latestKg !== null && weight.latestDate === day.date;
+  const staleLatest = !loggedThisDay && weight.latestKg !== null && day.date === todayLocal();
+  const latestWeight = conv(weight.latestKg);
+  const avgWeight = conv(weight.avg7Kg);
+  const changeWeight = conv(weight.change7Kg);
 
   return (
     <section className="card overflow-hidden" aria-label="Daily nutrition summary">
@@ -235,9 +241,7 @@ export function DaySummary({ day }: { day: DayData }) {
             <Scale className="h-4 w-4 text-fg-3 group-hover:text-fg transition-colors" />
             <div>
               <span className="text-xs text-fg-3 font-medium uppercase tracking-wide">Weight</span>
-              {latestWeight === null ? (
-                <div className="text-xs text-fg-2">Tap to log weigh-in</div>
-              ) : (
+              {loggedThisDay && latestWeight !== null ? (
                 <div className="flex items-baseline gap-1.5 tabular text-sm font-semibold text-fg">
                   <span>{latestWeight.toFixed(1)} {weight.unit}</span>
                   {avgWeight !== null && (
@@ -251,6 +255,14 @@ export function DaySummary({ day }: { day: DayData }) {
                     </span>
                   )}
                 </div>
+              ) : staleLatest && latestWeight !== null ? (
+                <div className="flex items-baseline gap-1.5 tabular text-sm font-semibold text-fg">
+                  <span className="text-xs font-normal text-fg-3">Latest</span>
+                  <span>{latestWeight.toFixed(1)} {weight.unit}</span>
+                  <span className="text-xs font-normal text-fg-3">· {formatDate(weight.latestDate!, { month: "short", day: "numeric" })}</span>
+                </div>
+              ) : (
+                <div className="text-xs text-fg-2">No weight logged</div>
               )}
             </div>
           </div>

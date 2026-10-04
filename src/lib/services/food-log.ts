@@ -2,10 +2,12 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { HttpError } from "@/lib/api/route";
 import { roundNutrients, sumNutrients, toNutrients, type Nutrients } from "@/lib/nutrition/core";
-import type { DayData, DayStatus, MealItem, NutritionGoals } from "@/lib/domain";
+import type { DayData, DayStatus, MealCategory, MealItem, MonthHistoryDay, MonthHistoryResponse, NutritionGoals } from "@/lib/domain";
 import type { MealItemInput, MealItemPatch } from "@/lib/validation";
-import { addDays, type DateString } from "@/lib/dates";
+import { addDays, monthRange, type DateString } from "@/lib/dates";
 import { weightSummary } from "@/lib/services/weight";
+import { compareReadings } from "@/lib/nutrition/weight-trend";
+import { weightUnitFor } from "@/lib/weight-units";
 
 type Row = Prisma.FoodLogEntryGetPayload<Record<string, never>>;
 
@@ -72,7 +74,7 @@ export async function getDay(userId: string, date: DateString): Promise<DayData>
     prisma.foodLogEntry.findMany({ where: { userId, date }, orderBy: { loggedAt: "asc" } }),
     prisma.waterLogEntry.aggregate({ where: { userId, date }, _sum: { amountMl: true } }),
     goalsFor(userId),
-    weightSummary(userId),
+    weightSummary(userId, date),
   ]);
   const entries = rows.map(toMealItem);
   const { measurementSystem, goalWeightKg, ...nutritionGoals } = goals;
@@ -88,19 +90,155 @@ export async function getDay(userId: string, date: DateString): Promise<DayData>
 
 /** One row per date that has entries, for the calendar and analytics. */
 export async function getDayStatuses(userId: string, from: DateString, to: DateString): Promise<DayStatus[]> {
-  const rows = await prisma.foodLogEntry.groupBy({
-    by: ["date", "mealCategory"],
-    where: { userId, date: { gte: from, lte: to } },
-    _sum: { calories: true },
-  });
+  const [rows, waterRows, weightRows] = await Promise.all([
+    prisma.foodLogEntry.groupBy({
+      by: ["date", "mealCategory"],
+      where: { userId, date: { gte: from, lte: to } },
+      _sum: { calories: true, protein: true, carbs: true, fat: true },
+      _count: { id: true },
+    }),
+    prisma.waterLogEntry.groupBy({
+      by: ["date"],
+      where: { userId, date: { gte: from, lte: to } },
+      _sum: { amountMl: true },
+    }),
+    prisma.weightEntry.findMany({
+      where: { userId, entryType: "daily", date: { gte: from, lte: to } },
+      select: { date: true, weightKg: true, time: true, createdAt: true },
+    }),
+  ]);
+
   const byDate = new Map<string, DayStatus>();
   for (const r of rows) {
-    const s = byDate.get(r.date) ?? { date: r.date, calories: 0, mealsLogged: 0 };
-    s.calories += r._sum.calories ?? 0;
+    const s = byDate.get(r.date) ?? {
+      date: r.date,
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      entryCount: 0,
+      mealsLogged: 0,
+      mealCalories: {},
+    };
+    const cals = Math.round(r._sum.calories ?? 0);
+    s.calories += cals;
+    s.protein = (s.protein ?? 0) + (r._sum.protein ?? 0);
+    s.carbs = (s.carbs ?? 0) + (r._sum.carbs ?? 0);
+    s.fat = (s.fat ?? 0) + (r._sum.fat ?? 0);
+    s.entryCount = (s.entryCount ?? 0) + (r._count.id ?? 0);
     s.mealsLogged += 1;
+    if (!s.mealCalories) s.mealCalories = {};
+    s.mealCalories[r.mealCategory as MealCategory] = cals;
     byDate.set(r.date, s);
   }
-  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+
+  for (const w of waterRows) {
+    const s = byDate.get(w.date);
+    if (s) {
+      s.waterMl = w._sum.amountMl ?? 0;
+    } else {
+      byDate.set(w.date, {
+        date: w.date,
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        entryCount: 0,
+        mealsLogged: 0,
+        mealCalories: {},
+        waterMl: w._sum.amountMl ?? 0,
+      });
+    }
+  }
+
+  // The day's weight is its latest actual daily reading (never an InBody scan, never an arbitrary same-day row).
+  const latestByDate = new Map<string, (typeof weightRows)[number]>();
+  for (const wt of weightRows) {
+    const best = latestByDate.get(wt.date);
+    if (!best || compareReadings(wt, best) > 0) latestByDate.set(wt.date, wt);
+  }
+  for (const wt of latestByDate.values()) {
+    const s = byDate.get(wt.date);
+    if (s) {
+      s.weightKg = wt.weightKg;
+    } else {
+      byDate.set(wt.date, {
+        date: wt.date,
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        entryCount: 0,
+        mealsLogged: 0,
+        mealCalories: {},
+        weightKg: wt.weightKg,
+      });
+    }
+  }
+
+  return [...byDate.values()]
+    .map((s) => ({
+      ...s,
+      calories: Math.round(s.calories),
+      protein: Math.round(s.protein ?? 0),
+      carbs: Math.round(s.carbs ?? 0),
+      fat: Math.round(s.fat ?? 0),
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Efficient monthly summary payload for calendar navigation and day preview. */
+export async function getMonthHistory(userId: string, month: string): Promise<MonthHistoryResponse> {
+  const m = month.slice(0, 7);
+  const { from, to } = monthRange(m);
+
+  const [statuses, goalsFull] = await Promise.all([
+    getDayStatuses(userId, from, to),
+    goalsFor(userId),
+  ]);
+
+  const { measurementSystem: _m, goalWeightKg: _g, ...goals } = goalsFull;
+
+  const days: Record<DateString, MonthHistoryDay> = {};
+  let totalCalories = 0;
+  let totalProtein = 0;
+  let loggedDaysCount = 0;
+
+  for (const s of statuses) {
+    days[s.date] = {
+      date: s.date,
+      calories: s.calories,
+      protein: s.protein ?? 0,
+      carbs: s.carbs ?? 0,
+      fat: s.fat ?? 0,
+      entryCount: s.entryCount ?? 0,
+      mealsLogged: s.mealsLogged,
+      mealCalories: s.mealCalories ?? {},
+      waterMl: s.waterMl ?? 0,
+      weightKg: s.weightKg ?? null,
+    };
+    if (s.entryCount && s.entryCount > 0) {
+      loggedDaysCount += 1;
+      totalCalories += s.calories;
+      totalProtein += (s.protein ?? 0);
+    }
+  }
+
+  const avgCalories = loggedDaysCount > 0 ? Math.round(totalCalories / loggedDaysCount) : 0;
+  const avgProtein = loggedDaysCount > 0 ? Math.round(totalProtein / loggedDaysCount) : 0;
+
+  return {
+    month: m,
+    weightUnit: weightUnitFor(goalsFull.measurementSystem),
+    days,
+    goals,
+    summary: {
+      loggedDays: loggedDaysCount,
+      totalCalories,
+      avgCalories,
+      avgProtein,
+    },
+  };
 }
 
 /** Throws 404 if the referenced food/recipe is not readable by this user. */

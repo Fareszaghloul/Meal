@@ -124,7 +124,7 @@ export async function POST(request: Request) {
             sex: "male",
             age: 28,
             heightCm: 178,
-            currentWeightKg: 78,
+            currentWeightKg: null,
             goalType: "lose",
             goalWeeklyRateKg: 0.5,
             goalWeightKg: 72,

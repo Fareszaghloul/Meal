@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
-import { RecipeEditForm } from "@/components/recipes/RecipeEditForm";
+import { RecipeBuilder } from "@/components/recipes/RecipeBuilder";
 
 export default async function RecipeEditPage(props: {
   params: Promise<{ id: string }>;
@@ -33,5 +33,5 @@ export default async function RecipeEditPage(props: {
     tags: recipe.tags.map((t) => t.tag.name),
   };
 
-  return <RecipeEditForm recipe={formattedRecipe} />;
+  return <RecipeBuilder mode="edit" initialRecipe={formattedRecipe} />;
 }

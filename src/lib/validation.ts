@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isDateString } from "@/lib/dates";
+import { isDateString, latestPossibleLocalDate } from "@/lib/dates";
 import { MEAL_CATEGORIES } from "@/lib/domain";
 
 export const dateString = z
@@ -126,17 +126,56 @@ export const goalsPatch = z.object({
   dailyWaterGoalMl: z.coerce.number().int().min(0).max(20_000).optional(),
 });
 
+/* ───────── weight ───────── */
+
+export const WEIGHT_KG_MIN = 20;
+export const WEIGHT_KG_MAX = 500;
+export const WEIGHT_NOTES_MAX = 500;
+
+// "" means "cleared"; a missing key (undefined) must stay missing so patches never wipe fields.
+const blankToNull = (v: unknown) => (v === "" ? null : v);
+
+/** A measurement date: a real calendar date that is not in the future anywhere on Earth. */
+const weightDate = dateString.refine((d) => d <= latestPossibleLocalDate(), "A weigh-in can't be dated in the future");
+/** "HH:mm", 24-hour; blank means no time. */
+const weightTime = z.preprocess(blankToNull, z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be HH:mm").nullable().optional());
+const weightKg = z.coerce
+  .number()
+  .finite()
+  .min(WEIGHT_KG_MIN, `Weight must be at least ${WEIGHT_KG_MIN} kg`)
+  .max(WEIGHT_KG_MAX, `Weight must be at most ${WEIGHT_KG_MAX} kg`);
+const metric = (min: number, max: number) => z.preprocess(blankToNull, z.coerce.number().finite().min(min).max(max).nullable().optional());
+const weightNotes = z.preprocess(blankToNull, z.string().trim().max(WEIGHT_NOTES_MAX, `Notes must be ${WEIGHT_NOTES_MAX} characters or fewer`).nullable().optional());
+const weightEntryType = z.enum(["daily", "inbody"]);
+
+/** New measurement. InBody-only metrics are dropped for daily weigh-ins by the service. */
 export const weightInput = z.object({
-  id: idString.optional(),
-  date: dateString,
-  time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
-  entryType: z.enum(["daily", "inbody"]).default("daily"),
-  weightKg: z.coerce.number().positive().max(700),
-  bodyFatPct: optionalNonNegative.optional(),
-  smmKg: optionalNonNegative.optional(),
-  bmi: optionalNonNegative.optional(),
-  notes: z.string().trim().max(500).nullable().optional(),
+  date: weightDate,
+  time: weightTime.optional(),
+  entryType: weightEntryType.default("daily"),
+  weightKg,
+  bodyFatPct: metric(3, 60).optional(),
+  smmKg: metric(5, 200).optional(),
+  bmi: metric(10, 60).optional(),
+  notes: weightNotes.optional(),
 });
+export type WeightInput = z.infer<typeof weightInput>;
+
+// Built explicitly (not `.partial()`) so the entryType default can't sneak into a patch.
+export const weightPatch = z.object({
+  date: weightDate.optional(),
+  time: weightTime.optional(),
+  entryType: weightEntryType.optional(),
+  weightKg: weightKg.optional(),
+  bodyFatPct: metric(3, 60).optional(),
+  smmKg: metric(5, 200).optional(),
+  bmi: metric(10, 60).optional(),
+  notes: weightNotes.optional(),
+});
+export type WeightPatch = z.infer<typeof weightPatch>;
+
+export const weightListQuery = z.object({ from: dateString.optional() });
+export const weightIdQuery = z.object({ id: idString });
 
 /** Export file shape (also what import accepts). */
 export const exportFile = z.object({

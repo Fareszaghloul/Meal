@@ -1,99 +1,207 @@
 import { prisma } from "@/lib/db";
-import { json, parseQuery, withAuth } from "@/lib/api/route";
+import { HttpError, json, parseQuery, withAuth } from "@/lib/api/route";
 import { z } from "zod";
-import { addDays } from "@/lib/dates";
-import { dateString } from "@/lib/validation";
+import { addDays, isDateString, todayLocal, type DateString } from "@/lib/dates";
 import { goalsFor } from "@/lib/services/food-log";
 import { round } from "@/lib/nutrition/core";
-import { summarize } from "@/lib/services/weight";
+import { summarize, withTrend } from "@/lib/nutrition/weight-trend";
+import {
+  computePeriodDates,
+  groupEntriesByDay,
+  calculateNutritionStats,
+  calculateDeltas,
+  calculateMealDistribution,
+  calculateFrequentFoods,
+  buildDailyIntakePoints,
+  PERIOD_DAYS,
+  type PeriodId,
+  type RawFoodLogItem,
+} from "@/lib/nutrition/analytics";
 
-const query = z.object({ to: dateString, days: z.coerce.number().int().min(1).max(365).default(30) });
+const querySchema = z.object({
+  to: z
+    .string()
+    .optional()
+    .refine((v) => !v || isDateString(v), "Expected a calendar date like 2026-10-03"),
+  period: z.enum(["7d", "30d", "90d", "6m", "1y"]).optional(),
+  days: z.coerce.number().int().min(1).max(365).optional(),
+});
 
-interface PeriodStats {
-  days: number;
-  daysLogged: number;
-  avgCalories: number | null;
-  avgProtein: number | null;
-  avgCarbs: number | null;
-  avgFat: number | null;
-  avgFiber: number | null;
-  /** % of logged days within ±10% of the calorie target. */
-  calorieAdherence: number | null;
-  /** % of logged days at or above the protein target. */
-  proteinAdherence: number | null;
+function resolvePeriod(period?: string, days?: number): PeriodId {
+  if (period && period in PERIOD_DAYS) {
+    return period as PeriodId;
+  }
+  if (days) {
+    if (days <= 7) return "7d";
+    if (days <= 30) return "30d";
+    if (days <= 90) return "90d";
+    if (days <= 180) return "6m";
+    return "1y";
+  }
+  return "30d";
 }
 
 export const GET = withAuth(async (req, user) => {
-  const { to, days } = parseQuery(req, query);
-  const from = addDays(to, -(days - 1));
+  const q = parseQuery(req, querySchema);
+  const to: DateString = q.to ?? todayLocal();
+  const periodId = resolvePeriod(q.period, q.days);
+  const periodDates = computePeriodDates(to, periodId);
+
   const [entries, goals, weights] = await Promise.all([
     prisma.foodLogEntry.findMany({
-      where: { userId: user.id, date: { gte: from, lte: to } },
-      select: { date: true, name: true, foodId: true, calories: true, protein: true, carbs: true, fat: true, fiber: true },
+      where: {
+        userId: user.id,
+        date: { gte: periodDates.previous.from, lte: to },
+      },
+      select: {
+        id: true,
+        date: true,
+        mealCategory: true,
+        name: true,
+        calories: true,
+        protein: true,
+        carbs: true,
+        fat: true,
+        fiber: true,
+        foodId: true,
+        recipeId: true,
+        servingUnit: true,
+        food: {
+          select: {
+            brand: true,
+          },
+        },
+      },
+      orderBy: { date: "asc" },
     }),
     goalsFor(user.id),
     prisma.weightEntry.findMany({
-      where: { userId: user.id, entryType: "daily", date: { gte: addDays(from, -7), lte: to } },
-      select: { date: true, weightKg: true },
+      where: {
+        userId: user.id,
+        entryType: "daily",
+        date: { gte: addDays(periodDates.previous.from, -7), lte: to },
+      },
+      select: { date: true, weightKg: true, time: true, createdAt: true },
       orderBy: { date: "asc" },
     }),
   ]);
 
-  const byDay = new Map<string, { calories: number; protein: number; carbs: number; fat: number; fiber: number }>();
-  const foodCounts = new Map<string, { name: string; count: number; calories: number }>();
-  for (const e of entries) {
-    const d = byDay.get(e.date) ?? { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
-    d.calories += e.calories;
-    d.protein += e.protein;
-    d.carbs += e.carbs;
-    d.fat += e.fat;
-    d.fiber += e.fiber;
-    byDay.set(e.date, d);
-    const key = e.foodId ?? e.name.toLowerCase();
-    const f = foodCounts.get(key) ?? { name: e.name, count: 0, calories: 0 };
-    f.count += 1;
-    f.calories += e.calories;
-    foodCounts.set(key, f);
+  const rawEntries: RawFoodLogItem[] = entries.map((e) => ({
+    id: e.id,
+    date: e.date,
+    mealCategory: e.mealCategory,
+    name: e.name,
+    brand: e.food?.brand ?? null,
+    calories: e.calories,
+    protein: e.protein,
+    carbs: e.carbs,
+    fat: e.fat,
+    fiber: e.fiber ?? 0,
+    foodId: e.foodId,
+    recipeId: e.recipeId,
+    servingUnit: e.servingUnit,
+  }));
+
+  const dailyMap = groupEntriesByDay(rawEntries);
+
+  const currentStats = calculateNutritionStats(
+    dailyMap,
+    periodDates.current.from,
+    periodDates.current.to,
+    periodDates.totalDays,
+    goals
+  );
+
+  const prevStats = calculateNutritionStats(
+    dailyMap,
+    periodDates.previous.from,
+    periodDates.previous.to,
+    periodDates.totalDays,
+    goals
+  );
+
+  const deltas = calculateDeltas(currentStats, prevStats);
+
+  const dailyIntake = buildDailyIntakePoints(
+    dailyMap,
+    periodDates.current.from,
+    periodDates.current.to
+  );
+
+  const mealDistribution = calculateMealDistribution(
+    rawEntries,
+    periodDates.current.from,
+    periodDates.current.to
+  );
+
+  const frequentFoods = calculateFrequentFoods(
+    rawEntries,
+    periodDates.current.from,
+    periodDates.current.to,
+    8
+  );
+
+  // Weight Analytics using canonical engine
+  const allTrend = withTrend(weights);
+  const periodTrend = allTrend.filter(
+    (d) => d.date >= periodDates.current.from && d.date <= periodDates.current.to
+  );
+
+  // Calculate weight trend change over the selected period
+  let changePeriodKg: number | null = null;
+  if (periodTrend.length >= 2) {
+    const startTrend = periodTrend[0].trendKg;
+    const endTrend = periodTrend[periodTrend.length - 1].trendKg;
+    changePeriodKg = round(endTrend - startTrend, 2);
+  } else if (periodTrend.length === 1) {
+    // If only one reading in period, check if there was a previous reading before period
+    const prior = allTrend.filter((d) => d.date < periodDates.current.from).pop();
+    if (prior) {
+      changePeriodKg = round(periodTrend[0].trendKg - prior.trendKg, 2);
+    }
   }
 
-  const period = (n: number): PeriodStats => {
-    const start = addDays(to, -(n - 1));
-    const logged = [...byDay.entries()].filter(([d]) => d >= start);
-    const count = logged.length;
-    const avg = (pick: (v: { calories: number; protein: number; carbs: number; fat: number; fiber: number }) => number) =>
-      count ? round(logged.reduce((s, [, v]) => s + pick(v), 0) / count, 1) : null;
-    const within = logged.filter(([, v]) => Math.abs(v.calories - goals.calories) <= goals.calories * 0.1).length;
-    const protein = logged.filter(([, v]) => v.protein >= goals.protein).length;
-    return {
-      days: n,
-      daysLogged: count,
-      avgCalories: count ? round(logged.reduce((s, [, v]) => s + v.calories, 0) / count, 0) : null,
-      avgProtein: avg((v) => v.protein),
-      avgCarbs: avg((v) => v.carbs),
-      avgFat: avg((v) => v.fat),
-      avgFiber: avg((v) => v.fiber),
-      calorieAdherence: count ? Math.round((within / count) * 100) : null,
-      proteinAdherence: count ? Math.round((protein / count) * 100) : null,
-    };
-  };
-
-  const daily = [...byDay.entries()]
-    .map(([date, v]) => ({ date, calories: Math.round(v.calories), protein: round(v.protein, 0) }))
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  const topFoods = [...foodCounts.values()]
-    .sort((a, b) => b.count - a.count || b.calories - a.calories)
-    .slice(0, 10)
-    .map((f) => ({ ...f, calories: Math.round(f.calories) }));
+  const weightSummary = summarize(weights, to);
 
   return json({
-    from,
-    to,
+    period: periodId,
+    totalDays: periodDates.totalDays,
+    current: periodDates.current,
+    previous: periodDates.previous,
+    stats: currentStats,
+    previousStats: prevStats,
+    deltas,
+    dailyIntake,
+    mealDistribution,
+    frequentFoods,
+    weight: {
+      latestKg: weightSummary.latestKg,
+      avg7Kg: weightSummary.avg7Kg !== null ? round(weightSummary.avg7Kg, 2) : null,
+      changePeriodKg,
+      change7Kg: weightSummary.change7Kg !== null ? round(weightSummary.change7Kg, 2) : null,
+      change30Kg: weightSummary.change30Kg !== null ? round(weightSummary.change30Kg, 2) : null,
+      points: periodTrend.map((p) => ({
+        date: p.date,
+        meanKg: round(p.meanKg, 2),
+        trendKg: round(p.trendKg, 2),
+      })),
+    },
     goals,
-    week: period(Math.min(7, days)),
-    period: period(days),
-    daily,
-    topFoods,
-    weight: { ...summarize(weights), points: weights },
+    // Backwards-compatibility fields for any existing components/callers
+    from: periodDates.current.from,
+    to: periodDates.current.to,
+    week: calculateNutritionStats(dailyMap, addDays(to, -6), to, 7, goals),
+    daily: dailyIntake
+      .filter((d) => d.logged)
+      .map((d) => ({
+        date: d.date,
+        calories: d.calories ?? 0,
+        protein: d.protein ?? 0,
+      })),
+    topFoods: frequentFoods.map((f) => ({
+      name: f.name,
+      count: f.count,
+      calories: f.totalCalories,
+    })),
   });
 });

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Activity, Dumbbell, Gauge, Calendar, Sparkles } from "lucide-react";
+import { Activity, Dumbbell, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fromKg } from "@/lib/weight-units";
 
 export interface BodyFatDataPoint {
   id: string;
@@ -84,7 +85,7 @@ export function BodyFatTrendChart({
         val = typeof e.bodyFatPct === "number" && !isNaN(e.bodyFatPct) && e.bodyFatPct > 0 ? e.bodyFatPct : null;
       } else if (activeMetric === "smm") {
         if (typeof e.smmKg === "number" && !isNaN(e.smmKg) && e.smmKg > 0) {
-          val = isImperial ? Math.round(e.smmKg * 2.20462 * 10) / 10 : Math.round(e.smmKg * 10) / 10;
+          val = Math.round(fromKg(e.smmKg, isImperial ? "lbs" : "kg") * 10) / 10;
         }
       } else if (activeMetric === "bmi") {
         val = typeof e.bmi === "number" && !isNaN(e.bmi) && e.bmi > 0 ? Math.round(e.bmi * 10) / 10 : null;

@@ -17,10 +17,12 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { WeightTrendChart } from "@/components/weight/WeightTrendChart";
+import { WeightChart } from "@/components/weight/WeightChart";
 import { BodyFatTrendChart, BodyFatDataPoint } from "@/components/profile/BodyFatTrendChart";
 import { LogWeightModal } from "@/components/weight/LogWeightModal";
-import { ProcessedWeightPoint, WeightAnalyticsSummary } from "@/lib/nutrition/weight-analytics";
+import { invalidateAll } from "@/lib/client/day-store";
+import { rangeFrom, useWeightData, type WeightRange } from "@/lib/client/weight-store";
+import { formatWeight, toKg, weightInputValue, weightUnitFor } from "@/lib/weight-units";
 
 export default function ProfilePage() {
   const { user, refreshUser, logout } = useAuth();
@@ -36,7 +38,7 @@ export default function ProfilePage() {
   const [heightCm, setHeightCm] = useState<number | string>(178);
   const [heightFeet, setHeightFeet] = useState<number | string>(5);
   const [heightInches, setHeightInches] = useState<number | string>(10);
-  const [currentWeightInput, setCurrentWeightInput] = useState<number | string>(78);
+  const [currentWeightInput, setCurrentWeightInput] = useState<number | string>("");
   const [bodyFatPct, setBodyFatPct] = useState<number | string>("");
   const [smmInput, setSmmInput] = useState<number | string>("");
   const [bmiInput, setBmiInput] = useState<number | string>("");
@@ -47,8 +49,9 @@ export default function ProfilePage() {
   const [bodyLoading, setBodyLoading] = useState(false);
 
   // Weight & InBody Analytics & Chart state
-  const [weightEntries, setWeightEntries] = useState<ProcessedWeightPoint[]>([]);
-  const [weightAnalytics, setWeightAnalytics] = useState<WeightAnalyticsSummary | null>(null);
+  const [weightRange, setWeightRange] = useState<WeightRange>("90");
+  const { data: weightData } = useWeightData(weightRange);
+  const [weightFromLog, setWeightFromLog] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   // Change password state
@@ -65,7 +68,7 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isImperial = measurementSystem === "imperial";
-  const weightUnit = isImperial ? "lbs" : "kg";
+  const weightUnit = weightUnitFor(measurementSystem);
   const heightUnit = isImperial ? "ft/in" : "cm";
 
   // Sync displayName when user is loaded
@@ -91,7 +94,7 @@ export default function ProfilePage() {
         const isImp = data.measurementSystem === "imperial";
 
         if (data.currentSmmKg !== null && data.currentSmmKg !== undefined) {
-          setSmmInput(isImp ? Math.round(data.currentSmmKg * 2.20462 * 10) / 10 : data.currentSmmKg);
+          setSmmInput(weightInputValue(data.currentSmmKg, weightUnitFor(data.measurementSystem)));
         } else {
           setSmmInput("");
         }
@@ -108,31 +111,20 @@ export default function ProfilePage() {
           setHeightCm(hCm);
         }
 
-        const curWKg = data.currentWeightKg ?? 78;
-        setCurrentWeightInput(isImp ? Math.round(curWKg * 2.20462 * 10) / 10 : curWKg);
+        if (data.currentWeightKg != null) {
+          setCurrentWeightInput(weightInputValue(data.currentWeightKg, weightUnitFor(data.measurementSystem)));
+        } else {
+          setCurrentWeightInput("");
+        }
+        setWeightFromLog(Boolean(data.currentWeightFromLog));
       }
     } catch (err) {
       console.error("Failed to fetch settings:", err);
     }
   };
 
-  // Load Weight & InBody history
-  const fetchWeightData = async () => {
-    try {
-      const res = await fetch("/api/weight");
-      if (res.ok) {
-        const data = await res.json();
-        setWeightEntries(data.entries || []);
-        setWeightAnalytics(data.analytics || null);
-      }
-    } catch (err) {
-      console.error("Failed to load weight logs:", err);
-    }
-  };
-
   useEffect(() => {
     fetchSettings();
-    fetchWeightData();
   }, []);
 
   // Compute age live when birthDate changes
@@ -152,9 +144,9 @@ export default function ProfilePage() {
   // Derived Body Composition Stats
   const weightKgNum = useMemo(() => {
     const val = Number(currentWeightInput);
-    if (isNaN(val) || val <= 0) return 75;
-    return isImperial ? Math.round((val / 2.20462) * 10) / 10 : val;
-  }, [currentWeightInput, isImperial]);
+    if (!currentWeightInput || isNaN(val) || val <= 0) return null;
+    return toKg(val, weightUnit);
+  }, [currentWeightInput, weightUnit]);
 
   const bodyFatNum = useMemo(() => {
     const val = Number(bodyFatPct);
@@ -162,12 +154,12 @@ export default function ProfilePage() {
   }, [bodyFatPct]);
 
   const fatMassKg = useMemo(() => {
-    if (bodyFatNum === null) return null;
+    if (weightKgNum === null || bodyFatNum === null) return null;
     return Math.round((weightKgNum * (bodyFatNum / 100)) * 10) / 10;
   }, [weightKgNum, bodyFatNum]);
 
   const leanMassKg = useMemo(() => {
-    if (fatMassKg === null) return null;
+    if (weightKgNum === null || fatMassKg === null) return null;
     return Math.round((weightKgNum - fatMassKg) * 10) / 10;
   }, [weightKgNum, fatMassKg]);
 
@@ -181,37 +173,15 @@ export default function ProfilePage() {
     return Number(heightCm) || 178;
   }, [heightCm, heightFeet, heightInches, isImperial]);
 
-  // Derived BMI from current weight and height
-  const calculatedBmiFromStats = useMemo(() => {
-    if (!resolvedHeightCm || resolvedHeightCm <= 0 || !weightKgNum || weightKgNum <= 0) return null;
-    const heightM = resolvedHeightCm / 100;
-    return Math.round((weightKgNum / (heightM * heightM)) * 10) / 10;
-  }, [resolvedHeightCm, weightKgNum]);
-
-  // Current display BMI: prioritize InBody report BMI if typed, otherwise calculated BMI
-  const displayBmi = useMemo(() => {
-    if (bmiInput !== "" && !isNaN(Number(bmiInput)) && Number(bmiInput) > 0) {
-      return Math.round(Number(bmiInput) * 10) / 10;
-    }
-    return calculatedBmiFromStats;
-  }, [bmiInput, calculatedBmiFromStats]);
-
-  const bmiCategory = useMemo(() => {
-    if (!displayBmi) return null;
-    if (displayBmi < 18.5) return { text: "Underweight (<18.5)", color: "text-[var(--macro-carbs)]" };
-    if (displayBmi < 25.0) return { text: "Normal (18.5–24.9)", color: "text-[var(--accent)]" };
-    if (displayBmi < 30.0) return { text: "Overweight (25–29.9)", color: "text-[var(--macro-carbs)]" };
-    return { text: "Obese (≥30.0)", color: "text-[var(--status-over-target)]" };
-  }, [displayBmi]);
-
   // Transform weight entries into InBody entries list for chart
   const inBodyEntries: BodyFatDataPoint[] = useMemo(() => {
-    return weightEntries
+    return (weightData?.inbody ?? [])
       .filter((e) => 
         (typeof e.bodyFatPct === "number" && e.bodyFatPct > 0) ||
         (typeof e.smmKg === "number" && e.smmKg > 0) ||
         (typeof e.bmi === "number" && e.bmi > 0)
       )
+      .sort((x, y) => x.date.localeCompare(y.date))
       .map((e) => ({
         id: e.id,
         date: e.date,
@@ -221,7 +191,7 @@ export default function ProfilePage() {
         weightKg: e.weightKg,
         notes: e.notes,
       }));
-  }, [weightEntries]);
+  }, [weightData]);
 
   // Handlers
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -256,16 +226,16 @@ export default function ProfilePage() {
     setBodyLoading(true);
 
     try {
-      const finalWeightKg = isImperial
-        ? Math.round((Number(currentWeightInput) / 2.20462) * 10) / 10
-        : Number(currentWeightInput);
+      const finalWeightKg = currentWeightInput !== "" && !isNaN(Number(currentWeightInput)) && Number(currentWeightInput) > 0
+        ? toKg(Number(currentWeightInput), weightUnit)
+        : null;
 
       const parsedSmm = smmInput !== "" ? Number(smmInput) : null;
       const finalSmmKg = parsedSmm !== null && !isNaN(parsedSmm)
-        ? (isImperial ? Math.round((parsedSmm / 2.20462) * 100) / 100 : parsedSmm)
+        ? toKg(parsedSmm, weightUnit)
         : null;
 
-      const parsedBmi = bmiInput !== "" ? Number(bmiInput) : (calculatedBmiFromStats ?? null);
+      const parsedBmi = bmiInput !== "" ? Number(bmiInput) : null;
       const finalBmi = parsedBmi !== null && !isNaN(parsedBmi) ? parsedBmi : null;
 
       const res = await fetch("/api/settings", {
@@ -276,7 +246,7 @@ export default function ProfilePage() {
           birthDate: birthDate || null,
           age: computedAgeFromBirthDate,
           heightCm: resolvedHeightCm,
-          currentWeightKg: finalWeightKg,
+          ...(weightFromLog ? {} : { currentWeightKg: finalWeightKg }),
           currentBodyFatPct: bodyFatPct !== "" ? Number(bodyFatPct) : null,
           currentSmmKg: finalSmmKg,
           currentBmi: finalBmi,
@@ -289,7 +259,6 @@ export default function ProfilePage() {
       } else {
         setBodyMsg({ type: "success", text: "Body profile and metrics saved!" });
         await fetchSettings();
-        await fetchWeightData();
       }
     } catch {
       setBodyMsg({ type: "error", text: "An error occurred while saving" });
@@ -461,15 +430,21 @@ export default function ProfilePage() {
       </div>
 
       {/* Body & Health Metrics Summary Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {/* Weight */}
         <div className="p-5 rounded-3xl bg-[var(--surface)] space-y-1">
           <span className="text-xs text-[var(--text-muted)] block">Current weight</span>
           <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
-            {currentWeightInput || "—"} <span className="text-xs font-normal text-[var(--text-secondary)]">{weightUnit}</span>
+            {currentWeightInput ? (
+              <>
+                {currentWeightInput} <span className="text-xs font-normal text-[var(--text-secondary)]">{weightUnit}</span>
+              </>
+            ) : (
+              "—"
+            )}
           </div>
           <span className="text-xs text-[var(--text-muted)] block truncate">
-            {weightAnalytics?.latest7dAvgKg ? `7-day: ${isImperial ? Math.round(weightAnalytics.latest7dAvgKg * 2.20462 * 10) / 10 : weightAnalytics.latest7dAvgKg} ${weightUnit}` : "Logged weight"}
+            {weightData?.summary.avg7Kg != null ? `7-day average: ${formatWeight(weightData.summary.avg7Kg, weightUnit)} ${weightUnit}` : "Latest weigh-in"}
           </span>
         </div>
 
@@ -505,20 +480,6 @@ export default function ProfilePage() {
           <span className="text-xs text-[var(--text-muted)] block">InBody scan</span>
         </div>
 
-        {/* BMI */}
-        <div className="p-5 rounded-3xl bg-[var(--surface)] space-y-1">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-[var(--macro-carbs)] shrink-0" />
-            <span className="text-xs text-[var(--text-muted)] block truncate">BMI</span>
-          </div>
-          <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
-            {displayBmi || "—"}
-          </div>
-          <span className={cn("text-xs font-medium block truncate", bmiCategory?.color || "text-[var(--text-muted)]")}>
-            {bmiCategory ? bmiCategory.text : "Index"}
-          </span>
-        </div>
-
         {/* Lean Body Mass */}
         <div className="p-5 rounded-3xl bg-[var(--surface)] space-y-1">
           <div className="flex items-center space-x-1.5">
@@ -528,7 +489,7 @@ export default function ProfilePage() {
           <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
             {leanMassKg !== null ? (
               <>
-                {isImperial ? Math.round(leanMassKg * 2.20462 * 10) / 10 : leanMassKg}{" "}
+                {weightInputValue(leanMassKg, weightUnit)}{" "}
                 <span className="text-xs font-normal text-[var(--text-secondary)]">{weightUnit}</span>
               </>
             ) : (
@@ -547,7 +508,7 @@ export default function ProfilePage() {
           <div className="text-2xl font-bold text-[var(--text-primary)] font-tabular">
             {fatMassKg !== null ? (
               <>
-                {isImperial ? Math.round(fatMassKg * 2.20462 * 10) / 10 : fatMassKg}{" "}
+                {weightInputValue(fatMassKg, weightUnit)}{" "}
                 <span className="text-xs font-normal text-[var(--text-secondary)]">{weightUnit}</span>
               </>
             ) : (
@@ -706,11 +667,22 @@ export default function ProfilePage() {
                 step="0.1"
                 min={30}
                 max={400}
-                required
                 value={currentWeightInput}
                 onChange={(e) => setCurrentWeightInput(e.target.value)}
-                className="w-full px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
+                readOnly={weightFromLog}
+                placeholder={weightFromLog ? undefined : "No weight logged"}
+                aria-describedby={weightFromLog ? "profile-weight-hint" : undefined}
+                className="w-full px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)] read-only:opacity-70"
               />
+              {weightFromLog ? (
+                <p id="profile-weight-hint" className="mt-1 text-xs text-[var(--text-muted)]">
+                  From your latest weigh-in.
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  No weigh-in logged yet. Log your weight on the Weight page.
+                </p>
+              )}
             </div>
 
             {/* Body Fat % (InBody scan) */}
@@ -763,22 +735,13 @@ export default function ProfilePage() {
                 <label className="block text-xs font-medium text-[var(--text-secondary)]">
                   InBody BMI
                 </label>
-                {calculatedBmiFromStats && (
-                  <button
-                    type="button"
-                    onClick={() => setBmiInput(String(calculatedBmiFromStats))}
-                    className="text-xs text-[var(--accent)] hover:underline font-medium cursor-pointer"
-                  >
-                    Auto: {calculatedBmiFromStats}
-                  </button>
-                )}
               </div>
               <input
                 type="number"
                 step="0.1"
                 min={10}
                 max={60}
-                placeholder={calculatedBmiFromStats ? String(calculatedBmiFromStats) : "e.g. 23.8"}
+                placeholder="e.g. 23.8"
                 value={bmiInput}
                 onChange={(e) => setBmiInput(e.target.value)}
                 className="w-full px-4 min-h-[44px] text-sm font-semibold rounded-2xl bg-[var(--background)] text-[var(--text-primary)] font-tabular focus:outline-hidden focus:ring-1.5 focus:ring-[var(--text-primary)]"
@@ -833,11 +796,16 @@ export default function ProfilePage() {
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-          <WeightTrendChart
-            entries={weightEntries}
-            goalWeightKg={goalWeightKg}
-            measurementSystem={measurementSystem}
-          />
+          <div className="card overflow-hidden">
+            <WeightChart
+              entries={weightData?.entries ?? []}
+              from={rangeFrom(weightRange)}
+              goalKg={goalWeightKg}
+              unit={weightUnit}
+              range={weightRange}
+              onRangeChange={setWeightRange}
+            />
+          </div>
         </div>
       </div>
 
@@ -1000,11 +968,10 @@ export default function ProfilePage() {
         isOpen={isLogModalOpen}
         onClose={() => setIsLogModalOpen(false)}
         onSuccess={() => {
-          fetchWeightData();
+          invalidateAll();
           fetchSettings();
         }}
         measurementSystem={measurementSystem}
-        userHeightCm={resolvedHeightCm}
       />
     </div>
   );

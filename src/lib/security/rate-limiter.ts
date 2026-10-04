@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export type RateLimitTier = "AUTH" | "EXPENSIVE" | "API";
+export type RateLimitTier = "AUTH" | "EXPENSIVE" | "OCR" | "API";
 
 interface RateLimitConfig {
   maxRequests: number;
@@ -15,6 +15,10 @@ const TIER_CONFIGS: Record<RateLimitTier, RateLimitConfig> = {
   EXPENSIVE: {
     maxRequests: 20,
     windowMs: 60 * 1000, // 20 requests per minute
+  },
+  OCR: {
+    maxRequests: 6,
+    windowMs: 60 * 1000, // image OCR is CPU-heavy: 6 scans per minute
   },
   API: {
     maxRequests: 120,
@@ -57,6 +61,19 @@ export function getClientIp(req: Request): string {
 }
 
 export function checkRateLimit(identifier: string, tier: RateLimitTier = "API") {
+  if (
+    process.env.NODE_ENV === "test" ||
+    (process.env.NODE_ENV !== "production" &&
+      (identifier === "127.0.0.1" || identifier === "::1" || identifier === "localhost"))
+  ) {
+    return {
+      success: true,
+      limit: 10000,
+      remaining: 10000,
+      resetSeconds: 0,
+    };
+  }
+
   const config = TIER_CONFIGS[tier];
   const now = Date.now();
   const windowStart = now - config.windowMs;

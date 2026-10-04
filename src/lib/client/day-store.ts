@@ -75,6 +75,9 @@ function setDay(date: DateString, updater: (d: DayData) => DayData) {
   if (!current) return;
   cache.set(date, recompute(updater(current)));
   emit();
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("mealprep:day-updated", { detail: { date } }));
+  }
 }
 
 export async function fetchDay(date: DateString, force = false): Promise<DayData> {
@@ -86,6 +89,9 @@ export async function fetchDay(date: DateString, force = false): Promise<DayData
       // Re-apply pending optimistic ops for this date on top of server truth.
       cache.set(date, applyPending(data));
       emit();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("mealprep:day-updated", { detail: { date } }));
+      }
       return cache.get(date)!;
     })
     .finally(() => inflight.delete(date));
@@ -116,6 +122,9 @@ function applyPending(day: DayData): DayData {
 export function invalidateAll() {
   cache.clear();
   emit();
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("mealprep:day-updated", { detail: { date: null } }));
+  }
 }
 
 export function prefetchDay(date: DateString) {

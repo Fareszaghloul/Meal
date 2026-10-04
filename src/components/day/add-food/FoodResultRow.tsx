@@ -18,7 +18,7 @@ interface FoodResultRowProps {
   item: RowItem;
   onSelect: (item: RowItem) => void;
   onQuickAdd?: (item: RowItem) => void;
-  onToggleFavorite?: (foodId: string, currentFav: boolean) => void;
+  onToggleFavorite?: (id: string, currentFav: boolean, kind?: "food" | "recipe") => void;
   isHighlighted?: boolean;
 }
 
@@ -65,12 +65,14 @@ export function FoodResultRow({
     const r = item.recipe;
     name = r.name;
     badgeText = "Recipe";
-    servingText = "1 serving";
+    const servingLabel = r.servingLabel?.trim() || "serving";
+    servingText = `1 ${servingLabel}`;
     calories = r.caloriesPerServing;
     protein = r.proteinPerServing;
     carbs = r.carbsPerServing;
     fat = r.fatPerServing;
     isFavorite = r.isFavorite;
+    foodIdForFav = r.id;
   } else if (item.kind === "online") {
     const o = item.food;
     name = o.name;
@@ -140,7 +142,7 @@ export function FoodResultRow({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onToggleFavorite(foodIdForFav!, isFavorite);
+              onToggleFavorite(foodIdForFav!, isFavorite, item.kind === "recipe" ? "recipe" : "food");
             }}
             className="btn btn-ghost btn-icon btn-sm text-fg-3 hover:text-fg"
             aria-label={isFavorite ? "Remove favorite" : "Add to favorites"}

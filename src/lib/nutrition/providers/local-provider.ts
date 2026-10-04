@@ -22,17 +22,34 @@ export class LocalFoodProvider implements FoodDatabaseProvider {
     const limit = options?.limit || 25;
     const userId = options?.userId;
 
+    const words = clean.split(/\s+/).filter((w) => w.length > 1);
+    const stemmedWords = words.map((w) => (w.endsWith("s") && w.length > 3 ? w.slice(0, -1) : w));
+
+    const textMatchConditions: any[] = [
+      { name: { contains: clean, mode: "insensitive" } },
+      { brand: { contains: clean, mode: "insensitive" } },
+      { category: { contains: clean, mode: "insensitive" } },
+      ...(clean.length >= 6 ? [{ barcode: clean }] : []),
+    ];
+
+    if (words.length > 1) {
+      textMatchConditions.push({
+        AND: stemmedWords.map((term) => ({
+          OR: [
+            { name: { contains: term, mode: "insensitive" } },
+            { brand: { contains: term, mode: "insensitive" } },
+            { category: { contains: term, mode: "insensitive" } },
+          ],
+        })),
+      });
+    }
+
     const whereConditions: any[] = [
       {
         OR: [{ userId: null }, ...(userId ? [{ userId }] : [])],
       },
       {
-        OR: [
-          { name: { contains: clean, mode: "insensitive" } },
-          { brand: { contains: clean, mode: "insensitive" } },
-          { category: { contains: clean, mode: "insensitive" } },
-          ...(clean.length >= 6 ? [{ barcode: clean }] : []),
-        ],
+        OR: textMatchConditions,
       },
     ];
 

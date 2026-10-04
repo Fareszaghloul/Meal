@@ -42,8 +42,14 @@ export function DefaultFoodView({
   onToggleFavorite,
   isRepeating,
 }: DefaultFoodViewProps) {
-  // Map MealItem to FoodSummary for row rendering
+  // Map MealItem to FoodSummary or RecipeSummary for row rendering
   const mapMealItemToFood = (item: MealItem): RowItem => {
+    // Check if item is a recipe in catalog
+    if (item.recipeId) {
+      const foundRecipe = catalogRecipes?.find((r) => r.id === item.recipeId || r.name.toLowerCase() === item.name.toLowerCase());
+      if (foundRecipe) return { kind: "recipe", recipe: foundRecipe };
+    }
+
     // Check if food exists in catalog
     const foundFood = catalogFoods?.find((f) => f.id === item.foodId || f.name.toLowerCase() === item.name.toLowerCase());
     if (foundFood) return { kind: "food", food: foundFood };

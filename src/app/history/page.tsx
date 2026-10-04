@@ -1,141 +1,317 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { api } from "@/lib/client/api";
-import { addDays, daysInMonth, parseDate, startOfMonth, todayLocal, type DateString } from "@/lib/dates";
-import type { DayStatus } from "@/lib/domain";
+import {
+  formatMonth,
+  shiftMonth,
+  startOfMonth,
+  todayLocal,
+  type DateString,
+} from "@/lib/dates";
+import type { MonthHistoryResponse } from "@/lib/domain";
+import { MonthYearPicker } from "@/components/history/MonthYearPicker";
+import { MonthCalendar } from "@/components/history/MonthCalendar";
+import { DayPreviewPanel } from "@/components/history/DayPreviewPanel";
 import { fmt } from "@/components/ui/primitives";
-import { prefetchDay } from "@/lib/client/day-store";
 import { cn } from "@/lib/utils";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const monthCache = new Map<string, DayStatus[]>();
+const monthHistoryCache = new Map<string, MonthHistoryResponse>();
+// One request per month even if the effect runs twice (React strict mode) or two triggers coincide.
+const monthInflight = new Map<string, Promise<MonthHistoryResponse>>();
 
-function shiftMonth(month: DateString, by: number): DateString {
-  const [y, m] = month.split("-").map(Number);
-  const d = new Date(y, m - 1 + by, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-}
-
-export default function HistoryPage() {
+function HistoryContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const today = todayLocal();
-  const [month, setMonth] = useState<DateString>(startOfMonth(today));
-  const [days, setDays] = useState<DayStatus[] | null>(monthCache.get(month) ?? null);
+
+  // Read initial month and date from query parameters or default to current local date
+  const initialMonthParam = searchParams.get("month");
+  const initialDateParam = searchParams.get("date");
+
+  const [month, setMonth] = useState<string>(() => {
+    if (initialMonthParam && /^\d{4}-\d{2}$/.test(initialMonthParam)) {
+      return initialMonthParam;
+    }
+    if (initialDateParam && /^\d{4}-\d{2}-\d{2}$/.test(initialDateParam)) {
+      return initialDateParam.slice(0, 7);
+    }
+    return startOfMonth(today).slice(0, 7);
+  });
+
+  const [selectedDate, setSelectedDate] = useState<DateString>(() => {
+    if (initialDateParam && /^\d{4}-\d{2}-\d{2}$/.test(initialDateParam)) {
+      return initialDateParam;
+    }
+    return today;
+  });
+
+  const [historyData, setHistoryData] = useState<MonthHistoryResponse | null>(() =>
+    monthHistoryCache.get(month) ?? null
+  );
+  const [loading, setLoading] = useState<boolean>(!monthHistoryCache.has(month));
   const [error, setError] = useState<string | null>(null);
 
-  const last = `${month.slice(0, 7)}-${String(daysInMonth(month)).padStart(2, "0")}`;
+  // Sync state to URL search parameters for refresh and back/forward persistence
+  const updateUrl = useCallback(
+    (newMonth: string, newDate: DateString) => {
+      const params = new URLSearchParams(window.location.search);
+      params.set("month", newMonth);
+      params.set("date", newDate);
+      router.replace(`/history?${params.toString()}`, { scroll: false });
+    },
+    [router]
+  );
+
+  // Fetch month data with caching
+  const loadMonth = useCallback(
+    async (m: string, force = false) => {
+      if (!force && monthHistoryCache.has(m)) {
+        setHistoryData(monthHistoryCache.get(m)!);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const pending = monthInflight.get(m) ?? api<MonthHistoryResponse>(`/api/history/month?month=${m}`).finally(() => monthInflight.delete(m));
+        monthInflight.set(m, pending);
+        const res = await pending;
+        monthHistoryCache.set(m, res);
+        setHistoryData(res);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Couldn't load history");
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    const cached = monthCache.get(month);
-    setDays(cached ?? null);
-    setError(null);
-    api<DayStatus[]>(`/api/days?from=${month}&to=${last}`)
-      .then((d) => {
-        monthCache.set(month, d);
-        setDays(d);
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"));
-  }, [month, last]);
+    void loadMonth(month);
+  }, [month, loadMonth]);
 
-  const byDate = useMemo(() => new Map((days ?? []).map((d) => [d.date, d])), [days]);
-  const leading = (parseDate(month).getDay() + 6) % 7; // Monday-first
-  const count = daysInMonth(month);
-  const cells: (DateString | null)[] = [...Array(leading).fill(null), ...Array.from({ length: count }, (_, i) => addDays(month, i))];
-  while (cells.length % 7) cells.push(null);
+  // Handle month change
+  const handleMonthChange = (newMonth: string) => {
+    setMonth(newMonth);
+    // If selectedDate is not in the new month, default selected date to the 1st of that month
+    const newSelectedDate =
+      selectedDate.slice(0, 7) === newMonth ? selectedDate : `${newMonth}-01`;
+    setSelectedDate(newSelectedDate);
+    updateUrl(newMonth, newSelectedDate);
+  };
 
-  const logged = (days ?? []).filter((d) => d.mealsLogged > 0);
-  const avg = logged.length ? Math.round(logged.reduce((s, d) => s + d.calories, 0) / logged.length) : null;
+  // Handle date selection
+  const handleSelectDate = (date: DateString) => {
+    setSelectedDate(date);
+    const dateMonth = date.slice(0, 7);
+    if (dateMonth !== month) {
+      setMonth(dateMonth);
+      updateUrl(dateMonth, date);
+    } else {
+      updateUrl(month, date);
+    }
+  };
+
+  // Jump to Today
+  const handleJumpToToday = () => {
+    const todayMonth = startOfMonth(today).slice(0, 7);
+    setMonth(todayMonth);
+    setSelectedDate(today);
+    updateUrl(todayMonth, today);
+  };
+
+  // Open full day in Daily Dashboard
+  const handleOpenDay = (date: DateString) => {
+    router.push(date === today ? "/" : `/?date=${date}`);
+  };
+
+  // Listen to day updates from day-store mutation pipeline
+  useEffect(() => {
+    const handleDayUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ date: DateString | null }>;
+      const updatedDate = customEvent.detail?.date;
+      if (!updatedDate) {
+        monthHistoryCache.clear();
+        void loadMonth(month, true);
+        return;
+      }
+      const updatedMonth = updatedDate.slice(0, 7);
+      monthHistoryCache.delete(updatedMonth);
+      if (updatedMonth === month) {
+        void loadMonth(month, true);
+      }
+    };
+
+    window.addEventListener("mealprep:day-updated", handleDayUpdate);
+    return () => {
+      window.removeEventListener("mealprep:day-updated", handleDayUpdate);
+    };
+  }, [month, loadMonth]);
+
+  const selectedDayData = historyData?.days?.[selectedDate] ?? null;
+  const isCurrentMonth = month === startOfMonth(today).slice(0, 7);
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold">History</h1>
-        <div className="flex items-center gap-1">
-          <button type="button" className="btn btn-ghost btn-icon" onClick={() => setMonth(shiftMonth(month, -1))} aria-label="Previous month">
+    <div className="mx-auto max-w-5xl space-y-4">
+      {/* Page Header */}
+      <header className="flex flex-wrap items-center justify-between gap-3 pt-1">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-fg">History</h1>
+          <p className="mt-0.5 text-xs text-fg-3">
+            Review past nutrition totals, meal patterns, and logged days
+          </p>
+        </div>
+
+        {/* Month Navigation Toolbar */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Previous Month */}
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon btn-sm h-8 w-8"
+            onClick={() => handleMonthChange(shiftMonth(month, -1))}
+            aria-label="Previous month"
+            title="Previous month"
+          >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="min-w-[9rem] text-center text-sm font-medium tabular">{parseDate(month).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
-          <button type="button" className="btn btn-ghost btn-icon" onClick={() => setMonth(shiftMonth(month, 1))} aria-label="Next month" disabled={month >= startOfMonth(today)}>
+
+          {/* Month / Year Picker Popover */}
+          <MonthYearPicker currentMonth={month} onChange={handleMonthChange} />
+
+          {/* Next Month */}
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon btn-sm h-8 w-8"
+            onClick={() => handleMonthChange(shiftMonth(month, 1))}
+            aria-label="Next month"
+            title="Next month"
+          >
             <ChevronRight className="h-4 w-4" />
           </button>
-          <button type="button" className={cn("btn btn-secondary btn-sm ml-1", month === startOfMonth(today) && "invisible")} onClick={() => setMonth(startOfMonth(today))}>
-            This month
-          </button>
+
+          {/* Jump to Today Button */}
+          {!isCurrentMonth || selectedDate !== today ? (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm h-8 px-2.5 text-xs font-medium ml-1"
+              onClick={handleJumpToToday}
+              title="Jump to today (T)"
+            >
+              Today
+            </button>
+          ) : null}
         </div>
       </header>
 
+      {/* Month Summary KPI Banner */}
+      {historyData && (
+        <section
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-1 px-4 py-2.5 text-xs text-fg-3"
+          aria-label="Month statistics"
+        >
+          <div className="flex items-center gap-1.5 font-medium text-fg">
+            <span className="tabular">{formatMonth(month)} Summary</span>
+          </div>
+
+          <div className="flex items-center gap-4 sm:gap-6 tabular">
+            <div>
+              <span className="text-fg-3 mr-1.5">Logged:</span>
+              <strong className="text-fg font-semibold">
+                {historyData.summary.loggedDays}{" "}
+                {historyData.summary.loggedDays === 1 ? "day" : "days"}
+              </strong>
+            </div>
+
+            {historyData.summary.loggedDays > 0 && (
+              <>
+                <div>
+                  <span className="text-fg-3 mr-1.5">Daily avg:</span>
+                  <strong className="text-fg font-semibold">
+                    {fmt.int(historyData.summary.avgCalories)} kcal
+                  </strong>
+                </div>
+                <div className="hidden sm:block">
+                  <span className="text-fg-3 mr-1.5">Avg protein:</span>
+                  <strong className="text-blue-400 font-semibold">
+                    {fmt.g(historyData.summary.avgProtein)}
+                  </strong>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Error Banner with Retry */}
       {error && (
-        <div className="card px-4 py-3 text-sm text-fg-2" role="alert">
-          Couldn't load this month: {error}
+        <div
+          className="flex items-center justify-between rounded-xl border border-negative/30 bg-negative/10 px-4 py-3 text-xs text-negative"
+          role="alert"
+        >
+          <span>Couldn't load history: {error}</span>
+          <button
+            type="button"
+            onClick={() => void loadMonth(month, true)}
+            className="btn btn-ghost btn-sm h-7 gap-1 text-negative hover:bg-negative/20"
+          >
+            <RotateCcw className="h-3 w-3" />
+            <span>Retry</span>
+          </button>
         </div>
       )}
 
-      <section className="card overflow-hidden" aria-label="Calendar">
-        <div className="grid grid-cols-7 border-b border-line text-center text-[11px] font-medium uppercase tracking-wide text-fg-3">
-          {WEEKDAYS.map((w) => (
-            <div key={w} className="py-2">
-              {w}
-            </div>
-          ))}
+      {/* Main Two-Column Layout */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-start">
+        {/* Left Column: Calendar Grid */}
+        <div className="lg:col-span-7 xl:col-span-7">
+          <MonthCalendar
+            month={month}
+            selectedDate={selectedDate}
+            days={historyData?.days ?? {}}
+            goals={historyData?.goals}
+            onSelectDate={handleSelectDate}
+            onOpenDay={handleOpenDay}
+          />
         </div>
-        <div className="grid grid-cols-7">
-          {cells.map((d, i) => {
-            if (!d) return <div key={`e${i}`} className="aspect-square border-b border-r border-line bg-surface-2/40 md:aspect-[4/3]" />;
-            const s = byDate.get(d);
-            const future = d > today;
-            const status = !s || s.mealsLogged === 0 ? "none" : s.mealsLogged >= 3 ? "logged" : "partial";
-            return (
-              <button
-                key={d}
-                type="button"
-                disabled={future}
-                onMouseEnter={() => !future && prefetchDay(d)}
-                onFocus={() => !future && prefetchDay(d)}
-                onClick={() => router.push(d === today ? "/" : `/?date=${d}`)}
-                aria-label={`${d}${s ? `, ${fmt.int(s.calories)} kilocalories, ${s.mealsLogged} meals` : ", nothing logged"}`}
-                className={cn(
-                  "flex aspect-square flex-col items-start justify-between border-b border-r border-line p-1.5 text-left transition-colors md:aspect-[4/3] md:p-2",
-                  future ? "text-fg-3/50" : "hover:bg-surface-2",
-                  d === today && "bg-accent-soft/60"
-                )}
-              >
-                <span className={cn("text-xs tabular md:text-sm", d === today ? "font-semibold text-fg" : "text-fg-2")}>{Number(d.slice(8))}</span>
-                {s && s.mealsLogged > 0 ? (
-                  <span className="w-full">
-                    <span className="hidden text-xs tabular text-fg md:block">{fmt.int(s.calories)}</span>
-                    <span className="mt-1 flex gap-0.5">
-                      {[0, 1, 2, 3].map((i) => (
-                        <span key={i} className={cn("h-1 flex-1 rounded-full", i < s.mealsLogged ? (status === "logged" ? "bg-fg" : "bg-fg-3") : "bg-surface-3")} />
-                      ))}
-                    </span>
-                  </span>
-                ) : (
-                  !future && <span className="h-1 w-full rounded-full bg-surface-3 md:mt-1" />
-                )}
-              </button>
-            );
-          })}
+
+        {/* Right Column: Selected Day Details Inspector */}
+        <div className="lg:col-span-5 xl:col-span-5 lg:sticky lg:top-4">
+          <DayPreviewPanel
+            date={selectedDate}
+            dayData={selectedDayData}
+            goals={historyData?.goals}
+            weightUnit={historyData?.weightUnit}
+            onOpenDay={handleOpenDay}
+            isLoading={loading}
+          />
         </div>
-        <div className="flex flex-wrap items-center gap-4 px-4 py-2.5 text-xs text-fg-2">
-          <span className="flex items-center gap-1.5">
-            <span className="h-1 w-4 rounded-full bg-fg" /> 3+ meals logged
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1 w-4 rounded-full bg-fg-3" /> partially logged
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1 w-4 rounded-full bg-surface-3" /> nothing logged
-          </span>
-          {avg !== null && (
-            <span className="ml-auto tabular">
-              {logged.length} day{logged.length === 1 ? "" : "s"} logged · avg {fmt.int(avg)} kcal
-            </span>
-          )}
-        </div>
-      </section>
+      </div>
     </div>
+  );
+}
+
+function HistorySkeleton() {
+  return (
+    <div className="mx-auto max-w-5xl space-y-4 animate-pulse">
+      <div className="h-10 w-48 rounded-lg bg-surface-2" />
+      <div className="h-10 w-full rounded-lg bg-surface-2" />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        <div className="h-96 rounded-xl bg-surface-2 lg:col-span-7" />
+        <div className="h-96 rounded-xl bg-surface-2 lg:col-span-5" />
+      </div>
+    </div>
+  );
+}
+
+export default function HistoryPage() {
+  return (
+    <Suspense fallback={<HistorySkeleton />}>
+      <HistoryContent />
+    </Suspense>
   );
 }

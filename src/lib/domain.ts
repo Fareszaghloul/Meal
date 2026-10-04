@@ -64,7 +64,40 @@ export interface DayData {
 export interface DayStatus {
   date: DateString;
   calories: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  entryCount?: number;
   mealsLogged: number; // distinct meal categories with at least one entry
+  mealCalories?: Partial<Record<MealCategory, number>>;
+  waterMl?: number;
+  weightKg?: number;
+}
+
+export interface MonthHistoryDay {
+  date: DateString;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  entryCount: number;
+  mealsLogged: number;
+  mealCalories: Partial<Record<MealCategory, number>>;
+  waterMl: number;
+  weightKg: number | null;
+}
+
+export interface MonthHistoryResponse {
+  month: string; // "YYYY-MM"
+  weightUnit: "kg" | "lbs";
+  days: Record<DateString, MonthHistoryDay>;
+  goals: NutritionGoals;
+  summary: {
+    loggedDays: number;
+    totalCalories: number;
+    avgCalories: number;
+    avgProtein: number;
+  };
 }
 
 export interface FoodServing {
@@ -104,10 +137,27 @@ export interface FoodSummary {
   userId: string | null;
 }
 
+export interface RecipeIngredientSummary extends Nutrients {
+  id?: string;
+  foodId: string | null;
+  rawName: string;
+  quantity: number;
+  unit: string;
+  notes?: string | null;
+  sortOrder?: number;
+  grams?: number | null;
+}
+
 export interface RecipeSummary {
   id: string;
   name: string;
+  description?: string | null;
   servings: number;
+  servingLabel?: string | null;
+  yieldWeightGrams?: number | null;
+  prepTimeMinutes?: number | null;
+  cookTimeMinutes?: number | null;
+  imageUrl?: string | null;
   caloriesPerServing: number;
   proteinPerServing: number;
   carbsPerServing: number;
@@ -119,6 +169,9 @@ export interface RecipeSummary {
   transFatPerServing: number | null;
   sodiumPerServing: number | null;
   isFavorite: boolean;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface MealTemplateItem extends Nutrients {
@@ -147,4 +200,15 @@ export interface WeightEntry {
   smmKg: number | null;
   bmi: number | null;
   notes: string | null;
+  createdAt: string;
+}
+
+/** Everything the Weight page needs: bounded daily readings, all InBody scans, and the all-time summary. */
+export interface WeightPageData {
+  /** Daily readings from 6 days before `from` (for a correct trend at the left edge), ascending. */
+  entries: WeightEntry[];
+  inbody: WeightEntry[];
+  summary: WeightSummary;
+  measurementSystem: string;
+  heightCm: number | null;
 }

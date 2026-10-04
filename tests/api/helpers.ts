@@ -1,26 +1,38 @@
+import { assertTestDatabase } from "@/lib/testing/safety-guard";
+
 /**
- * API tests run against a live server (default http://localhost:3100) with the
- * throwaway test account created by `node scratch/create-test-user.mjs`.
+ * API tests run against an isolated test server (default http://localhost:3101)
+ * backed by the dedicated PostgreSQL test database: 'meal_test'.
  */
-export const BASE = process.env.TEST_BASE_URL || "http://localhost:3100";
-const EMAIL = process.env.TEST_EMAIL || "e2e-test@mealprep.local";
-const PASSWORD = process.env.TEST_PASSWORD || "E2eTestPassword!2026";
+export const BASE = process.env.TEST_BASE_URL || "http://localhost:3101";
+const DEFAULT_EMAIL = process.env.TEST_EMAIL || "e2e-test@mealprep.local";
+const DEFAULT_PASSWORD = process.env.TEST_PASSWORD || "E2eTestPassword!2026";
 
-let cookie: string | null = null;
+let cookieMap = new Map<string, string>();
+let safetyChecked = false;
 
-export async function login(): Promise<string> {
-  if (cookie) return cookie;
+async function ensureSafety() {
+  if (!safetyChecked) {
+    await assertTestDatabase();
+    safetyChecked = true;
+  }
+}
+
+export async function login(email = DEFAULT_EMAIL, password = DEFAULT_PASSWORD): Promise<string> {
+  await ensureSafety();
+  if (cookieMap.has(email)) return cookieMap.get(email)!;
   const res = await fetch(`${BASE}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
+    body: JSON.stringify({ email, password }),
   });
-  if (!res.ok) throw new Error(`login failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`login failed for ${email}: ${res.status} ${await res.text()}`);
   const set = res.headers.get("set-cookie") ?? "";
   const m = set.match(/mealprep_session=([^;]+)/);
   if (!m) throw new Error("no session cookie");
-  cookie = `mealprep_session=${m[1]}`;
-  return cookie;
+  const c = `mealprep_session=${m[1]}`;
+  cookieMap.set(email, c);
+  return c;
 }
 
 export async function call<T = unknown>(path: string, init?: RequestInit & { json?: unknown }): Promise<{ status: number; body: T }> {

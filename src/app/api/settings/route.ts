@@ -4,15 +4,19 @@ import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/session";
 
 /** Secrets never leave the server; the client only learns whether a key is set. */
-function publicSettings(settings: UserSettings, workouts: WorkoutRoutineEntry[]) {
+function publicSettings(settings: UserSettings, workouts: WorkoutRoutineEntry[], currentWeightFromLog: boolean) {
   const { cloudApiKey, usdaApiKey, ...safe } = settings;
   return {
     ...safe,
     workouts,
+    /** True once a daily weigh-in exists: currentWeightKg is then derived from the log and read-only here. */
+    currentWeightFromLog,
     hasCloudApiKey: Boolean(cloudApiKey),
     hasUsdaApiKey: Boolean(usdaApiKey),
   };
 }
+
+const hasDailyWeight = async (userId: string) => (await prisma.weightEntry.count({ where: { userId, entryType: "daily" } })) > 0;
 
 const optionalNumber = (v: unknown) => (v === null || v === "" || v === undefined ? null : Number(v));
 
@@ -38,7 +42,7 @@ export async function GET(request: Request) {
           sex: "male",
           age: 28,
           heightCm: 178,
-          currentWeightKg: 78,
+          currentWeightKg: null,
           goalType: "lose",
           goalWeeklyRateKg: 0.5,
           goalWeightKg: 72,
@@ -58,7 +62,7 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "asc" },
     });
 
-    return NextResponse.json(publicSettings(settings, workouts));
+    return NextResponse.json(publicSettings(settings, workouts, await hasDailyWeight(user.id)));
   } catch (error: any) {
     if (error.name === "AuthError") {
       return NextResponse.json({ error: error.message }, { status: error.status });
@@ -136,7 +140,9 @@ export async function PUT(request: Request) {
     }
     if (age !== undefined && dataToUpdate.age === undefined) dataToUpdate.age = Number(age);
     if (heightCm !== undefined) dataToUpdate.heightCm = Number(heightCm);
-    if (currentWeightKg !== undefined) dataToUpdate.currentWeightKg = Number(currentWeightKg);
+    // With weigh-ins logged, current weight is derived from them (syncCurrentWeight); a manual value would just diverge.
+    const weightFromLog = await hasDailyWeight(user.id);
+    if (currentWeightKg !== undefined && !weightFromLog) dataToUpdate.currentWeightKg = optionalNumber(currentWeightKg);
     if (currentBodyFatPct !== undefined) {
       dataToUpdate.currentBodyFatPct = currentBodyFatPct !== null && currentBodyFatPct !== "" ? Number(currentBodyFatPct) : null;
     }
@@ -182,7 +188,7 @@ export async function PUT(request: Request) {
       orderBy: { createdAt: "asc" },
     });
 
-    return NextResponse.json(publicSettings(updated, workouts));
+    return NextResponse.json(publicSettings(updated, workouts, weightFromLog));
   } catch (error: any) {
     if (error.name === "AuthError") {
       return NextResponse.json({ error: error.message }, { status: error.status });
