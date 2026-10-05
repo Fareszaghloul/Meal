@@ -66,7 +66,7 @@ export function AddMealModal({
   }, [open]);
 
   const selectedRecipe = useMemo(() => {
-    return allRecipes.find((r) => r.id === selectedRecipeId) ?? null;
+    return (Array.isArray(allRecipes) ? allRecipes : []).find((r) => r.id === selectedRecipeId) ?? null;
   }, [allRecipes, selectedRecipeId]);
 
   const recipePreview = useMemo(() => {

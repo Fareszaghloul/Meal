@@ -14,6 +14,7 @@ export interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
+  serverError: string | null;
   login: (user: AuthUser) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -26,6 +27,7 @@ const PUBLIC_AUTH_PATHS = ["/login"];
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [serverError, setServerError] = useState<string | null>(null);
   const router = useRouter();
 
   const refreshUser = useCallback(async () => {
@@ -36,8 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
-      } else {
+        setServerError(null);
+      } else if (res.status === 401) {
         setUser(null);
+        setServerError(null);
         if (typeof window !== "undefined") {
           const pathname = window.location.pathname;
           const isPublic = PUBLIC_AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
@@ -45,9 +49,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             router.push("/login");
           }
         }
+      } else {
+        // Server or database error (500 / 503)
+        const errData = await res.json().catch(() => null);
+        console.error("Session check encountered server/database error:", errData || res.status);
+        setServerError(errData?.error || "The database or server is temporarily unavailable.");
+        // Do NOT wipe user session or redirect to login on server errors
       }
-    } catch {
-      setUser(null);
+    } catch (err: any) {
+      console.error("Network error during session check:", err);
+      setServerError("Network error communicating with the server.");
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, serverError, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

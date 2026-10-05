@@ -81,12 +81,22 @@ export default function MealPrepPage() {
     void loadPrepData();
 
     fetch("/api/recipes")
-      .then((res) => res.json())
-      .then((data) => {
-        setRecipes(data);
-        if (data.length > 0) setSelectedRecipeId(data[0].id);
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load recipes");
+        return res.json();
       })
-      .catch((err) => console.error(err));
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setRecipes(data);
+          if (data.length > 0) setSelectedRecipeId(data[0].id);
+        } else {
+          setRecipes([]);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setRecipes([]);
+      });
   }, []);
 
   const handleToggleTask = async (taskId: string, currentStatus: boolean) => {
@@ -199,7 +209,7 @@ export default function MealPrepPage() {
     setSelectedDays(DAYS.map((d) => d.key));
   };
 
-  const selectedRecipe = recipes.find((r) => r.id === selectedRecipeId);
+  const selectedRecipe = Array.isArray(recipes) ? recipes.find((r) => r.id === selectedRecipeId) : undefined;
 
   const totalCalories = selectedRecipe
     ? Math.round((selectedRecipe.caloriesPerServing || 0) * servings * selectedDays.length)

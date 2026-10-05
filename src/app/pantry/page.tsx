@@ -115,7 +115,10 @@ export default function FoodsAndPantryPage() {
   const fetchFoods = async () => {
     try {
       const res = await fetch("/api/foods");
-      if (res.ok) setFoods(await res.json());
+      if (res.ok) {
+        const d = await res.json();
+        if (Array.isArray(d)) setFoods(d);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -124,7 +127,10 @@ export default function FoodsAndPantryPage() {
   const fetchPantry = async () => {
     try {
       const res = await fetch("/api/pantry");
-      if (res.ok) setPantryItems(await res.json());
+      if (res.ok) {
+        const d = await res.json();
+        if (Array.isArray(d)) setPantryItems(d);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -134,7 +140,10 @@ export default function FoodsAndPantryPage() {
     setIsLoadingMatches(true);
     try {
       const res = await fetch("/api/pantry/what-can-i-make");
-      if (res.ok) setRecipeMatches(await res.json());
+      if (res.ok) {
+        const d = await res.json();
+        if (Array.isArray(d)) setRecipeMatches(d);
+      }
     } catch (err) {
       console.error(err);
     } finally {

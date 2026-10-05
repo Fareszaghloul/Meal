@@ -87,7 +87,7 @@ export function EditMealModal({
   }, [meal]);
 
   const selectedRecipe = useMemo(() => {
-    return allRecipes.find((r) => r.id === selectedRecipeId) ?? meal?.recipe ?? null;
+    return (Array.isArray(allRecipes) ? allRecipes : []).find((r) => r.id === selectedRecipeId) ?? meal?.recipe ?? null;
   }, [allRecipes, selectedRecipeId, meal]);
 
   const recipePreview = useMemo(() => {

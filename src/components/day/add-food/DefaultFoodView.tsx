@@ -32,14 +32,16 @@ export function mapMealItemToFood(
   catalogRecipes?: RecipeSummary[]
 ): RowItem {
   // Check if item is a recipe in catalog
-  if (item.recipeId) {
-    const foundRecipe = catalogRecipes?.find((r) => r.id === item.recipeId || r.name.toLowerCase() === item.name.toLowerCase());
+  if (item.recipeId && Array.isArray(catalogRecipes)) {
+    const foundRecipe = catalogRecipes.find((r) => r.id === item.recipeId || r.name.toLowerCase() === item.name.toLowerCase());
     if (foundRecipe) return { kind: "recipe", recipe: foundRecipe };
   }
 
   // Check if food exists in catalog
-  const foundFood = catalogFoods?.find((f) => f.id === item.foodId || f.name.toLowerCase() === item.name.toLowerCase());
-  if (foundFood) return { kind: "food", food: foundFood };
+  if (Array.isArray(catalogFoods)) {
+    const foundFood = catalogFoods.find((f) => f.id === item.foodId || f.name.toLowerCase() === item.name.toLowerCase());
+    if (foundFood) return { kind: "food", food: foundFood };
+  }
 
   // Otherwise create synthetic FoodSummary based on the logged item
   const syntheticFood: FoodSummary = {

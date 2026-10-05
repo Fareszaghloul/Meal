@@ -92,10 +92,13 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
     fetch("/api/pantry")
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
-        setPantryItems(data);
+        setPantryItems(Array.isArray(data) ? data : []);
         setIsPantryLoaded(true);
       })
-      .catch(() => setIsPantryLoaded(true));
+      .catch(() => {
+        setPantryItems([]);
+        setIsPantryLoaded(true);
+      });
   }, []);
 
   const ingredientStatus = useMemo(() => {
@@ -105,7 +108,7 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
       const ingFoodId = ing.foodId;
       const ingName = (ing.food?.name || ing.rawName).toLowerCase().trim();
 
-      const match = pantryItems.find((p) => {
+      const match = (Array.isArray(pantryItems) ? pantryItems : []).find((p) => {
         if (ingFoodId && p.foodId && ingFoodId === p.foodId) return true;
         const pName = p.name.toLowerCase().trim();
         return pName.includes(ingName) || ingName.includes(pName);

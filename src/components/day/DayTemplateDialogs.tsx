@@ -141,16 +141,17 @@ export function ApplyDayTemplateSheet({
     setLoading(true);
     api<DayTemplate[]>("/api/day-templates")
       .then((data) => {
-        setTemplates(data);
-        if (data.length > 0 && !selectedId) {
-          setSelectedId(data[0].id);
+        const arr = Array.isArray(data) ? data : [];
+        setTemplates(arr);
+        if (arr.length > 0 && !selectedId) {
+          setSelectedId(arr[0].id);
         }
       })
-      .catch(() => undefined)
+      .catch(() => setTemplates([]))
       .finally(() => setLoading(false));
   }, [open, selectedId]);
 
-  const selectedTemplate = templates.find((t) => t.id === selectedId);
+  const selectedTemplate = Array.isArray(templates) ? templates.find((t) => t.id === selectedId) : undefined;
 
   const apply = async () => {
     if (!selectedId) return;

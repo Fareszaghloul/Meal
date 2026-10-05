@@ -27,8 +27,14 @@ export async function GET(request: Request) {
       user,
       settings,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("GET /api/auth/me error:", error);
+    if (error?.constructor?.name === "PrismaClientInitializationError" || error?.name === "PrismaClientInitializationError") {
+      return NextResponse.json(
+        { error: "Database server is currently unavailable.", code: "db_unavailable" },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to fetch current user session" },
       { status: 500 }

@@ -95,9 +95,15 @@ export default function MealPlannerPage() {
 
   useEffect(() => {
     fetch("/api/recipes")
-      .then((res) => res.json())
-      .then((data) => setAllRecipes(data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load recipes");
+        return res.json();
+      })
+      .then((data) => setAllRecipes(Array.isArray(data) ? data : []))
+      .catch((err) => {
+        console.error(err);
+        setAllRecipes([]);
+      });
 
     fetch("/api/settings")
       .then((res) => res.json())

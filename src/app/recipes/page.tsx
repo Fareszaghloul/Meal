@@ -28,7 +28,7 @@ export default function RecipeLibraryPage() {
       const res = await fetch("/api/recipes");
       if (res.ok) {
         const data = await res.json();
-        setRecipes(data);
+        setRecipes(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error("Failed to fetch recipes:", err);

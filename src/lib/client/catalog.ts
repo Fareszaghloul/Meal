@@ -19,12 +19,17 @@ export function loadCatalog(force = false): Promise<Catalog> {
   if (!force && cached && Date.now() - cached.loadedAt < TTL) return Promise.resolve(cached);
   if (pending) return pending;
   pending = Promise.all([
-    api<FoodSummary[]>("/api/foods?limit=2000"),
+    api<FoodSummary[]>("/api/foods?limit=2000").catch(() => [] as FoodSummary[]),
     api<RecipeSummary[]>("/api/recipes").catch(() => [] as RecipeSummary[]),
     api<MealTemplate[]>("/api/templates").catch(() => [] as MealTemplate[]),
   ])
     .then(([foods, recipes, templates]) => {
-      cached = { foods, recipes, templates, loadedAt: Date.now() };
+      cached = {
+        foods: Array.isArray(foods) ? foods : [],
+        recipes: Array.isArray(recipes) ? recipes : [],
+        templates: Array.isArray(templates) ? templates : [],
+        loadedAt: Date.now(),
+      };
       return cached;
     })
     .finally(() => {

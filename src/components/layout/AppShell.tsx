@@ -139,6 +139,7 @@ function UserFooter({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { serverError } = useAuth();
   const pathname = usePathname();
   const [drawer, setDrawer] = useState(false);
   const isAuthPage = AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
@@ -180,6 +181,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <SyncBadgeDot />
           </div>
         </header>
+
+        {serverError && (
+          <div className="mx-auto w-full max-w-5xl px-4 pt-3 md:px-8">
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-400">
+              <CloudOff className="h-4 w-4 shrink-0" />
+              <span>{serverError}</span>
+            </div>
+          </div>
+        )}
 
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 pt-4 md:px-8 md:pb-10 md:pt-8">{children}</main>
 
