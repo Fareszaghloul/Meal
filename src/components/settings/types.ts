@@ -40,6 +40,10 @@ export interface SettingsDto {
   workouts: WorkoutRoutineInput[];
   goalHistory: GoalRevisionDto[];
   firstGoalDate: string | null;
+  // Phase 2 preferences
+  pantryUsageBehavior?: "manual" | "ask" | "auto";
+  defaultMealCategory?: string | null;
+  defaultCopyMode?: "append" | "replace";
   // admin only
   ollamaUrl?: string;
   ollamaModel?: string;

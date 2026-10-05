@@ -26,6 +26,60 @@ interface DefaultFoodViewProps {
   isRepeating?: boolean;
 }
 
+export function mapMealItemToFood(
+  item: MealItem,
+  catalogFoods?: FoodSummary[],
+  catalogRecipes?: RecipeSummary[]
+): RowItem {
+  // Check if item is a recipe in catalog
+  if (item.recipeId) {
+    const foundRecipe = catalogRecipes?.find((r) => r.id === item.recipeId || r.name.toLowerCase() === item.name.toLowerCase());
+    if (foundRecipe) return { kind: "recipe", recipe: foundRecipe };
+  }
+
+  // Check if food exists in catalog
+  const foundFood = catalogFoods?.find((f) => f.id === item.foodId || f.name.toLowerCase() === item.name.toLowerCase());
+  if (foundFood) return { kind: "food", food: foundFood };
+
+  // Otherwise create synthetic FoodSummary based on the logged item
+  const syntheticFood: FoodSummary = {
+    id: item.foodId ?? `entry-${item.id}`,
+    name: item.name,
+    brand: null,
+    category: "Recent",
+    source: "recent",
+    defaultUnit: item.servingUnit,
+    servingSize: item.servings,
+    servingUnit: item.servingUnit,
+    servingWeightGrams: 100,
+    caloriesPer100g: item.calories,
+    proteinPer100g: item.protein,
+    carbsPer100g: item.carbs,
+    fatPer100g: item.fat,
+    fiberPer100g: item.fiber,
+    totalSugarsPer100g: item.totalSugars,
+    addedSugarsPer100g: item.addedSugars,
+    saturatedFatPer100g: item.saturatedFat,
+    transFatPer100g: item.transFat,
+    sodiumPer100g: item.sodium,
+    barcode: null,
+    isFavorite: false,
+    lastUsedAt: item.loggedAt,
+    useCount: 1,
+    userId: null,
+    servings: [
+      {
+        id: "default",
+        label: `${fmt.qty(item.servings)} ${item.servingUnit}`,
+        grams: 100,
+        isDefault: true,
+        sortOrder: 0,
+      },
+    ],
+  };
+  return { kind: "food", food: syntheticFood };
+}
+
 export function DefaultFoodView({
   meal,
   yesterdayEntries,
@@ -42,56 +96,6 @@ export function DefaultFoodView({
   onToggleFavorite,
   isRepeating,
 }: DefaultFoodViewProps) {
-  // Map MealItem to FoodSummary or RecipeSummary for row rendering
-  const mapMealItemToFood = (item: MealItem): RowItem => {
-    // Check if item is a recipe in catalog
-    if (item.recipeId) {
-      const foundRecipe = catalogRecipes?.find((r) => r.id === item.recipeId || r.name.toLowerCase() === item.name.toLowerCase());
-      if (foundRecipe) return { kind: "recipe", recipe: foundRecipe };
-    }
-
-    // Check if food exists in catalog
-    const foundFood = catalogFoods?.find((f) => f.id === item.foodId || f.name.toLowerCase() === item.name.toLowerCase());
-    if (foundFood) return { kind: "food", food: foundFood };
-
-    // Otherwise create synthetic FoodSummary based on the logged item
-    const syntheticFood: FoodSummary = {
-      id: item.foodId ?? `entry-${item.id}`,
-      name: item.name,
-      brand: null,
-      category: "Recent",
-      source: "recent",
-      defaultUnit: item.servingUnit,
-      servingSize: item.servings,
-      servingUnit: item.servingUnit,
-      servingWeightGrams: 100,
-      caloriesPer100g: item.calories,
-      proteinPer100g: item.protein,
-      carbsPer100g: item.carbs,
-      fatPer100g: item.fat,
-      fiberPer100g: item.fiber,
-      totalSugarsPer100g: item.totalSugars,
-      addedSugarsPer100g: item.addedSugars,
-      saturatedFatPer100g: item.saturatedFat,
-      transFatPer100g: item.transFat,
-      sodiumPer100g: item.sodium,
-      barcode: null,
-      isFavorite: false,
-      lastUsedAt: item.loggedAt,
-      useCount: 1,
-      userId: null,
-      servings: [
-        {
-          id: "default",
-          label: `${fmt.qty(item.servings)} ${item.servingUnit}`,
-          grams: 100,
-          isDefault: true,
-          sortOrder: 0,
-        },
-      ],
-    };
-    return { kind: "food", food: syntheticFood };
-  };
 
   const hasYesterday = yesterdayEntries && yesterdayEntries.length > 0;
   const yesterdayTotals = hasYesterday
@@ -152,7 +156,7 @@ export function DefaultFoodView({
             {frequentFoods.slice(0, 5).map((item) => (
               <FoodResultRow
                 key={`freq-${item.id}`}
-                item={mapMealItemToFood(item)}
+                item={mapMealItemToFood(item, catalogFoods, catalogRecipes)}
                 onSelect={onSelect}
                 onQuickAdd={onQuickAdd}
                 onToggleFavorite={onToggleFavorite}
@@ -173,7 +177,7 @@ export function DefaultFoodView({
             {recentFoods.slice(0, 8).map((item) => (
               <FoodResultRow
                 key={`recent-${item.id}`}
-                item={mapMealItemToFood(item)}
+                item={mapMealItemToFood(item, catalogFoods, catalogRecipes)}
                 onSelect={onSelect}
                 onQuickAdd={onQuickAdd}
                 onToggleFavorite={onToggleFavorite}

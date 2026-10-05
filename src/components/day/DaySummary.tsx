@@ -2,11 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
-import { Minus, Plus, Scale, Droplet, ArrowUpRight } from "lucide-react";
+import { Minus, Plus, Scale, Droplet, ArrowUpRight, RotateCcw } from "lucide-react";
 import type { DayData } from "@/lib/domain";
 import { percentOf } from "@/lib/nutrition/core";
 import { fmt } from "@/components/ui/primitives";
-import { addWater, undoWater } from "@/lib/client/day-store";
+import { addWater, undoWater, resetWater } from "@/lib/client/day-store";
 import { cn } from "@/lib/utils";
 import { formatDate, todayLocal } from "@/lib/dates";
 import { fromKg } from "@/lib/weight-units";
@@ -185,6 +185,78 @@ export function DaySummary({ day }: { day: DayData }) {
             </span>
           </div>
         )}
+
+        {/* ─── Target · Consumed · Remaining Table ─── */}
+        <div className="mt-4 rounded-xl border border-line bg-surface-2/20 p-3 text-xs">
+          <div className="grid grid-cols-4 gap-2 font-semibold text-fg-3 text-[10px] uppercase tracking-wider pb-1.5 border-b border-line">
+            <span>Nutrient</span>
+            <span className="text-right">Target</span>
+            <span className="text-right">Consumed</span>
+            <span className="text-right">Remaining</span>
+          </div>
+          <div className="divide-y divide-line/60 pt-1 font-tabular">
+            {[
+              {
+                name: "Calories",
+                target: hasCalorieGoal ? `${fmt.int(goals.calories)} kcal` : "—",
+                consumed: `${fmt.int(totals.calories)} kcal`,
+                rem: hasCalorieGoal ? goals.calories - totals.calories : null,
+                unit: "kcal",
+              },
+              {
+                name: "Protein",
+                target: goals.protein > 0 ? `${fmt.g(goals.protein)}g` : "—",
+                consumed: `${fmt.g(totals.protein)}g`,
+                rem: goals.protein > 0 ? goals.protein - totals.protein : null,
+                unit: "g",
+              },
+              {
+                name: "Carbs",
+                target: goals.carbs > 0 ? `${fmt.g(goals.carbs)}g` : "—",
+                consumed: `${fmt.g(totals.carbs)}g`,
+                rem: goals.carbs > 0 ? goals.carbs - totals.carbs : null,
+                unit: "g",
+              },
+              {
+                name: "Fat",
+                target: goals.fat > 0 ? `${fmt.g(goals.fat)}g` : "—",
+                consumed: `${fmt.g(totals.fat)}g`,
+                rem: goals.fat > 0 ? goals.fat - totals.fat : null,
+                unit: "g",
+              },
+              ...(goals.fiber !== null || totals.fiber > 0
+                ? [
+                    {
+                      name: "Fiber",
+                      target: goals.fiber !== null ? `${fmt.g(goals.fiber)}g` : "—",
+                      consumed: `${fmt.g(totals.fiber)}g`,
+                      rem: goals.fiber !== null ? goals.fiber - totals.fiber : null,
+                      unit: "g",
+                    },
+                  ]
+                : []),
+            ].map((row) => (
+              <div key={row.name} className="grid grid-cols-4 gap-2 py-1.5 text-xs items-center">
+                <span className="font-medium text-fg">{row.name}</span>
+                <span className="text-right text-fg-3">{row.target}</span>
+                <span className="text-right text-fg font-medium">{row.consumed}</span>
+                <span className="text-right">
+                  {row.rem === null ? (
+                    <span className="text-fg-3">—</span>
+                  ) : row.rem < 0 ? (
+                    <span className="text-warning font-semibold">
+                      +{fmt.g(Math.abs(row.rem))} {row.unit}
+                    </span>
+                  ) : (
+                    <span className="text-accent font-medium">
+                      {fmt.g(row.rem)} {row.unit}
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ─── Compact Hydration & Weight Bottom Strip ─── */}
@@ -208,10 +280,21 @@ export function DaySummary({ day }: { day: DayData }) {
               className="btn btn-ghost btn-icon btn-sm h-7 w-7 text-fg-3 hover:text-fg"
               aria-label="Remove 250ml water"
               disabled={water.totalMl === 0}
-              title="Remove water"
+              title="Remove water (-250ml)"
             >
               <Minus className="h-3 w-3" />
             </button>
+            {water.totalMl > 0 && (
+              <button
+                type="button"
+                onClick={() => resetWater(day.date)}
+                className="btn btn-ghost btn-icon btn-sm h-7 w-7 text-fg-3 hover:text-danger"
+                aria-label="Reset water to 0"
+                title="Reset water to 0"
+              >
+                <RotateCcw className="h-3 w-3" />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => addWater(day.date, 250)}

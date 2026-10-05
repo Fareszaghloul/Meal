@@ -25,11 +25,11 @@ export function EntryRow({ entry, onEdit }: { entry: MealItem; onEdit: (e: MealI
       onClick: () => onEdit(entry),
     },
     {
-      label: "Duplicate",
+      label: "Repeat",
       icon: <CopyPlus className="h-3.5 w-3.5" />,
       onClick: () => {
         duplicateEntry(entry);
-        toast(`Duplicated ${entry.name}`);
+        toast(`Repeated ${entry.name}`);
       },
     },
     ...moveTargets.map((c) => ({

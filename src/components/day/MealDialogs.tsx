@@ -9,6 +9,7 @@ import { copyEntries } from "@/lib/client/day-store";
 import { invalidateCatalog } from "@/lib/client/catalog";
 import { toast } from "@/components/ui/Toast";
 import { addDays, type DateString } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 
 export function SaveTemplateSheet({ entries, category, onClose }: { entries: MealItem[] | null; category: MealCategory; onClose: () => void }) {
   const [name, setName] = useState("");
@@ -113,6 +114,166 @@ export function CopyToSheet({ entries, category, fromDate, onClose }: { entries:
           <span className="label">Meal</span>
           <Segmented value={target} onChange={setTarget} options={MEAL_CATEGORIES.map((c) => ({ value: c, label: MEAL_LABELS[c] }))} size="sm" className="w-full" />
         </div>
+      </div>
+    </Sheet>
+  );
+}
+
+export function CopyDaySheet({
+  open,
+  toDate,
+  existingCount,
+  onClose,
+}: {
+  open: boolean;
+  toDate: DateString;
+  existingCount: number;
+  onClose: () => void;
+}) {
+  const [fromDate, setFromDate] = useState<DateString>(addDays(toDate, -1));
+  const [copyMode, setCopyMode] = useState<"append" | "replace">("append");
+  const [busy, setBusy] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+
+  const needsConfirm = existingCount > 0 && !confirmed;
+
+  const handleCopy = async () => {
+    if (needsConfirm) {
+      setConfirmed(true);
+      return;
+    }
+    setBusy(true);
+    try {
+      const created = await copyEntries({ fromDate, toDate, mode: copyMode });
+      if (created.length > 0) {
+        toast(
+          copyMode === "replace"
+            ? `Replaced day with ${created.length} item${created.length === 1 ? "" : "s"} from ${fromDate}`
+            : `Copied ${created.length} item${created.length === 1 ? "" : "s"} from ${fromDate}`,
+          { kind: "success" }
+        );
+        onClose();
+      } else {
+        toast(`No logged items found on ${fromDate}`, { kind: "info" });
+      }
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn't copy day", { kind: "error" });
+    } finally {
+      setBusy(false);
+      setConfirmed(false);
+    }
+  };
+
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Copy Day"
+      description={`Copy all meals and food entries from another day to ${toDate}`}
+      size="sm"
+      footer={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={cn("btn", copyMode === "replace" ? "btn-warning" : "btn-primary")}
+            onClick={handleCopy}
+            disabled={busy}
+          >
+            {busy ? "Copying…" : needsConfirm ? `Confirm & ${copyMode === "replace" ? "Replace" : "Append"} on ${toDate}` : "Copy entire day"}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <label className="label" htmlFor="copy-from-date">
+            Copy from date
+          </label>
+          <input
+            id="copy-from-date"
+            type="date"
+            className="input tabular"
+            value={fromDate}
+            onChange={(e) => {
+              if (e.target.value) {
+                setFromDate(e.target.value);
+                setConfirmed(false);
+              }
+            }}
+          />
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm text-xs"
+            onClick={() => {
+              setFromDate(addDays(toDate, -1));
+              setConfirmed(false);
+            }}
+          >
+            Yesterday
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm text-xs"
+            onClick={() => {
+              setFromDate(addDays(toDate, -7));
+              setConfirmed(false);
+            }}
+          >
+            Same day last week
+          </button>
+        </div>
+
+        {existingCount > 0 && (
+          <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-fg space-y-2">
+            <div>
+              <p className="font-semibold text-warning">Notice</p>
+              <p className="mt-0.5 text-fg-2">
+                This day already has <strong>{existingCount}</strong> item{existingCount === 1 ? "" : "s"} logged.
+              </p>
+            </div>
+            <div>
+              <span className="font-medium text-fg block mb-1">Choose copy action:</span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCopyMode("append");
+                    setConfirmed(false);
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold border transition text-left",
+                    copyMode === "append"
+                      ? "bg-[var(--accent)] text-[var(--on-accent)] border-transparent"
+                      : "bg-surface-2 text-fg-2 border-line hover:bg-surface-3"
+                  )}
+                >
+                  Append (Keep {existingCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCopyMode("replace");
+                    setConfirmed(false);
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold border transition text-left",
+                    copyMode === "replace"
+                      ? "bg-warning text-white border-transparent"
+                      : "bg-surface-2 text-fg-2 border-line hover:bg-surface-3"
+                  )}
+                >
+                  Replace existing
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Sheet>
   );

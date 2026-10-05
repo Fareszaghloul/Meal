@@ -1,4 +1,4 @@
-import { normalizeUnit, convertToGrams } from "../nutrition/units";
+import { normalizeUnit, COMMON_UNITS } from "../nutrition/units";
 
 export interface NeededIngredient {
   foodId?: string | null;
@@ -122,7 +122,6 @@ export function aggregateShoppingList(
   const accumulators = new Map<string, ItemAccumulator>();
 
   for (const item of neededIngredients) {
-    const key = (item.foodId || item.foodName || item.rawName).trim().toLowerCase();
     const displayName = item.foodName || item.rawName;
     const category = inferCategory(displayName, item.foodCategory || undefined);
     const normUnit = normalizeUnit(item.unit);
@@ -150,8 +149,11 @@ export function aggregateShoppingList(
       else baseAmount = item.quantity;
     }
 
-    if (!accumulators.has(key)) {
-      accumulators.set(key, {
+    const baseKey = (item.foodId || item.foodName || item.rawName).trim().toLowerCase();
+    const groupKey = `${baseKey}:::${unitType}`;
+
+    if (!accumulators.has(groupKey)) {
+      accumulators.set(groupKey, {
         name: displayName,
         foodId: item.foodId,
         category,
@@ -160,34 +162,40 @@ export function aggregateShoppingList(
         unitDisplay: normUnit,
       });
     } else {
-      const existing = accumulators.get(key)!;
+      const existing = accumulators.get(groupKey)!;
       existing.baseAmount += baseAmount;
     }
   }
 
-  // If subtractPantry is active, find matching pantry items and deduct
+  // If subtractPantry is active, find matching pantry items with compatible unit dimensions and deduct
   const results: AggregatedShoppingItem[] = [];
 
-  for (const [key, acc] of accumulators.entries()) {
+  for (const [groupKey, acc] of accumulators.entries()) {
+    const baseKey = groupKey.split(":::")[0];
     let neededAmount = acc.baseAmount;
     let pantryAmount = 0;
 
     if (subtractPantry) {
-      // Look for matching item in pantry by foodId or normalized name
-      const pantryMatch = pantryStock.find(
-        (p) =>
-          (acc.foodId && p.foodId && p.foodId === acc.foodId) ||
-          p.name.toLowerCase().includes(key) ||
-          key.includes(p.name.toLowerCase())
-      );
+      // Look for matching item in pantry by foodId or normalized name, matching unit dimension
+      const pantryMatch = pantryStock.find((p) => {
+        const pNormUnit = normalizeUnit(p.unit);
+        const pUnitInfo = COMMON_UNITS[pNormUnit];
+        const pType = pUnitInfo?.type || "mass";
+        if (pType !== acc.unitType) return false;
+
+        const matchesId = Boolean(acc.foodId && p.foodId && p.foodId === acc.foodId);
+        const pName = p.name.toLowerCase().trim();
+        const matchesName = pName.includes(baseKey) || baseKey.includes(pName);
+        return matchesId || matchesName;
+      });
 
       if (pantryMatch) {
         const pNormUnit = normalizeUnit(pantryMatch.unit);
+        const pUnitInfo = COMMON_UNITS[pNormUnit];
         let pBase = pantryMatch.quantity;
-        if (pNormUnit === "kg") pBase *= 1000;
-        else if (pNormUnit === "l") pBase *= 1000;
-        else if (pNormUnit === "tbsp") pBase *= 15;
-        else if (pNormUnit === "cup") pBase *= 240;
+        if (pUnitInfo) {
+          pBase = pantryMatch.quantity * pUnitInfo.baseGrams;
+        }
 
         pantryAmount = pBase;
         neededAmount = Math.max(0, neededAmount - pBase);

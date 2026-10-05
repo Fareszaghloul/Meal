@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +10,10 @@ import {
   Trash2,
   Star,
   Plus,
+  Package,
+  ShoppingCart,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import type { RecipeSummary } from "@/lib/domain";
 import { fmt } from "@/components/ui/primitives";
@@ -79,6 +83,84 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
   const [isFavorite, setIsFavorite] = useState(initialRecipe.isFavorite);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [nutritionView, setNutritionView] = useState<"perServing" | "total" | "per100g">("perServing");
+
+  const [pantryItems, setPantryItems] = useState<Array<{ id: string; name: string; foodId?: string | null; quantity: number; unit: string }>>([]);
+  const [isPantryLoaded, setIsPantryLoaded] = useState(false);
+  const [isAddingMissing, setIsAddingMissing] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/pantry")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        setPantryItems(data);
+        setIsPantryLoaded(true);
+      })
+      .catch(() => setIsPantryLoaded(true));
+  }, []);
+
+  const ingredientStatus = useMemo(() => {
+    if (!isPantryLoaded) return [];
+
+    return recipe.ingredients.map((ing) => {
+      const ingFoodId = ing.foodId;
+      const ingName = (ing.food?.name || ing.rawName).toLowerCase().trim();
+
+      const match = pantryItems.find((p) => {
+        if (ingFoodId && p.foodId && ingFoodId === p.foodId) return true;
+        const pName = p.name.toLowerCase().trim();
+        return pName.includes(ingName) || ingName.includes(pName);
+      });
+
+      let inStock = false;
+      let availableQty = 0;
+      let availableUnit = "";
+
+      if (match) {
+        availableQty = match.quantity;
+        availableUnit = match.unit;
+        inStock = match.quantity > 0;
+      }
+
+      return {
+        ingredient: ing,
+        inStock,
+        availableQty,
+        availableUnit,
+      };
+    });
+  }, [recipe.ingredients, pantryItems, isPantryLoaded]);
+
+  const availableCount = ingredientStatus.filter((s) => s.inStock).length;
+  const missingCount = ingredientStatus.length - availableCount;
+  const matchPercent =
+    ingredientStatus.length > 0 ? Math.round((availableCount / ingredientStatus.length) * 100) : 100;
+  const missingIngredients = ingredientStatus.filter((s) => !s.inStock);
+
+  const handleAddMissingToShoppingList = async () => {
+    if (missingIngredients.length === 0) return;
+    setIsAddingMissing(true);
+    try {
+      let added = 0;
+      for (const item of missingIngredients) {
+        const res = await fetch("/api/shopping-list", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: item.ingredient.food?.name || item.ingredient.rawName,
+            quantity: item.ingredient.quantity || 1,
+            unit: item.ingredient.unit || "piece",
+            category: "Other",
+          }),
+        });
+        if (res.ok) added++;
+      }
+      toast(`Added ${added} missing items to shopping list`, { kind: "success" });
+    } catch {
+      toast("Failed to add missing items", { kind: "error" });
+    } finally {
+      setIsAddingMissing(false);
+    }
+  };
 
   const servingLabel = recipe.servingLabel?.trim() || (recipe.servings === 1 ? "serving" : "servings");
   const hasYield = Boolean(recipe.yieldWeightGrams && recipe.yieldWeightGrams > 0);
@@ -388,6 +470,62 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
         </div>
       </div>
 
+      {/* ─── Pantry Availability Section ─── */}
+      {isPantryLoaded && (
+        <div className="rounded-2xl border border-line/50 bg-surface-1 p-5 sm:p-6 space-y-3 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div
+                className={cn(
+                  "p-2 rounded-xl",
+                  matchPercent === 100
+                    ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                    : "bg-surface-2 text-fg-2"
+                )}
+              >
+                <Package className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-fg-2">
+                    Pantry Availability
+                  </h2>
+                  <span
+                    className={cn(
+                      "text-xs px-2.5 py-0.5 rounded-full font-semibold tabular",
+                      matchPercent === 100
+                        ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                        : matchPercent >= 50
+                        ? "bg-amber-500/10 text-amber-500"
+                        : "bg-rose-500/10 text-rose-500"
+                    )}
+                  >
+                    {matchPercent}% in stock ({availableCount}/{ingredientStatus.length})
+                  </span>
+                </div>
+                <p className="text-xs text-fg-3 mt-0.5">
+                  {missingCount === 0
+                    ? "All ingredients are available in your pantry ready to cook!"
+                    : `${missingCount} ingredient${missingCount > 1 ? "s are" : " is"} missing from your pantry`}
+                </p>
+              </div>
+            </div>
+
+            {missingCount > 0 && (
+              <button
+                type="button"
+                onClick={handleAddMissingToShoppingList}
+                disabled={isAddingMissing}
+                className="btn btn-primary h-9 px-3.5 text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 shrink-0 self-start sm:self-auto disabled:opacity-50"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span>{isAddingMissing ? "Adding..." : `Add ${missingCount} missing to Shopping List`}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ─── Compact Ingredients List ─── */}
       <div className="rounded-2xl border border-line/50 bg-surface-1 p-5 sm:p-6 space-y-3 shadow-xs">
         <div className="flex items-center justify-between pb-2 border-b border-line/40">
@@ -407,6 +545,7 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
             const ingProtein = ing.protein ?? 0;
             const ingCarbs = ing.carbs ?? 0;
             const ingFat = ing.fat ?? 0;
+            const status = ingredientStatus.find((s) => s.ingredient.id === ing.id);
 
             return (
               <div
@@ -422,14 +561,30 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
                       <span className="text-fg-3 text-xs shrink-0">· {ing.food.brand}</span>
                     )}
                   </div>
-                  <div className="mt-0.5 text-xs text-fg-3 tabular">
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-fg-3 tabular flex-wrap">
                     <span className="font-medium text-fg-2">
                       {fmt.qty(ing.quantity)} {ing.unit}
                     </span>
                     {ing.grams && ing.unit !== "g" ? (
                       <span className="text-fg-4"> ({fmt.qty(ing.grams)}g)</span>
                     ) : null}
-                    {ing.notes && <span className="ml-1 text-fg-4">· {ing.notes}</span>}
+                    {ing.notes && <span className="text-fg-4">· {ing.notes}</span>}
+                    {isPantryLoaded && status && (
+                      <span className="text-fg-4 select-none">·</span>
+                    )}
+                    {isPantryLoaded && status && (
+                      status.inStock ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-[var(--accent)] font-medium">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>In pantry ({fmt.qty(status.availableQty)} {status.availableUnit})</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-[var(--text-muted)] font-normal">
+                          <AlertCircle className="w-3 h-3 text-amber-500/80" />
+                          <span>Missing</span>
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
 

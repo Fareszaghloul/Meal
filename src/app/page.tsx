@@ -2,13 +2,15 @@
 
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Copy, Layers, Sparkles } from "lucide-react";
 import { DateNav } from "@/components/day/DateNav";
 import { DaySummary } from "@/components/day/DaySummary";
 import { MealSection } from "@/components/day/MealSection";
 import { AddFoodSheet } from "@/components/day/AddFoodSheet";
 import { EditEntrySheet } from "@/components/day/EditEntrySheet";
-import { CopyToSheet, SaveTemplateSheet } from "@/components/day/MealDialogs";
+import { CopyToSheet, SaveTemplateSheet, CopyDaySheet } from "@/components/day/MealDialogs";
+import { ApplyDayTemplateSheet, SaveDayTemplateSheet } from "@/components/day/DayTemplateDialogs";
+import { WhatShouldIEatModal } from "@/components/day/WhatShouldIEatModal";
 import { copyEntries, prefetchDay, useDay } from "@/lib/client/day-store";
 import { MEAL_CATEGORIES, MEAL_LABELS, type MealCategory, type MealItem } from "@/lib/domain";
 import { addDays, isDateString, todayLocal } from "@/lib/dates";
@@ -34,6 +36,10 @@ function DashboardInner() {
   const [editing, setEditing] = useState<MealItem | null>(null);
   const [saving, setSaving] = useState<{ category: MealCategory; entries: MealItem[] } | null>(null);
   const [copying, setCopying] = useState<{ category: MealCategory; entries: MealItem[] } | null>(null);
+  const [copyingDayOpen, setCopyingDayOpen] = useState(false);
+  const [applyingTemplateOpen, setApplyingTemplateOpen] = useState(false);
+  const [savingDayTemplateOpen, setSavingDayTemplateOpen] = useState(false);
+  const [whatShouldIEatOpen, setWhatShouldIEatOpen] = useState(false);
 
   const setDate = useCallback(
     (d: string) => {
@@ -95,15 +101,55 @@ function DashboardInner() {
       {/* Top Header */}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <DateNav date={date} onChange={setDate} />
-        <button
-          type="button"
-          onClick={() => setAdding(suggestMeal())}
-          className="btn btn-primary h-9 px-3.5 text-xs font-semibold shadow-xs"
-          aria-label="Add food"
-        >
-          <Plus className="h-4 w-4" /> Add food
-          <span className="kbd ml-1.5 hidden md:inline text-[10px]">N</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setApplyingTemplateOpen(true)}
+            className="btn btn-secondary h-9 px-3 text-xs font-medium shadow-xs"
+            aria-label="Apply day template"
+            title="Populate day from a saved day template"
+          >
+            <Layers className="h-3.5 w-3.5 mr-1" /> Template
+          </button>
+          {Boolean(day?.entries.length) && (
+            <button
+              type="button"
+              onClick={() => setSavingDayTemplateOpen(true)}
+              className="btn btn-secondary h-9 px-3 text-xs font-medium shadow-xs hidden sm:inline-flex"
+              aria-label="Save day as template"
+              title="Save this day as a template"
+            >
+              Save day
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setCopyingDayOpen(true)}
+            className="btn btn-secondary h-9 px-3 text-xs font-medium shadow-xs"
+            aria-label="Copy entire day"
+            title="Copy all entries from another day"
+          >
+            <Copy className="h-3.5 w-3.5 mr-1" /> Copy day
+          </button>
+          <button
+            type="button"
+            onClick={() => setWhatShouldIEatOpen(true)}
+            className="btn btn-secondary h-9 px-3 text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 bg-[var(--accent-subtle)] text-[var(--accent)] hover:opacity-90 border-[var(--accent)]/30"
+            aria-label="What Should I Eat?"
+            title="Recommendations matching remaining macros"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> What to eat?
+          </button>
+          <button
+            type="button"
+            onClick={() => setAdding(suggestMeal())}
+            className="btn btn-primary h-9 px-3.5 text-xs font-semibold shadow-xs"
+            aria-label="Add food"
+          >
+            <Plus className="h-4 w-4" /> Add food
+            <span className="kbd ml-1.5 hidden md:inline text-[10px]">N</span>
+          </button>
+        </div>
       </header>
 
       {/* Error state */}
@@ -167,6 +213,29 @@ function DashboardInner() {
         category={copying?.category ?? "lunch"}
         fromDate={date}
         onClose={() => setCopying(null)}
+      />
+      <CopyDaySheet
+        open={copyingDayOpen}
+        toDate={date}
+        existingCount={day?.entries.length ?? 0}
+        onClose={() => setCopyingDayOpen(false)}
+      />
+      <ApplyDayTemplateSheet
+        open={applyingTemplateOpen}
+        date={date}
+        existingCount={day?.entries.length ?? 0}
+        onClose={() => setApplyingTemplateOpen(false)}
+      />
+      <SaveDayTemplateSheet
+        open={savingDayTemplateOpen}
+        day={day}
+        onClose={() => setSavingDayTemplateOpen(false)}
+      />
+      <WhatShouldIEatModal
+        isOpen={whatShouldIEatOpen}
+        onClose={() => setWhatShouldIEatOpen(false)}
+        date={date}
+        onLogged={refresh}
       />
     </div>
   );

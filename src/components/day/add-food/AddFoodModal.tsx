@@ -10,11 +10,12 @@ import { addDays, todayLocal } from "@/lib/dates";
 import { addEntry, copyEntries, logTemplate } from "@/lib/client/day-store";
 import { loadCatalog, peekCatalog, invalidateCatalog, rankMatches, type Catalog } from "@/lib/client/catalog";
 import { api } from "@/lib/client/api";
+import { fmt } from "@/components/ui/primitives";
 import { parseNaturalSearch, type ParsedNaturalSearch } from "@/lib/nutrition/natural-parser";
 import { getRestaurantFoods } from "@/lib/nutrition/restaurant-data";
 import type { NormalizedFood } from "@/lib/nutrition/providers/types";
 import { defaultServing, portionToEntry } from "@/lib/nutrition/servings";
-import { nutrientsForGrams, roundNutrients } from "@/lib/nutrition/core";
+import { nutrientsForGrams, roundNutrients, sumNutrients } from "@/lib/nutrition/core";
 
 import type { FoodFilterType, EntryDraft } from "./types";
 import { MealDateHeader } from "./MealDateHeader";
@@ -23,7 +24,7 @@ import { FoodFilterChips } from "./FoodFilterChips";
 import { FoodResultRow, type RowItem } from "./FoodResultRow";
 import { FoodPortionEditor } from "./FoodPortionEditor";
 import { ManualNutritionForm } from "./ManualNutritionForm";
-import { DefaultFoodView } from "./DefaultFoodView";
+import { DefaultFoodView, mapMealItemToFood } from "./DefaultFoodView";
 
 interface AddFoodModalProps {
   open: boolean;
@@ -233,9 +234,53 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal }: 
     }
 
     if (activeFilter === "recent") {
-      const recentFoods = foods.filter((f) => f.lastUsedAt).sort((a, b) => (b.lastUsedAt! > a.lastUsedAt! ? 1 : -1));
-      const filtered = effectiveSearchQuery ? rankMatches(recentFoods, effectiveSearchQuery, (f) => `${f.name} ${f.brand ?? ""}`) : recentFoods;
-      return filtered.map((food) => ({ kind: "food", food }));
+      const recentLogged = (recentData?.recent ?? []).map((item) =>
+        mapMealItemToFood(item, foods, recipes)
+      );
+      const recentFoods = foods
+        .filter((f) => f.lastUsedAt)
+        .sort((a, b) => (b.lastUsedAt! > a.lastUsedAt! ? 1 : -1))
+        .map((food): RowItem => ({ kind: "food", food }));
+
+      const seen = new Set<string>();
+      const combined: RowItem[] = [];
+      for (const it of [...recentLogged, ...recentFoods]) {
+        const name = (it.kind === "food" ? it.food.name : it.kind === "recipe" ? it.recipe.name : it.food.name).toLowerCase().trim();
+        if (!seen.has(name)) {
+          seen.add(name);
+          combined.push(it);
+        }
+      }
+
+      const filtered = effectiveSearchQuery
+        ? rankMatches(combined, effectiveSearchQuery, (it) => (it.kind === "food" ? it.food.name : it.kind === "recipe" ? it.recipe.name : it.food.name))
+        : combined;
+      return filtered;
+    }
+
+    if (activeFilter === "frequent") {
+      const freqLogged = ((recentData as any)?.frequent ?? Object.values(recentData?.frequentByMeal ?? {}).flat()).map((item: MealItem) =>
+        mapMealItemToFood(item, foods, recipes)
+      );
+      const freqFoods = foods
+        .filter((f) => f.useCount > 0)
+        .sort((a, b) => b.useCount - a.useCount)
+        .map((food): RowItem => ({ kind: "food", food }));
+
+      const seen = new Set<string>();
+      const combined: RowItem[] = [];
+      for (const it of [...freqLogged, ...freqFoods]) {
+        const name = (it.kind === "food" ? it.food.name : it.kind === "recipe" ? it.recipe.name : it.food.name).toLowerCase().trim();
+        if (!seen.has(name)) {
+          seen.add(name);
+          combined.push(it);
+        }
+      }
+
+      const filtered = effectiveSearchQuery
+        ? rankMatches(combined, effectiveSearchQuery, (it) => (it.kind === "food" ? it.food.name : it.kind === "recipe" ? it.recipe.name : it.food.name))
+        : combined;
+      return filtered;
     }
 
     // "All" filter
@@ -430,18 +475,25 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal }: 
 
   const showDefaultView = !effectiveSearchQuery && activeFilter === "all";
 
+  const savedMealsList = useMemo(() => {
+    const templates = catalog?.templates ?? [];
+    if (!effectiveSearchQuery) return templates;
+    return rankMatches(templates, effectiveSearchQuery, (t) => t.name);
+  }, [catalog?.templates, effectiveSearchQuery]);
+
   // Compute counts for filter chips
   const counts = useMemo(() => {
     const foods = catalog?.foods ?? [];
     const recipes = catalog?.recipes ?? [];
     return {
       favorites: foods.filter((f) => f.isFavorite).length + recipes.filter((r) => r.isFavorite).length,
-      recent: foods.filter((f) => f.lastUsedAt).length,
+      recent: (recentData?.recent?.length ?? 0) || foods.filter((f) => f.lastUsedAt).length,
+      saved: catalog?.templates?.length ?? 0,
       mine: foods.filter((f) => f.userId).length,
       recipes: recipes.length,
       restaurants: restaurantFoods.length,
     };
-  }, [catalog, restaurantFoods]);
+  }, [catalog, restaurantFoods, recentData]);
 
   // Determine header layout
   const header = (
@@ -530,6 +582,53 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal }: 
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="skeleton h-12 rounded-lg" />
               ))}
+            </div>
+          ) : activeFilter === "saved" ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-0.5 text-[11px] font-semibold uppercase tracking-wider text-fg-3">
+                <span>Saved Meals ({savedMealsList.length})</span>
+                <span className="text-fg-3 font-normal normal-case">1-tap to log</span>
+              </div>
+              {savedMealsList.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-sm font-medium text-fg-2">No saved meals found</p>
+                  <p className="text-xs text-fg-3 mt-1 max-w-xs mx-auto">
+                    You can save any meal combination from your daily dashboard using the meal menu &rarr; &ldquo;Save as meal&rdquo;.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {savedMealsList.map((t) => {
+                    const total = roundNutrients(sumNutrients(t.items));
+                    return (
+                      <div
+                        key={t.id}
+                        className="flex items-center justify-between gap-3 px-3.5 py-3 transition-colors rounded-lg hover:bg-surface-2/60 border border-line bg-surface"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-fg">
+                            {t.name}
+                          </div>
+                          <div className="text-xs text-fg-3 mt-0.5 line-clamp-1">
+                            {t.items.map((i) => `${fmt.qty(i.servings)} ${i.servingUnit} ${i.name}`).join(", ")}
+                          </div>
+                          <div className="text-xs text-fg-2 mt-1 tabular">
+                            <span className="font-semibold text-fg">{fmt.int(total.calories)} kcal</span>
+                            <span className="text-fg-3"> · {fmt.g(total.protein)}P · {fmt.g(total.carbs)}C · {fmt.g(total.fat)}F</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleApplyTemplate(t)}
+                          className="btn btn-primary btn-sm shrink-0 text-xs font-semibold"
+                        >
+                          Log meal
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ) : showDefaultView ? (
             <DefaultFoodView

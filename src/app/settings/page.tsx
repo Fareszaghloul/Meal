@@ -198,6 +198,45 @@ function GeneralSection({ settings, save, saving }: SectionProps) {
           className="w-full sm:w-auto"
         />
       </Row>
+      <Row label="Pantry Deductions" hint="How recipe ingredients are deducted from your pantry when you log a planned meal.">
+        <Segmented
+          ariaLabel="Pantry Deductions"
+          value={settings.pantryUsageBehavior ?? "ask"}
+          onChange={(v) => v !== settings.pantryUsageBehavior && apply("pantryUsageBehavior", { pantryUsageBehavior: v }, `Pantry deduction behavior set to ${v}`)}
+          options={[
+            { value: "ask", label: "Ask each time" },
+            { value: "auto", label: "Auto deduct" },
+            { value: "manual", label: "Manual only" },
+          ]}
+          className={cn("w-full sm:w-auto", saving !== null && "pointer-events-none opacity-60")}
+        />
+      </Row>
+      <Row label="Default Meal Slot" hint="Default category pre-selected when creating meals or templates.">
+        <Segmented
+          ariaLabel="Default Meal Slot"
+          value={settings.defaultMealCategory ?? "lunch"}
+          onChange={(v) => v !== settings.defaultMealCategory && apply("defaultMealCategory", { defaultMealCategory: v }, `Default meal category set to ${v}`)}
+          options={[
+            { value: "breakfast", label: "Breakfast" },
+            { value: "lunch", label: "Lunch" },
+            { value: "dinner", label: "Dinner" },
+            { value: "snack", label: "Snack" },
+          ]}
+          className={cn("w-full sm:w-auto", saving !== null && "pointer-events-none opacity-60")}
+        />
+      </Row>
+      <Row label="Default Copy Mode" hint="Default behavior when copying days or meals to a day with existing items.">
+        <Segmented
+          ariaLabel="Default Copy Mode"
+          value={settings.defaultCopyMode ?? "append"}
+          onChange={(v) => v !== settings.defaultCopyMode && apply("defaultCopyMode", { defaultCopyMode: v }, `Default copy mode set to ${v}`)}
+          options={[
+            { value: "append", label: "Append" },
+            { value: "replace", label: "Replace" },
+          ]}
+          className={cn("w-full sm:w-auto", saving !== null && "pointer-events-none opacity-60")}
+        />
+      </Row>
     </Section>
   );
 }

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
+  CalendarCheck,
   CalendarDays,
   ChevronDown,
   CloudOff,
@@ -41,7 +42,9 @@ const PRIMARY = [
 ];
 
 const MORE = [
+  { label: "Saved meals", href: "/saved-meals", icon: Utensils },
   { label: "Meal plan", href: "/meal-plan", icon: LayoutList },
+  { label: "Weekly review", href: "/weekly-review", icon: CalendarCheck },
   { label: "Meal prep", href: "/meal-prep", icon: Flame },
   { label: "Shopping list", href: "/shopping-list", icon: ShoppingCart },
   { label: "Pantry", href: "/pantry", icon: Warehouse },

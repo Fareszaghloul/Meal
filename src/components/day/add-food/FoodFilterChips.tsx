@@ -13,7 +13,9 @@ interface FoodFilterChipsProps {
 const FILTERS: { id: FoodFilterType; label: string }[] = [
   { id: "all", label: "All" },
   { id: "recent", label: "Recent" },
+  { id: "frequent", label: "Frequent" },
   { id: "favorites", label: "Favorites" },
+  { id: "saved", label: "Saved Meals" },
   { id: "mine", label: "My Foods" },
   { id: "recipes", label: "Recipes" },
   { id: "restaurants", label: "Restaurants" },

@@ -201,7 +201,7 @@ export default function ProfilePage() {
 
     try {
       const res = await fetch("/api/auth/account", {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ displayName: displayName.trim() }),
       });
@@ -211,6 +211,9 @@ export default function ProfilePage() {
         setInfoMsg({ type: "error", text: data.error || "Failed to update profile" });
       } else {
         setInfoMsg({ type: "success", text: "Profile name updated!" });
+        if (data.user?.displayName) {
+          setDisplayName(data.user.displayName);
+        }
         await refreshUser();
       }
     } catch {

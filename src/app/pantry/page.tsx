@@ -107,6 +107,9 @@ export default function FoodsAndPantryPage() {
   const [pantryQuantity, setPantryQuantity] = useState("500");
   const [pantryUnit, setPantryUnit] = useState("g");
   const [pantryCategory, setPantryCategory] = useState("Pantry");
+  const [pantryStorageLocation, setPantryStorageLocation] = useState("Pantry");
+  const [pantryExpiryDate, setPantryExpiryDate] = useState("");
+  const [pantryLowStockThreshold, setPantryLowStockThreshold] = useState("");
   const [selectedFoodId, setSelectedFoodId] = useState("");
 
   const fetchFoods = async () => {
@@ -242,6 +245,9 @@ export default function FoodsAndPantryPage() {
           quantity: Number(pantryQuantity) || 1,
           unit: pantryUnit,
           category: pantryCategory,
+          storageLocation: pantryStorageLocation || "Pantry",
+          expiryDate: pantryExpiryDate || null,
+          lowStockThreshold: pantryLowStockThreshold ? Number(pantryLowStockThreshold) : null,
           foodId: selectedFoodId || null,
         }),
       });
@@ -250,6 +256,9 @@ export default function FoodsAndPantryPage() {
         setIsAddPantryModalOpen(false);
         setPantryName("");
         setPantryQuantity("500");
+        setPantryStorageLocation("Pantry");
+        setPantryExpiryDate("");
+        setPantryLowStockThreshold("");
         fetchPantry();
         fetchWhatCanIMake();
       }
@@ -886,13 +895,20 @@ export default function FoodsAndPantryPage() {
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[var(--background)] text-[var(--text-secondary)]">
-                          {item.category || "Pantry"}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-[var(--background)] text-[var(--text-secondary)]">
+                            {item.category || "Pantry"}
+                          </span>
+                          {item.storageLocation && item.storageLocation !== "Pantry" && (
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)]">
+                              {item.storageLocation}
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={() => handleDeletePantryItem(item.id)}
                           title="Delete item"
-                          className="p-1 text-[var(--text-secondary)] hover:text-red-400 rounded-md transition"
+                          className="p-1 text-[var(--text-secondary)] hover:text-red-400 rounded-md transition cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -906,12 +922,53 @@ export default function FoodsAndPantryPage() {
                           Linked to: {item.food.name} ({item.food.caloriesPer100g} kcal/100g)
                         </p>
                       )}
+
+                      {/* Expiry & Low Stock Badges */}
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                        {item.expiryDate && (() => {
+                          const today = new Date().toISOString().slice(0, 10);
+                          const isExpired = item.expiryDate < today;
+                          const expDate = new Date(item.expiryDate).getTime();
+                          const diffDays = Math.round((expDate - Date.now()) / (1000 * 60 * 60 * 24));
+                          const isSoon = !isExpired && diffDays <= 3;
+
+                          return (
+                            <span
+                              className={cn(
+                                "text-[10px] font-semibold px-2 py-0.5 rounded-full font-tabular",
+                                isExpired
+                                  ? "bg-red-500/15 text-red-500"
+                                  : isSoon
+                                  ? "bg-amber-500/15 text-amber-600"
+                                  : "bg-[var(--background)] text-[var(--text-muted)]"
+                              )}
+                            >
+                              {isExpired ? `Expired (${item.expiryDate})` : isSoon ? `Exp in ${diffDays}d` : `Exp: ${item.expiryDate}`}
+                            </span>
+                          );
+                        })()}
+
+                        {(item.isLowStock || (typeof item.lowStockThreshold === "number" && item.quantity <= item.lowStockThreshold)) && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-tabular">
+                            Low stock (≤ {item.lowStockThreshold ?? item.quantity} {item.unit})
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Quantity Adjustment Controls */}
                     <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between">
                       <div className="text-xs text-[var(--text-secondary)]">Stock:</div>
-                      <div className="flex items-center gap-2 bg-[var(--background)] rounded-full px-2 py-1">
+                      <div className="flex items-center gap-1.5 bg-[var(--background)] rounded-full px-2 py-1">
+                        {(item.unit === "g" || item.unit === "ml") && (
+                          <button
+                            onClick={() => handleUpdatePantryQuantity(item, -50)}
+                            className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[var(--surface)] hover:bg-[var(--border)] text-[var(--text-secondary)] transition"
+                            title="Decrease by 50"
+                          >
+                            -50
+                          </button>
+                        )}
                         <button
                           onClick={() => handleUpdatePantryQuantity(item, -1)}
                           className="w-6 h-6 rounded-full bg-[var(--surface)] hover:bg-[var(--border)] flex items-center justify-center text-[var(--text-primary)] transition"
@@ -919,7 +976,7 @@ export default function FoodsAndPantryPage() {
                         >
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="font-mono font-bold text-xs text-[var(--text-primary)] px-2">
+                        <span className="font-mono font-bold text-xs text-[var(--text-primary)] px-1">
                           {item.quantity} {item.unit}
                         </span>
                         <button
@@ -929,6 +986,15 @@ export default function FoodsAndPantryPage() {
                         >
                           <Plus className="w-3 h-3" />
                         </button>
+                        {(item.unit === "g" || item.unit === "ml") && (
+                          <button
+                            onClick={() => handleUpdatePantryQuantity(item, 50)}
+                            className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] transition"
+                            title="Increase by 50"
+                          >
+                            +50
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1716,23 +1782,68 @@ export default function FoodsAndPantryPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
-                  Category
-                </label>
-                <select
-                  value={pantryCategory}
-                  onChange={(e) => setPantryCategory(e.target.value)}
-                  className="w-full px-4 py-2.5 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)] cursor-pointer"
-                >
-                  <option value="Pantry">Pantry</option>
-                  <option value="Produce">Produce</option>
-                  <option value="Meat">Meat</option>
-                  <option value="Dairy">Dairy</option>
-                  <option value="Spices">Spices</option>
-                  <option value="Snacks">Snacks</option>
-                  <option value="Fast Food">Fast Food</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
+                    Category
+                  </label>
+                  <select
+                    value={pantryCategory}
+                    onChange={(e) => setPantryCategory(e.target.value)}
+                    className="w-full px-4 py-2.5 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)] cursor-pointer"
+                  >
+                    <option value="Pantry">Pantry</option>
+                    <option value="Produce">Produce</option>
+                    <option value="Meat">Meat</option>
+                    <option value="Dairy">Dairy</option>
+                    <option value="Spices">Spices</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Fast Food">Fast Food</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
+                    Storage Location
+                  </label>
+                  <select
+                    value={pantryStorageLocation}
+                    onChange={(e) => setPantryStorageLocation(e.target.value)}
+                    className="w-full px-4 py-2.5 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)] cursor-pointer"
+                  >
+                    <option value="Pantry">Pantry</option>
+                    <option value="Fridge">Fridge</option>
+                    <option value="Freezer">Freezer</option>
+                    <option value="Spice Rack">Spice Rack</option>
+                    <option value="Countertop">Countertop</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
+                    Expiry Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={pantryExpiryDate}
+                    onChange={(e) => setPantryExpiryDate(e.target.value)}
+                    className="w-full px-4 py-2.5 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
+                    Low Stock Alert ({pantryUnit})
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="e.g. 100"
+                    value={pantryLowStockThreshold}
+                    onChange={(e) => setPantryLowStockThreshold(e.target.value)}
+                    className="w-full px-4 py-2.5 min-h-[44px] text-xs rounded-2xl bg-[var(--background)] text-[var(--text-primary)] focus:outline-none focus:ring-1.5 focus:ring-[var(--text-primary)]"
+                  />
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end space-x-2">

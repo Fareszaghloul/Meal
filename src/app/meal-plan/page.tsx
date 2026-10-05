@@ -12,8 +12,20 @@ import {
   Trash2,
   X,
   ArrowRight,
+  Pencil,
+  Utensils,
+  RotateCcw,
+  Loader2,
+  Sparkles,
+  ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/Toast";
+import { invalidateAll } from "@/lib/client/day-store";
+import { AddMealModal } from "@/components/meal-plan/AddMealModal";
+import { EditMealModal } from "@/components/meal-plan/EditMealModal";
+import { GenerateWeekModal } from "@/components/meal-plan/GenerateWeekModal";
+import { ReplaceMealModal } from "@/components/meal-plan/ReplaceMealModal";
 
 const DAYS_OF_WEEK = [
   { key: "monday", label: "Monday", short: "Mon" },
@@ -58,12 +70,10 @@ export default function MealPlannerPage() {
     day: string;
     category: string;
   } | null>(null);
-
-  // Add meal modal state
-  const [selectedRecipeId, setSelectedRecipeId] = useState("");
-  const [mealServings, setMealServings] = useState(1);
-  const [customName, setCustomName] = useState("");
-  const [isSubmittingMeal, setIsSubmittingMeal] = useState(false);
+  const [editingMeal, setEditingMeal] = useState<any | null>(null);
+  const [loggingMealId, setLoggingMealId] = useState<string | null>(null);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [replacingMeal, setReplacingMeal] = useState<any | null>(null);
 
   const weekStartStr = formatDate(currentMonday);
 
@@ -120,61 +130,63 @@ export default function MealPlannerPage() {
     setCurrentMonday(getMondayDate());
   };
 
-  const handleAddMeal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeModalSlot) return;
-    setIsSubmittingMeal(true);
-
-    try {
-      const res = await fetch("/api/meal-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          weekStart: weekStartStr,
-          dayOfWeek: activeModalSlot.day,
-          mealCategory: activeModalSlot.category,
-          recipeId: selectedRecipeId || null,
-          customName: selectedRecipeId ? null : customName,
-          servings: mealServings,
-        }),
-      });
-
-      if (res.ok) {
-        setActiveModalSlot(null);
-        setSelectedRecipeId("");
-        setCustomName("");
-        setMealServings(1);
-        fetchMealPlan();
-      }
-    } finally {
-      setIsSubmittingMeal(false);
-    }
-  };
-
   const handleDeleteMeal = async (mealId: string) => {
     try {
       const res = await fetch(`/api/meal-plan?mealId=${mealId}`, {
         method: "DELETE",
       });
-      if (res.ok) fetchMealPlan();
+      if (res.ok) {
+        toast("Meal removed from plan", { kind: "info" });
+        fetchMealPlan();
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleToggleComplete = async (meal: any) => {
+  const handleLogMeal = async (meal: any) => {
+    setLoggingMealId(meal.id);
     try {
-      await fetch("/api/meal-plan", {
-        method: "PUT",
+      const res = await fetch("/api/meal-plan/log", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mealId: meal.id,
-          isCompleted: !meal.isCompleted,
-        }),
+        body: JSON.stringify({ mealId: meal.id }),
       });
-      fetchMealPlan();
-    } catch (err) {
-      console.error(err);
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error || "Failed to log meal", { kind: "error" });
+      } else {
+        toast(`Logged "${meal.recipe?.name || meal.customName || "Meal"}" to Food Log ✓`, { kind: "success" });
+        invalidateAll();
+        fetchMealPlan();
+      }
+    } catch {
+      toast("Error logging meal to food log", { kind: "error" });
+    } finally {
+      setLoggingMealId(null);
+    }
+  };
+
+  const handleUnlogMeal = async (meal: any) => {
+    setLoggingMealId(meal.id);
+    try {
+      const res = await fetch("/api/meal-plan/unlog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mealId: meal.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error || "Failed to unlog meal", { kind: "error" });
+      } else {
+        toast(`Unlogged "${meal.recipe?.name || meal.customName || "Meal"}" from Food Log`, { kind: "info" });
+        invalidateAll();
+        fetchMealPlan();
+      }
+    } catch {
+      toast("Error unlogging meal", { kind: "error" });
+    } finally {
+      setLoggingMealId(null);
     }
   };
 
@@ -264,9 +276,17 @@ export default function MealPlannerPage() {
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsGenerateModalOpen(true)}
+            className="inline-flex items-center space-x-2 px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition shadow-none cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Generate Week</span>
+          </button>
           <Link
             href="/meal-prep"
-            className="inline-flex items-center space-x-2 px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition shadow-none cursor-pointer"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--surface)]/80 transition"
           >
             <Flame className="w-4 h-4" />
             <span>Weekly prep mode</span>
@@ -406,51 +426,113 @@ export default function MealPlannerPage() {
                             <span>Add</span>
                           </button>
                         ) : (
-                          catMeals.map((meal: any) => (
-                            <div
-                              key={meal.id}
-                              className={cn(
-                                "p-2.5 rounded-xl text-xs transition group",
-                                isToday ? "bg-[var(--surface)]" : "bg-[var(--background)]",
-                                meal.isCompleted && "opacity-60"
-                              )}
-                            >
-                              <div className="flex items-start justify-between gap-1">
-                                <div className="min-w-0 flex-1">
-                                  <div
-                                    className={cn(
-                                      "font-semibold text-xs text-[var(--text-primary)] truncate",
-                                      meal.isCompleted && "line-through"
-                                    )}
-                                  >
-                                    {meal.recipe?.name || meal.customName || "Meal"}
-                                  </div>
-                                  <div className="text-[10px] text-[var(--text-muted)] font-tabular mt-0.5">
-                                    {Math.round(meal.calories)} kcal · {Math.round(meal.protein)}g P
-                                  </div>
-                                </div>
+                          catMeals.map((meal: any) => {
+                            const isLogged = meal.status === "logged" || Boolean(meal.foodLogEntryId);
+                            const isCompleted = meal.status === "completed" || meal.isCompleted;
+                            const isBusy = loggingMealId === meal.id;
 
-                                <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleComplete(meal)}
-                                    className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--lime)]"
-                                    title={meal.isCompleted ? "Mark uncompleted" : "Mark eaten"}
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteMeal(meal.id)}
-                                    className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--ui-error)]"
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                            return (
+                              <div
+                                key={meal.id}
+                                className={cn(
+                                  "p-2.5 rounded-xl text-xs transition group",
+                                  isToday ? "bg-[var(--surface)]" : "bg-[var(--background)]",
+                                  isLogged
+                                    ? "ring-1 ring-[var(--lime)]/50 bg-[var(--accent-subtle)]/30"
+                                    : (isCompleted && "opacity-60")
+                                )}
+                              >
+                                <div className="flex items-start justify-between gap-1">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span
+                                        className={cn(
+                                          "font-semibold text-xs text-[var(--text-primary)] truncate",
+                                          (isLogged || isCompleted) && "line-through text-[var(--text-secondary)]"
+                                        )}
+                                      >
+                                        {meal.recipe?.name || meal.customName || "Meal"}
+                                      </span>
+                                      {isLogged && (
+                                        <span className="inline-flex items-center px-1.5 py-0.2 rounded-full bg-[var(--lime)] text-[var(--on-lime)] text-[9px] font-bold">
+                                          Logged ✓
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-[var(--text-muted)] font-tabular mt-0.5">
+                                      {Math.round(meal.calories)} kcal · {Math.round(meal.protein)}g P · {Math.round(meal.carbs)}g C · {Math.round(meal.fat)}g F
+                                      {meal.servings > 1 && ` · ${meal.servings} serv.`}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition">
+                                    {isLogged ? (
+                                      <button
+                                        type="button"
+                                        disabled={isBusy}
+                                        onClick={() => handleUnlogMeal(meal)}
+                                        className="p-1 rounded-md text-[var(--lime)] hover:text-[var(--text-primary)] cursor-pointer"
+                                        title="Unlog / Undo from Food Log"
+                                      >
+                                        {isBusy ? (
+                                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        ) : (
+                                          <RotateCcw className="w-3.5 h-3.5" />
+                                        )}
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        disabled={isBusy}
+                                        onClick={() => handleLogMeal(meal)}
+                                        className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--lime)] cursor-pointer"
+                                        title="Log meal to Food Log (Mark as eaten)"
+                                      >
+                                        {isBusy ? (
+                                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        ) : (
+                                          <Utensils className="w-3.5 h-3.5" />
+                                        )}
+                                      </button>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingMeal(meal)}
+                                      className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                                      title="Edit meal"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      disabled={isLogged}
+                                      onClick={() => setReplacingMeal(meal)}
+                                      className={cn(
+                                        "p-1 rounded-md transition cursor-pointer",
+                                        isLogged
+                                          ? "text-[var(--text-muted)] opacity-35 cursor-not-allowed"
+                                          : "text-[var(--text-muted)] hover:text-[var(--accent)]"
+                                      )}
+                                      title={isLogged ? "Unlog meal first to replace" : "Replace meal with smart alternative"}
+                                    >
+                                      <ArrowLeftRight className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteMeal(meal.id)}
+                                      className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--ui-error)] cursor-pointer"
+                                      title="Delete meal"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     );
@@ -494,116 +576,41 @@ export default function MealPlannerPage() {
         </div>
       </div>
 
-      {/* ─── Add Meal Modal ─── */}
-      {activeModalSlot && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
-          onClick={() => setActiveModalSlot(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
-              <div>
-                <h3 className="font-semibold text-base text-[var(--text-primary)] capitalize">
-                  Add {activeModalSlot.category}
-                </h3>
-                <p className="text-xs text-[var(--text-muted)] capitalize">
-                  {activeModalSlot.day}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModalSlot(null)}
-                className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      {/* Add Planned Meal Modal */}
+      <AddMealModal
+        open={activeModalSlot !== null}
+        slot={activeModalSlot}
+        weekStartStr={weekStartStr}
+        allRecipes={allRecipes}
+        onClose={() => setActiveModalSlot(null)}
+        onSuccess={fetchMealPlan}
+      />
 
-            <form onSubmit={handleAddMeal} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
-                  Select a recipe
-                </label>
-                <select
-                  value={selectedRecipeId}
-                  onChange={(e) => {
-                    setSelectedRecipeId(e.target.value);
-                    if (e.target.value) setCustomName("");
-                  }}
-                  className="input-field"
-                >
-                  <option value="">-- Choose from your recipes --</option>
-                  {allRecipes.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name} ({Math.round(r.calories)} kcal)
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {/* Edit Planned Meal Modal */}
+      <EditMealModal
+        meal={editingMeal}
+        allRecipes={allRecipes}
+        onClose={() => setEditingMeal(null)}
+        onSuccess={fetchMealPlan}
+        onDelete={handleDeleteMeal}
+      />
 
-              {!selectedRecipeId && (
-                <div>
-                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
-                    Or enter a quick custom item
-                  </label>
-                  <input
-                    type="text"
-                    value={customName}
-                    onChange={(e) => setCustomName(e.target.value)}
-                    placeholder="e.g., Greek yogurt bowl"
-                    className="input-field"
-                  />
-                </div>
-              )}
+      {/* Generate Week Modal */}
+      <GenerateWeekModal
+        isOpen={isGenerateModalOpen}
+        onClose={() => setIsGenerateModalOpen(false)}
+        weekStartDate={weekStartStr}
+        userGoals={userGoals}
+        onPlanApplied={fetchMealPlan}
+      />
 
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
-                  Portions / Servings
-                </label>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setMealServings(Math.max(1, mealServings - 1))}
-                    className="w-10 h-10 rounded-full bg-[var(--background)] text-[var(--text-primary)] font-bold hover:bg-[var(--border)] transition flex items-center justify-center cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <span className="font-bold text-base font-tabular text-[var(--text-primary)] w-8 text-center">
-                    {mealServings}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setMealServings(mealServings + 1)}
-                    className="w-10 h-10 rounded-full bg-[var(--background)] text-[var(--text-primary)] font-bold hover:bg-[var(--border)] transition flex items-center justify-center cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveModalSlot(null)}
-                  className="px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--background)] text-[var(--text-primary)] text-xs font-semibold hover:bg-[var(--border)] transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingMeal || (!selectedRecipeId && !customName.trim())}
-                  className="px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
-                >
-                  {isSubmittingMeal ? "Adding..." : "Add to plan"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Replace Meal Modal */}
+      <ReplaceMealModal
+        meal={replacingMeal}
+        isOpen={replacingMeal !== null}
+        onClose={() => setReplacingMeal(null)}
+        onMealReplaced={fetchMealPlan}
+      />
     </div>
   );
 }

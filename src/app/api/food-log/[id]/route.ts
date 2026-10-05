@@ -7,6 +7,8 @@ export const PUT = withAuth<{ id: string }>(async (req, user, { id }) => {
   return json(await updateEntry(user.id, id, patch));
 });
 
+export const PATCH = PUT;
+
 export const DELETE = withAuth<{ id: string }>(async (_req, user, { id }) => {
   await deleteEntry(user.id, id);
   return json({ success: true });

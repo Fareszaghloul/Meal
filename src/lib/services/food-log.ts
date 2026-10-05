@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { HttpError } from "@/lib/api/route";
-import { roundNutrients, sumNutrients, toNutrients, type Nutrients } from "@/lib/nutrition/core";
+import { roundNutrients, sumNutrients, toNutrients, nutrientsForGrams, type Nutrients } from "@/lib/nutrition/core";
 import type { DayData, DayStatus, MealCategory, MealItem, MonthHistoryDay, MonthHistoryResponse, NutritionGoals } from "@/lib/domain";
 import type { MealItemInput, MealItemPatch } from "@/lib/validation";
 import { addDays, monthRange, type DateString } from "@/lib/dates";
@@ -322,25 +322,67 @@ export async function updateEntry(userId: string, id: string, patch: MealItemPat
   await assertReferencesOwned(userId, patch.foodId, patch.recipeId);
 
   // Changing only the quantity rescales the stored nutrients proportionally.
-  const nutrientKeysTouched = ["calories", "protein", "carbs", "fat", "fiber"].some((k) => k in patch);
+  const nutrientKeys = ["calories", "protein", "carbs", "fat", "fiber", "totalSugars", "addedSugars", "saturatedFat", "transFat", "sodium"] as const;
+  const nutrientKeysTouched = nutrientKeys.some((k) => k in patch && (patch as Record<string, unknown>)[k] !== undefined);
   let nutrients: Partial<Nutrients> = {};
   if (patch.servings !== undefined && !nutrientKeysTouched && existing.servings > 0) {
-    const factor = patch.servings / existing.servings;
-    const scaled = roundNutrients(
-      toNutrients({
-        calories: existing.calories * factor,
-        protein: existing.protein * factor,
-        carbs: existing.carbs * factor,
-        fat: existing.fat * factor,
-        fiber: existing.fiber * factor,
-        totalSugars: existing.totalSugars === null ? null : existing.totalSugars * factor,
-        addedSugars: existing.addedSugars === null ? null : existing.addedSugars * factor,
-        saturatedFat: existing.saturatedFat === null ? null : existing.saturatedFat * factor,
-        transFat: existing.transFat === null ? null : existing.transFat * factor,
-        sodium: existing.sodium === null ? null : existing.sodium * factor,
-      })
-    );
-    nutrients = scaled;
+    if (existing.recipeId) {
+      const recipe = await prisma.recipe.findFirst({ where: { id: existing.recipeId, userId } });
+      if (recipe) {
+        const factor = patch.servings;
+        nutrients = roundNutrients({
+          calories: recipe.caloriesPerServing * factor,
+          protein: recipe.proteinPerServing * factor,
+          carbs: recipe.carbsPerServing * factor,
+          fat: recipe.fatPerServing * factor,
+          fiber: recipe.fiberPerServing * factor,
+          totalSugars: recipe.totalSugarsPerServing === null ? null : recipe.totalSugarsPerServing * factor,
+          addedSugars: recipe.addedSugarsPerServing === null ? null : recipe.addedSugarsPerServing * factor,
+          saturatedFat: recipe.saturatedFatPerServing === null ? null : recipe.saturatedFatPerServing * factor,
+          transFat: recipe.transFatPerServing === null ? null : recipe.transFatPerServing * factor,
+          sodium: recipe.sodiumPerServing === null ? null : recipe.sodiumPerServing * factor,
+        });
+      }
+    } else if (existing.foodId) {
+      const food = await prisma.food.findFirst({
+        where: { id: existing.foodId, OR: [{ userId }, { userId: null }] },
+      });
+      if (food && (existing.servingUnit === "g" || existing.servingUnit === "ml")) {
+        nutrients = roundNutrients(nutrientsForGrams(food, patch.servings));
+      } else {
+        const factor = patch.servings / existing.servings;
+        nutrients = roundNutrients(
+          toNutrients({
+            calories: existing.calories * factor,
+            protein: existing.protein * factor,
+            carbs: existing.carbs * factor,
+            fat: existing.fat * factor,
+            fiber: existing.fiber * factor,
+            totalSugars: existing.totalSugars === null ? null : existing.totalSugars * factor,
+            addedSugars: existing.addedSugars === null ? null : existing.addedSugars * factor,
+            saturatedFat: existing.saturatedFat === null ? null : existing.saturatedFat * factor,
+            transFat: existing.transFat === null ? null : existing.transFat * factor,
+            sodium: existing.sodium === null ? null : existing.sodium * factor,
+          })
+        );
+      }
+    } else {
+      const factor = patch.servings / existing.servings;
+      nutrients = roundNutrients(
+        toNutrients({
+          calories: existing.calories * factor,
+          protein: existing.protein * factor,
+          carbs: existing.carbs * factor,
+          fat: existing.fat * factor,
+          fiber: existing.fiber * factor,
+          totalSugars: existing.totalSugars === null ? null : existing.totalSugars * factor,
+          addedSugars: existing.addedSugars === null ? null : existing.addedSugars * factor,
+          saturatedFat: existing.saturatedFat === null ? null : existing.saturatedFat * factor,
+          transFat: existing.transFat === null ? null : existing.transFat * factor,
+          sodium: existing.sodium === null ? null : existing.sodium * factor,
+        })
+      );
+    }
   } else if (nutrientKeysTouched) {
     nutrients = roundNutrients(toNutrients({ ...toNutrients(existing), ...patch }));
   }
@@ -366,7 +408,14 @@ export async function deleteEntry(userId: string, id: string): Promise<void> {
 /** Copy entries (a whole day, one meal, or selected ids) to another date/meal. */
 export async function copyEntries(
   userId: string,
-  opts: { fromDate: DateString; toDate: DateString; fromMealCategory?: string; toMealCategory?: string; entryIds?: string[] }
+  opts: {
+    fromDate: DateString;
+    toDate: DateString;
+    fromMealCategory?: string;
+    toMealCategory?: string;
+    entryIds?: string[];
+    mode?: "append" | "replace";
+  }
 ): Promise<MealItem[]> {
   const source = await prisma.foodLogEntry.findMany({
     where: {
@@ -379,9 +428,21 @@ export async function copyEntries(
   });
   if (source.length === 0) return [];
   const now = Date.now();
-  const rows = await prisma.$transaction(
-    source.map((s, i) =>
-      prisma.foodLogEntry.create({
+  const rows = await prisma.$transaction(async (tx) => {
+    if (opts.mode === "replace") {
+      await tx.foodLogEntry.deleteMany({
+        where: {
+          userId,
+          date: opts.toDate,
+          ...(opts.toMealCategory ? { mealCategory: opts.toMealCategory } : {}),
+        },
+      });
+    }
+
+    const created = [];
+    for (let i = 0; i < source.length; i++) {
+      const s = source[i];
+      const entry = await tx.foodLogEntry.create({
         data: {
           userId,
           date: opts.toDate,
@@ -394,9 +455,11 @@ export async function copyEntries(
           loggedAt: new Date(now + i), // keep original order
           ...toNutrients(s),
         },
-      })
-    )
-  );
+      });
+      created.push(entry);
+    }
+    return created;
+  });
   return rows.map(toMealItem);
 }
 
@@ -407,6 +470,7 @@ export function previousDay(date: DateString): DateString {
 
 export interface RecentFoodsData {
   recent: MealItem[];
+  frequent: MealItem[];
   frequentByMeal: Record<string, MealItem[]>;
   yesterdayByMeal: Record<string, MealItem[]>;
 }
@@ -437,6 +501,22 @@ export async function getRecentAndFrequentFoods(userId: string, currentDate: Dat
     }
   }
 
+  // Overall frequent items across all meals
+  const overallCountMap = new Map<string, { count: number; item: MealItem }>();
+  for (const r of recentRows) {
+    const key = r.foodId || r.recipeId || r.name.toLowerCase().trim();
+    const existing = overallCountMap.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      overallCountMap.set(key, { count: 1, item: toMealItem(r) });
+    }
+  }
+  const frequent: MealItem[] = Array.from(overallCountMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 25)
+    .map((x) => x.item);
+
   // Frequent items grouped by mealCategory
   const mealCountMap: Record<string, Map<string, { count: number; item: MealItem }>> = {
     breakfast: new Map(),
@@ -448,7 +528,7 @@ export async function getRecentAndFrequentFoods(userId: string, currentDate: Dat
   for (const r of recentRows) {
     const cat = (r.mealCategory || "snack").toLowerCase();
     const map = mealCountMap[cat] || (mealCountMap[cat] = new Map());
-    const key = r.name.toLowerCase().trim();
+    const key = r.foodId || r.recipeId || r.name.toLowerCase().trim();
     const existing = map.get(key);
     if (existing) {
       existing.count += 1;
@@ -478,5 +558,5 @@ export async function getRecentAndFrequentFoods(userId: string, currentDate: Dat
     yesterdayByMeal[cat].push(toMealItem(r));
   }
 
-  return { recent, frequentByMeal, yesterdayByMeal };
+  return { recent, frequent, frequentByMeal, yesterdayByMeal };
 }

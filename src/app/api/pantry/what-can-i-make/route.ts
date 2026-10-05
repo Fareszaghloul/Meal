@@ -36,6 +36,8 @@ export async function GET(request: Request) {
           rawName: ing.rawName,
           foodId: ing.foodId,
           food: ing.food ? { name: ing.food.name } : null,
+          quantity: ing.quantity,
+          unit: ing.unit,
         })),
       })),
       pantry.map((p) => ({

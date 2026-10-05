@@ -22,9 +22,9 @@ type Listener = () => void;
 
 interface Op {
   id: string;
-  kind: "create" | "update" | "delete" | "water-add" | "water-undo";
+  kind: "create" | "update" | "delete" | "water-add" | "water-undo" | "water-reset";
   url: string;
-  method: "POST" | "PUT" | "DELETE";
+  method: "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   date: DateString;
   entryId?: string;
@@ -195,7 +195,7 @@ function onSuccess(op: Op, result: unknown) {
   if (op.kind === "create" || op.kind === "update") {
     const item = result as MealItem;
     setDay(op.date, (d) => ({ ...d, entries: d.entries.map((e) => (e.id === item.id ? { ...item } : e)) }));
-  } else if (op.kind === "water-add" || op.kind === "water-undo") {
+  } else if (op.kind === "water-add" || op.kind === "water-undo" || op.kind === "water-reset") {
     const r = result as { totalMl?: number };
     if (typeof r?.totalMl === "number") setDay(op.date, (d) => ({ ...d, water: { ...d.water, totalMl: r.totalMl! } }));
   }
@@ -247,7 +247,7 @@ export function updateEntry(current: MealItem, patch: MealItemPatch) {
     entries: movedDate ? d.entries.filter((e) => e.id !== current.id) : d.entries.map((e) => (e.id === current.id ? { ...next, _pending: "saving" } : e)),
   }));
   if (movedDate) cache.delete(patch.date!);
-  enqueue({ id: crypto.randomUUID(), kind: "update", url: `/api/food-log/${current.id}`, method: "PUT", body: patch, date: movedDate ? patch.date! : current.date, entryId: current.id });
+  enqueue({ id: crypto.randomUUID(), kind: "update", url: "/api/food-log", method: "PATCH", body: { id: current.id, ...patch }, date: movedDate ? patch.date! : current.date, entryId: current.id });
 }
 
 export function deleteEntry(item: MealItem) {
@@ -273,8 +273,13 @@ export function undoWater(date: DateString) {
   enqueue({ id: crypto.randomUUID(), kind: "water-undo", url: `/api/water-log?date=${date}`, method: "DELETE", date });
 }
 
+export function resetWater(date: DateString) {
+  setDay(date, (d) => ({ ...d, water: { ...d.water, totalMl: 0 } }));
+  enqueue({ id: crypto.randomUUID(), kind: "water-reset", url: `/api/water-log?date=${date}&reset=true`, method: "DELETE", date });
+}
+
 /** Server-side copies (yesterday's meal, templates) — awaited, then the day is refetched. */
-export async function copyEntries(body: { fromDate: DateString; toDate: DateString; fromMealCategory?: MealCategory; toMealCategory?: MealCategory; entryIds?: string[] }) {
+export async function copyEntries(body: { fromDate: DateString; toDate: DateString; fromMealCategory?: MealCategory; toMealCategory?: MealCategory; entryIds?: string[]; mode?: "append" | "replace" }) {
   const created = await api<MealItem[]>("/api/food-log/copy", { method: "POST", json: body });
   cache.delete(body.toDate);
   await fetchDay(body.toDate, true);

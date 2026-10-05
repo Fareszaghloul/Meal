@@ -32,6 +32,11 @@ model User {
   foodLogEntries        FoodLogEntry[]
   waterLogEntries       WaterLogEntry[]
   mealTemplates         MealTemplate[]
+  savedMeals            SavedMeal[]
+  dayTemplates          DayTemplate[]
+  pantryTransactions    PantryTransaction[]
+  prepSessions          PrepSession[]
+  nutritionRecommendations NutritionRecommendation[]
 }
 
 model Session {
@@ -97,6 +102,8 @@ model Food {
   recipeIngredients  RecipeIngredient[]
   pantryItems        PantryItem[]
   foodLogEntries     FoodLogEntry[]
+  savedMealItems     SavedMealItem[]
+  dayTemplateItems   DayTemplateItem[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -169,6 +176,8 @@ model Recipe {
   tags                  RecipeTag[]
   meals                 Meal[]
   foodLogEntries        FoodLogEntry[]
+  savedMealItems        SavedMealItem[]
+  dayTemplateItems      DayTemplateItem[]
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
@@ -261,8 +270,12 @@ model Meal {
   saturatedFat Float?
   transFat     Float?
   sodium       Float?
-  isCompleted  Boolean   @default(false)
-  sortOrder    Int       @default(0)
+  isCompleted    Boolean       @default(false)
+  status         String        @default("planned") // "planned" | "logged" | "completed" | "skipped"
+  foodLogEntryId String?       @unique
+  foodLogEntry   FoodLogEntry? @relation(fields: [foodLogEntryId], references: [id], onDelete: SetNull)
+  loggedAt       DateTime?
+  sortOrder      Int           @default(0)
 
   @@index([mealPlanId])
 }
@@ -288,16 +301,21 @@ model ShoppingListItem {
 }
 
 model PantryItem {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  foodId    String?
-  food      Food?    @relation(fields: [foodId], references: [id], onDelete: SetNull)
-  name      String
-  quantity  Float
-  unit      String
-  category  String   @default("Pantry")
-  updatedAt DateTime @updatedAt
+  id                String              @id @default(cuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodId            String?
+  food              Food?               @relation(fields: [foodId], references: [id], onDelete: SetNull)
+  name              String
+  quantity          Float
+  unit              String
+  category          String              @default("Pantry")
+  storageLocation   String              @default("Pantry") // "Pantry" | "Fridge" | "Freezer" | "Other"
+  expiryDate        String?             // "YYYY-MM-DD"
+  lowStockThreshold Float?
+  transactions      PantryTransaction[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
   @@index([userId])
 }
@@ -381,6 +399,11 @@ model UserSettings {
   // Hydration Settings
   dailyWaterGoalMl           Int      @default(2500)
   
+  // Daily & Convenience Preferences
+  pantryUsageBehavior        String   @default("ask") // "manual" | "ask" | "auto"
+  defaultMealCategory        String?  @default("lunch")
+  defaultCopyMode            String?  @default("append") // "append" | "replace"
+
   updatedAt                  DateTime @updatedAt
 }
 
@@ -427,6 +450,8 @@ model FoodLogEntry {
   foodId       String?
   food         Food?     @relation(fields: [foodId], references: [id], onDelete: SetNull)
 
+  plannedMeal  Meal?
+
   loggedAt     DateTime  @default(now())
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -445,4 +470,160 @@ model WaterLogEntry {
 
   @@index([userId, date])
 }
+
+model SavedMeal {
+  id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  mealCategory     String?           // "breakfast" | "lunch" | "dinner" | "snack"
+  isFavorite       Boolean           @default(false)
+  useCount         Int               @default(0)
+  items            SavedMealItem[]
+  dayTemplateItems DayTemplateItem[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([userId])
+}
+
+model SavedMealItem {
+  id           String     @id @default(cuid())
+  savedMealId  String
+  savedMeal    SavedMeal  @relation(fields: [savedMealId], references: [id], onDelete: Cascade)
+  foodId       String?
+  food         Food?      @relation(fields: [foodId], references: [id], onDelete: SetNull)
+  recipeId     String?
+  recipe       Recipe?    @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  customName   String?
+  quantity     Float      @default(1.0)
+  servingUnit  String     @default("serving")
+  calories     Float      @default(0)
+  protein      Float      @default(0)
+  carbs        Float      @default(0)
+  fat          Float      @default(0)
+  fiber        Float?
+  totalSugars  Float?
+  addedSugars  Float?
+  saturatedFat Float?
+  transFat     Float?
+  sodium       Float?
+  sortOrder    Int        @default(0)
+
+  @@index([savedMealId])
+  @@index([foodId])
+  @@index([recipeId])
+}
+
+model DayTemplate {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isFavorite  Boolean           @default(false)
+  useCount    Int               @default(0)
+  items       DayTemplateItem[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([userId])
+}
+
+model DayTemplateItem {
+  id            String       @id @default(cuid())
+  dayTemplateId String
+  dayTemplate   DayTemplate  @relation(fields: [dayTemplateId], references: [id], onDelete: Cascade)
+  mealCategory  String       // "breakfast" | "lunch" | "dinner" | "snack"
+  foodId        String?
+  food          Food?        @relation(fields: [foodId], references: [id], onDelete: SetNull)
+  recipeId      String?
+  recipe        Recipe?      @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  savedMealId   String?
+  savedMeal     SavedMeal?   @relation(fields: [savedMealId], references: [id], onDelete: SetNull)
+  customName    String?
+  servings      Float        @default(1.0)
+  servingUnit   String       @default("serving")
+  calories      Float        @default(0)
+  protein       Float        @default(0)
+  carbs         Float        @default(0)
+  fat           Float        @default(0)
+  fiber         Float?
+  totalSugars   Float?
+  addedSugars   Float?
+  saturatedFat  Float?
+  transFat      Float?
+  sodium        Float?
+  sortOrder     Int          @default(0)
+
+  @@index([dayTemplateId])
+  @@index([foodId])
+  @@index([recipeId])
+  @@index([savedMealId])
+}
+
+model PantryTransaction {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pantryItemId String
+  pantryItem   PantryItem @relation(fields: [pantryItemId], references: [id], onDelete: Cascade)
+  type         String     // "ADD" | "REMOVE" | "MEAL_USAGE" | "ADJUSTMENT" | "RESTORE"
+  quantity     Float
+  unit         String
+  sourceType   String?    // "meal" | "manual" | "shopping"
+  sourceId     String?    // e.g. mealId
+  createdAt    DateTime   @default(now())
+
+  @@index([userId])
+  @@index([pantryItemId])
+  @@index([sourceId])
+}
+
+model PrepSession {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart String     // ISO date e.g. "2026-09-07"
+  tasks     PrepTask[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([userId, weekStart])
+}
+
+model PrepTask {
+  id            String      @id @default(cuid())
+  prepSessionId String
+  prepSession   PrepSession @relation(fields: [prepSessionId], references: [id], onDelete: Cascade)
+  label         String
+  completed     Boolean     @default(false)
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([prepSessionId])
+}
+
+model NutritionRecommendation {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dataStartDate       String   // "YYYY-MM-DD"
+  dataEndDate         String   // "YYYY-MM-DD"
+  previousCalories    Float
+  recommendedCalories Float
+  calorieChange       Float
+  observedWeeklyRate  Float    // in kg/week
+  targetWeeklyRate    Float    // in kg/week
+  confidence          String   // "low" | "medium" | "high"
+  reason              String
+  status              String   @default("pending") // "pending" | "accepted" | "dismissed"
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
 

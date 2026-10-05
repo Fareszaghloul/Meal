@@ -6,6 +6,7 @@ import {
   Plus,
   Trash2,
   Package,
+  Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -96,6 +97,67 @@ export default function ShoppingListPage() {
     }
   };
 
+  const [addingToPantryId, setAddingToPantryId] = useState<string | null>(null);
+  const [isAddingAllToPantry, setIsAddingAllToPantry] = useState(false);
+  const [pantryNotice, setPantryNotice] = useState<string | null>(null);
+
+  const handleAddToPantry = async (item: ShoppingItem) => {
+    setAddingToPantryId(item.id);
+    try {
+      const res = await fetch("/api/shopping-list/add-to-pantry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          category: item.category,
+        }),
+      });
+      if (res.ok) {
+        setItems((prev) =>
+          prev.map((i) => (i.id === item.id ? { ...i, isChecked: true } : i))
+        );
+        setPantryNotice(`Added "${item.name}" to pantry!`);
+        setTimeout(() => setPantryNotice(null), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAddingToPantryId(null);
+    }
+  };
+
+  const handleAddCheckedToPantry = async () => {
+    const checked = items.filter((i) => i.isChecked);
+    if (checked.length === 0) return;
+    setIsAddingAllToPantry(true);
+    try {
+      let count = 0;
+      for (const item of checked) {
+        const res = await fetch("/api/shopping-list/add-to-pantry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            category: item.category,
+          }),
+        });
+        if (res.ok) count++;
+      }
+      setPantryNotice(`Added ${count} items to pantry!`);
+      setTimeout(() => setPantryNotice(null), 3500);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAddingAllToPantry(false);
+    }
+  };
+
   const clearCompleted = async () => {
     setItems((prev) => prev.filter((i) => !i.isChecked));
     try {
@@ -172,16 +234,35 @@ export default function ShoppingListPage() {
           </button>
 
           {completedItems > 0 && (
-            <button
-              type="button"
-              onClick={clearCompleted}
-              className="px-4 py-2 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--ui-error)] text-xs font-semibold transition cursor-pointer"
-            >
-              Clear checked ({completedItems})
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleAddCheckedToPantry}
+                disabled={isAddingAllToPantry}
+                className="px-4 py-2 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Archive className="w-3.5 h-3.5" />
+                <span>{isAddingAllToPantry ? "Adding..." : `Add to pantry (${completedItems})`}</span>
+              </button>
+              <button
+                type="button"
+                onClick={clearCompleted}
+                className="px-4 py-2 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--ui-error)] text-xs font-semibold transition cursor-pointer"
+              >
+                Clear checked
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {/* ─── Pantry Transfer Notice Banner ─── */}
+      {pantryNotice && (
+        <div className="px-4 py-3 rounded-2xl bg-[var(--accent-subtle)] text-[var(--text-primary)] text-xs font-medium flex items-center gap-2 border border-[var(--accent)]/30">
+          <Check className="w-4 h-4 text-[var(--accent)] shrink-0" />
+          <span>{pantryNotice}</span>
+        </div>
+      )}
 
       {/* ─── Lime-subtle Progress Card next to One-Line Add-Item Form ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
@@ -323,16 +404,29 @@ export default function ShoppingListPage() {
                             {item.isChecked && <Check className="w-3 h-3" />}
                           </div>
 
-                          <span
-                            className={cn(
-                              "text-xs truncate transition-all",
-                              item.isChecked
-                                ? "line-through text-[var(--text-muted)]"
-                                : "text-[var(--text-primary)] font-medium"
-                            )}
-                          >
-                            {item.name}
-                          </span>
+                          <div className="min-w-0 flex-1 flex items-center gap-2">
+                            <span
+                              className={cn(
+                                "text-xs truncate transition-all",
+                                item.isChecked
+                                  ? "line-through text-[var(--text-muted)]"
+                                  : "text-[var(--text-primary)] font-medium"
+                              )}
+                            >
+                              {item.name}
+                            </span>
+
+                            <span
+                              className={cn(
+                                "text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 tracking-tight",
+                                item.isCustom
+                                  ? "bg-[var(--surface-active)] text-[var(--text-muted)]"
+                                  : "bg-[var(--accent-subtle)] text-[var(--accent)]"
+                              )}
+                            >
+                              {item.isCustom ? "Manual" : "Meal Plan"}
+                            </span>
+                          </div>
                         </div>
 
                         <div className="flex items-center space-x-2 shrink-0">
@@ -346,6 +440,17 @@ export default function ShoppingListPage() {
                           >
                             {item.quantity} {item.unit}
                           </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleAddToPantry(item)}
+                            disabled={addingToPantryId === item.id}
+                            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-[var(--background)] hover:bg-[var(--surface-active)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer flex items-center gap-1 opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                            title="Add to Pantry"
+                          >
+                            <Archive className="w-3 h-3 text-[var(--accent)]" />
+                            <span>{addingToPantryId === item.id ? "Adding..." : "Pantry"}</span>
+                          </button>
 
                           <button
                             type="button"

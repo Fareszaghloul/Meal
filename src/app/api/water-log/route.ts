@@ -24,17 +24,25 @@ export const POST = withAuth(async (req, user) => {
   return json({ entry, totalMl: await totalFor(user.id, date) }, { status: 201 });
 });
 
-const deleteQuery = z.object({ id: z.string().optional(), date: dayQuery.shape.date.optional() });
+const deleteQuery = z.object({
+  id: z.string().optional(),
+  date: dayQuery.shape.date.optional(),
+  reset: z.union([z.literal("true"), z.literal("false"), z.boolean()]).optional(),
+});
 
-/** `?id=` removes one entry; `?date=` removes the most recent entry of that day (undo). */
+/** `?id=` removes one entry; `?date=&reset=true` removes all entries of that day; `?date=` removes the most recent entry of that day (undo). */
 export const DELETE = withAuth(async (req, user) => {
-  const { id, date } = parseQuery(req, deleteQuery);
+  const { id, date, reset } = parseQuery(req, deleteQuery);
   if (id) {
     const { count } = await prisma.waterLogEntry.deleteMany({ where: { id, userId: user.id } });
     if (count === 0) throw new HttpError(404, "Entry not found.", "not_found");
     return json({ success: true });
   }
   if (date) {
+    if (reset === true || reset === "true") {
+      await prisma.waterLogEntry.deleteMany({ where: { userId: user.id, date } });
+      return json({ success: true, totalMl: 0 });
+    }
     const last = await prisma.waterLogEntry.findFirst({
       where: { userId: user.id, date },
       orderBy: { loggedAt: "desc" },

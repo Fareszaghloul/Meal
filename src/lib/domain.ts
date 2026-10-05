@@ -190,6 +190,54 @@ export interface MealTemplate {
   createdAt: string;
 }
 
+export interface SavedMealItem extends Nutrients {
+  id: string;
+  savedMealId: string;
+  foodId: string | null;
+  recipeId: string | null;
+  customName: string | null;
+  name: string;
+  quantity: number;
+  servingUnit: string;
+  sortOrder: number;
+}
+
+export interface SavedMeal {
+  id: string;
+  name: string;
+  mealCategory?: MealCategory | null;
+  isFavorite: boolean;
+  useCount: number;
+  items: SavedMealItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DayTemplateItem extends Nutrients {
+  id: string;
+  dayTemplateId: string;
+  mealCategory: MealCategory;
+  foodId: string | null;
+  recipeId: string | null;
+  savedMealId: string | null;
+  customName: string | null;
+  name: string;
+  servings: number;
+  servingUnit: string;
+  sortOrder: number;
+}
+
+export interface DayTemplate {
+  id: string;
+  name: string;
+  description?: string | null;
+  isFavorite: boolean;
+  useCount: number;
+  items: DayTemplateItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WeightEntry {
   id: string;
   date: DateString;

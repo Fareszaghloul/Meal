@@ -42,29 +42,37 @@ export const mealItemInput = nutrientsSchema.extend({
 });
 export type MealItemInput = z.infer<typeof mealItemInput>;
 
-// Built explicitly (not `.partial()`) so defaults don't sneak in and make every PUT look like a macro override.
-export const mealItemPatch = z
-  .object({
-    date: dateString.optional(),
-    mealCategory: mealCategory.optional(),
-    name: z.string().trim().min(1, "Name is required").max(200).optional(),
-    servings: z.coerce.number().finite().positive("Quantity must be greater than 0").max(100_000).optional(),
-    servingUnit: z.string().trim().min(1).max(32).optional(),
-    foodId: idString.nullable().optional(),
-    recipeId: idString.nullable().optional(),
-    calories: nonNegative.max(100_000).optional(),
-    protein: nonNegative.max(10_000).optional(),
-    carbs: nonNegative.max(10_000).optional(),
-    fat: nonNegative.max(10_000).optional(),
-    fiber: nonNegative.max(10_000).optional(),
-    totalSugars: optionalNonNegative.optional(),
-    addedSugars: optionalNonNegative.optional(),
-    saturatedFat: optionalNonNegative.optional(),
-    transFat: optionalNonNegative.optional(),
-    sodium: optionalNonNegative.optional(),
-  })
-  .refine((v) => Object.keys(v).length > 0, "Nothing to update");
+// Built explicitly (not `.partial()`) so defaults don't sneak in and make every PUT/PATCH look like a macro override.
+export const mealItemPatchShape = z.object({
+  date: dateString.optional(),
+  mealCategory: mealCategory.optional(),
+  name: z.string().trim().min(1, "Name is required").max(200).optional(),
+  servings: z.coerce.number().finite().positive("Quantity must be greater than 0").max(100_000).optional(),
+  servingUnit: z.string().trim().min(1).max(32).optional(),
+  foodId: idString.nullable().optional(),
+  recipeId: idString.nullable().optional(),
+  calories: nonNegative.max(100_000).optional(),
+  protein: nonNegative.max(10_000).optional(),
+  carbs: nonNegative.max(10_000).optional(),
+  fat: nonNegative.max(10_000).optional(),
+  fiber: nonNegative.max(10_000).optional(),
+  totalSugars: optionalNonNegative.optional(),
+  addedSugars: optionalNonNegative.optional(),
+  saturatedFat: optionalNonNegative.optional(),
+  transFat: optionalNonNegative.optional(),
+  sodium: optionalNonNegative.optional(),
+});
+
+export const mealItemPatch = mealItemPatchShape.refine(
+  (v) => Object.keys(v).length > 0,
+  "Nothing to update"
+);
 export type MealItemPatch = z.infer<typeof mealItemPatch>;
+
+export const mealItemPatchWithId = mealItemPatchShape.extend({
+  id: idString,
+});
+export type MealItemPatchWithId = z.infer<typeof mealItemPatchWithId>;
 
 export const copyEntriesInput = z.object({
   fromDate: dateString,
@@ -72,7 +80,43 @@ export const copyEntriesInput = z.object({
   fromMealCategory: mealCategory.optional(),
   toMealCategory: mealCategory.optional(),
   entryIds: z.array(idString).max(200).optional(),
+  mode: z.enum(["append", "replace"]).default("append").optional(),
 });
+
+export const addMealInput = z.object({
+  weekStart: dateString.optional(),
+  dayOfWeek: z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]),
+  mealCategory,
+  recipeId: idString.nullable().optional(),
+  customName: z.string().trim().max(200).nullable().optional(),
+  servings: z.coerce.number().finite().positive("Servings must be greater than 0").max(100_000).default(1),
+  calories: optionalNonNegative.optional().default(0),
+  protein: optionalNonNegative.optional().default(0),
+  carbs: optionalNonNegative.optional().default(0),
+  fat: optionalNonNegative.optional().default(0),
+  fiber: optionalNonNegative.optional().default(null),
+}).refine(
+  (data) => data.recipeId || (data.customName && data.customName.trim().length > 0),
+  { message: "Custom meal must have a name", path: ["customName"] }
+);
+export type AddMealInput = z.infer<typeof addMealInput>;
+
+export const updateMealInput = z.object({
+  mealId: idString,
+  recipeId: idString.nullable().optional(),
+  customName: z.string().trim().max(200).nullable().optional(),
+  servings: z.coerce.number().finite().positive("Servings must be greater than 0").max(100_000).optional(),
+  dayOfWeek: z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]).optional(),
+  mealCategory: mealCategory.optional(),
+  calories: optionalNonNegative.optional(),
+  protein: optionalNonNegative.optional(),
+  carbs: optionalNonNegative.optional(),
+  fat: optionalNonNegative.optional(),
+  fiber: optionalNonNegative.optional(),
+  status: z.enum(["planned", "logged", "completed", "skipped"]).optional(),
+  isCompleted: z.boolean().optional(),
+});
+export type UpdateMealInput = z.infer<typeof updateMealInput>;
 
 export const dayQuery = z.object({ date: dateString });
 export const rangeQuery = z.object({ from: dateString, to: dateString });
@@ -115,6 +159,93 @@ export const templateInput = z.object({
 });
 
 export const templateLogInput = z.object({ date: dateString, mealCategory });
+
+export const savedMealItemInput = z.object({
+  id: z.string().optional(),
+  foodId: idString.nullable().optional(),
+  recipeId: idString.nullable().optional(),
+  customName: z.string().trim().max(200).nullable().optional(),
+  name: z.string().trim().min(1).max(200).optional(),
+  quantity: z.coerce.number().finite().positive("Quantity must be greater than 0").max(100_000).default(1),
+  servingUnit: z.string().trim().min(1).max(32).default("serving"),
+  calories: z.coerce.number().min(0).default(0),
+  protein: z.coerce.number().min(0).default(0),
+  carbs: z.coerce.number().min(0).default(0),
+  fat: z.coerce.number().min(0).default(0),
+  fiber: z.coerce.number().min(0).nullable().optional(),
+  totalSugars: z.coerce.number().min(0).nullable().optional(),
+  addedSugars: z.coerce.number().min(0).nullable().optional(),
+  saturatedFat: z.coerce.number().min(0).nullable().optional(),
+  transFat: z.coerce.number().min(0).nullable().optional(),
+  sodium: z.coerce.number().min(0).nullable().optional(),
+  sortOrder: z.coerce.number().int().optional().default(0),
+});
+
+export const savedMealInput = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100),
+  mealCategory: mealCategory.nullable().optional(),
+  isFavorite: z.boolean().optional().default(false),
+  items: z.array(savedMealItemInput).min(1, "A saved meal needs at least one item").max(100),
+});
+export type SavedMealInput = z.infer<typeof savedMealInput>;
+
+export const updateSavedMealInput = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  mealCategory: mealCategory.nullable().optional(),
+  isFavorite: z.boolean().optional(),
+  items: z.array(savedMealItemInput).min(1).max(100).optional(),
+});
+export type UpdateSavedMealInput = z.infer<typeof updateSavedMealInput>;
+
+export const logSavedMealInput = z.object({
+  date: dateString,
+  mealCategory,
+  multiplier: z.coerce.number().finite().positive("Multiplier must be positive").max(100).default(1).optional(),
+});
+export type LogSavedMealInput = z.infer<typeof logSavedMealInput>;
+
+/* ───────── day templates ───────── */
+
+export const dayTemplateItemInput = z.object({
+  id: z.string().optional(),
+  mealCategory,
+  foodId: idString.nullable().optional(),
+  recipeId: idString.nullable().optional(),
+  savedMealId: idString.nullable().optional(),
+  customName: z.string().trim().max(200).nullable().optional(),
+  name: z.string().trim().max(200).optional(),
+  servings: z.coerce.number().finite().positive("Servings must be positive").max(100_000).default(1),
+  calories: optionalNonNegative.optional().default(0),
+  protein: optionalNonNegative.optional().default(0),
+  carbs: optionalNonNegative.optional().default(0),
+  fat: optionalNonNegative.optional().default(0),
+  fiber: optionalNonNegative.optional().default(null),
+  sortOrder: z.coerce.number().int().optional().default(0),
+});
+export type DayTemplateItemInput = z.infer<typeof dayTemplateItemInput>;
+
+export const dayTemplateInput = z.object({
+  name: z.string().trim().min(1, "Template name is required").max(100),
+  description: z.string().trim().max(500).nullable().optional(),
+  isFavorite: z.boolean().optional().default(false),
+  items: z.array(dayTemplateItemInput).min(1, "A day template needs at least one item").max(100),
+});
+export type DayTemplateInput = z.infer<typeof dayTemplateInput>;
+
+export const updateDayTemplateInput = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  description: z.string().trim().max(500).nullable().optional(),
+  isFavorite: z.boolean().optional(),
+  items: z.array(dayTemplateItemInput).min(1).max(100).optional(),
+});
+export type UpdateDayTemplateInput = z.infer<typeof updateDayTemplateInput>;
+
+export const applyDayTemplateInput = z.object({
+  date: dateString,
+  targetType: z.enum(["food-log", "meal-plan"]).default("food-log"),
+  mode: z.enum(["append", "replace"]).default("append"),
+});
+export type ApplyDayTemplateInput = z.infer<typeof applyDayTemplateInput>;
 
 
 /* ───────── weight ───────── */
@@ -231,7 +362,57 @@ export const userSettingsShape = {
     useSimpleActivityMode: z.boolean(),
     simpleActivityLevel: z.enum(["sedentary", "light", "moderate", "very", "extra"]),
     useThermicEffectAdjustment: z.boolean(),
+    // Phase 2 preferences
+    pantryUsageBehavior: z.enum(["manual", "ask", "auto"]),
+    defaultMealCategory: mealCategory.nullable(),
+    defaultCopyMode: z.enum(["append", "replace"]),
 };
+
+/* ───────── pantry ───────── */
+
+export const pantryItemInput = z.object({
+  name: z.string().trim().min(1, "Name is required").max(200),
+  quantity: z.coerce.number().finite().min(0, "Quantity cannot be negative").max(100_000).default(1),
+  unit: z.string().trim().min(1).max(32).default("g"),
+  category: z.string().trim().max(100).default("Pantry"),
+  storageLocation: z.string().trim().max(100).default("Pantry"),
+  expiryDate: z.string().nullable().optional(),
+  lowStockThreshold: optionalNonNegative.optional(),
+  foodId: idString.nullable().optional(),
+});
+export type PantryItemInput = z.infer<typeof pantryItemInput>;
+
+export const pantryItemPatch = z.object({
+  name: z.string().trim().min(1).max(200).optional(),
+  quantity: z.coerce.number().finite().min(0).max(100_000).optional(),
+  unit: z.string().trim().min(1).max(32).optional(),
+  category: z.string().trim().max(100).optional(),
+  storageLocation: z.string().trim().max(100).optional(),
+  expiryDate: z.string().nullable().optional(),
+  lowStockThreshold: optionalNonNegative.optional(),
+  delta: z.coerce.number().finite().optional(), // For quick +/- adjustments
+}).refine((v) => Object.keys(v).length > 0, "Nothing to update");
+export type PantryItemPatch = z.infer<typeof pantryItemPatch>;
+
+/* ───────── prep checklist ───────── */
+
+export const prepTaskInput = z.object({
+  weekStart: dateString,
+  title: z.string().trim().min(1, "Task title is required").max(200),
+  category: z.enum(["prep", "cook", "portion", "clean"]).default("prep"),
+  recipeId: idString.nullable().optional(),
+  recipeName: z.string().trim().max(200).nullable().optional(),
+  sortOrder: z.coerce.number().int().optional().default(0),
+});
+export type PrepTaskInput = z.infer<typeof prepTaskInput>;
+
+export const updatePrepTaskInput = z.object({
+  title: z.string().trim().min(1).max(200).optional(),
+  isCompleted: z.boolean().optional(),
+  category: z.enum(["prep", "cook", "portion", "clean"]).optional(),
+  sortOrder: z.coerce.number().int().optional(),
+}).refine((v) => Object.keys(v).length > 0, "Nothing to update");
+export type UpdatePrepTaskInput = z.infer<typeof updatePrepTaskInput>;
 
 /**
  * PATCH /api/settings. Every field optional (only supplied fields change); unknown fields are rejected,
@@ -278,3 +459,50 @@ export const exportFile = z.object({
   templates: z.array(templateInput).default([]),
 });
 export type ExportFile = z.infer<typeof exportFile>;
+
+export const accountPatch = z.object({
+  displayName: z.string().trim().min(2, "Name must be at least 2 characters").max(60),
+});
+export type AccountPatch = z.infer<typeof accountPatch>;
+
+/* ───────── Phase 3 schemas ───────── */
+
+export const plannerConfigInput = z.object({
+  weekStartDate: dateString,
+  targets: z.object({
+    calories: z.coerce.number().min(500).max(15000),
+    protein: z.coerce.number().min(0).max(1000),
+    carbs: z.coerce.number().min(0).max(2000),
+    fat: z.coerce.number().min(0).max(1000),
+    fiber: z.coerce.number().min(0).nullable().optional(),
+  }),
+  slots: z.array(z.enum(["breakfast", "lunch", "dinner", "snack"])).min(1).optional(),
+  variety: z.enum(["low", "medium", "high"]).optional(),
+  pantryPreference: z.enum(["ignore", "prefer", "strongly_prefer"]).optional(),
+  useSavedMeals: z.boolean().optional(),
+  useRecipes: z.boolean().optional(),
+  prioritizeFavorites: z.boolean().optional(),
+  prioritizeFrequent: z.boolean().optional(),
+});
+export type PlannerConfigInput = z.infer<typeof plannerConfigInput>;
+
+export const applyPlanInput = z.object({
+  weekStartDate: dateString,
+  plan: z.any(),
+  mode: z.enum(["replace", "fill_empty"]).default("replace"),
+});
+export type ApplyPlanInput = z.infer<typeof applyPlanInput>;
+
+export const replaceMealInput = z.object({
+  type: z.enum(["recipe", "saved_meal"]),
+  id: z.string().min(1),
+  servings: z.coerce.number().positive().optional().default(1),
+});
+export type ReplaceMealInput = z.infer<typeof replaceMealInput>;
+
+export const applyAdaptiveInput = z.object({
+  recommendedCalories: z.coerce.number().min(500).max(15000),
+  recommendationId: z.string().optional(),
+});
+export type ApplyAdaptiveInput = z.infer<typeof applyAdaptiveInput>;
+

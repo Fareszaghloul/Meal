@@ -1,3 +1,14 @@
+import { COMMON_UNITS, normalizeUnit } from "../nutrition/units";
+
+export interface RecipeIngredientMatch {
+  id: string;
+  rawName: string;
+  foodId?: string | null;
+  food?: { name: string } | null;
+  quantity?: number;
+  unit?: string;
+}
+
 export interface RecipeWithIngredients {
   id: string;
   name: string;
@@ -7,12 +18,7 @@ export interface RecipeWithIngredients {
   carbsPerServing: number;
   fatPerServing: number;
   servings: number;
-  ingredients: Array<{
-    id: string;
-    rawName: string;
-    foodId?: string | null;
-    food?: { name: string } | null;
-  }>;
+  ingredients: RecipeIngredientMatch[];
 }
 
 export interface PantryItemSimple {
@@ -33,17 +39,46 @@ export interface RecipeMatchResult {
 }
 
 /**
- * Calculates match percentage and missing items for recipes based on current pantry
+ * Checks whether a pantry item provides sufficient quantity for a recipe ingredient
+ */
+function hasSufficientStock(
+  ing: RecipeIngredientMatch,
+  pantryItem: PantryItemSimple
+): boolean {
+  if (typeof ing.quantity !== "number" || ing.quantity <= 0) {
+    return true; // No quantity specified, presence is sufficient
+  }
+
+  const ingUnit = normalizeUnit(ing.unit || "g");
+  const pUnit = normalizeUnit(pantryItem.unit || "g");
+
+  const ingUnitInfo = COMMON_UNITS[ingUnit];
+  const pUnitInfo = COMMON_UNITS[pUnit];
+
+  // If unit dimensions match, convert to comparable grams/base
+  if (ingUnitInfo && pUnitInfo && ingUnitInfo.type === pUnitInfo.type) {
+    const requiredBase = ing.quantity * ingUnitInfo.baseGrams;
+    const availableBase = pantryItem.quantity * pUnitInfo.baseGrams;
+    return availableBase >= requiredBase;
+  }
+
+  // Same unit directly
+  if (ingUnit === pUnit) {
+    return pantryItem.quantity >= ing.quantity;
+  }
+
+  // Fallback: if positive stock is available
+  return pantryItem.quantity > 0;
+}
+
+/**
+ * Calculates match percentage and missing items for recipes based on current pantry,
+ * considering required vs available quantities.
  */
 export function rankRecipesByPantry(
   recipes: RecipeWithIngredients[],
   pantry: PantryItemSimple[]
 ): RecipeMatchResult[] {
-  const pantryFoodIds = new Set(
-    pantry.map((p) => p.foodId).filter(Boolean) as string[]
-  );
-  const pantryNames = pantry.map((p) => p.name.toLowerCase().trim());
-
   return recipes
     .map((recipe) => {
       const availableIngredients: string[] = [];
@@ -53,12 +88,14 @@ export function rankRecipesByPantry(
         const ingFoodId = ing.foodId;
         const ingName = (ing.food?.name || ing.rawName).toLowerCase().trim();
 
-        const isMatchById = ingFoodId ? pantryFoodIds.has(ingFoodId) : false;
-        const isMatchByName = pantryNames.some(
-          (pName) => ingName.includes(pName) || pName.includes(ingName)
-        );
+        // Find candidate pantry item
+        const matchingPantry = pantry.find((p) => {
+          if (ingFoodId && p.foodId && ingFoodId === p.foodId) return true;
+          const pName = p.name.toLowerCase().trim();
+          return pName.includes(ingName) || ingName.includes(pName);
+        });
 
-        if (isMatchById || isMatchByName) {
+        if (matchingPantry && hasSufficientStock(ing, matchingPantry)) {
           availableIngredients.push(ing.food?.name || ing.rawName);
         } else {
           missingIngredients.push(ing.food?.name || ing.rawName);
@@ -77,8 +114,13 @@ export function rankRecipesByPantry(
         totalIngredients,
         availableIngredients,
         missingIngredients,
-        canMakeNow: matchPercentage === 100,
+        canMakeNow: matchPercentage === 100 && totalIngredients > 0,
       };
     })
-    .sort((a, b) => b.matchPercentage - a.matchPercentage);
+    .sort((a, b) => {
+      if (b.canMakeNow !== a.canMakeNow) {
+        return b.canMakeNow ? 1 : -1;
+      }
+      return b.matchPercentage - a.matchPercentage;
+    });
 }

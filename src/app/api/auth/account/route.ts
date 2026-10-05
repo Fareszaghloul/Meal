@@ -3,10 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
 import { requireAuth, clearSessionCookie } from "@/lib/auth/session";
-
-const updateAccountSchema = z.object({
-  displayName: z.string().trim().min(2, "Name must be at least 2 characters").max(60),
-});
+import { accountPatch } from "@/lib/validation";
 
 const deleteAccountSchema = z.object({
   password: z.string().min(1, "Password confirmation is required"),
@@ -17,7 +14,7 @@ export async function PATCH(request: Request) {
     const user = await requireAuth(request);
 
     const body = await request.json().catch(() => ({}));
-    const parseResult = updateAccountSchema.safeParse(body);
+    const parseResult = accountPatch.safeParse(body);
 
     if (!parseResult.success) {
       return NextResponse.json(
