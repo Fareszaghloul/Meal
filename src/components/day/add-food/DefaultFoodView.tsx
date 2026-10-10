@@ -6,7 +6,7 @@ import type { FoodSummary, MealCategory, MealItem, MealTemplate, RecipeSummary }
 import { MEAL_LABELS } from "@/lib/domain";
 import { fmt } from "@/components/ui/primitives";
 import { sumNutrients, roundNutrients } from "@/lib/nutrition/core";
-import { FoodResultRow, type RowItem } from "./FoodResultRow";
+import { FoodResultRow, rowKey, type RowItem } from "./FoodResultRow";
 import { cn } from "@/lib/utils";
 
 interface DefaultFoodViewProps {
@@ -24,6 +24,10 @@ interface DefaultFoodViewProps {
   onOpenManualEntry: () => void;
   onToggleFavorite?: (foodId: string, currentFav: boolean) => void;
   isRepeating?: boolean;
+  /** Row keys already added during this visit, and how to undo / bulk add. */
+  addedKeys?: Set<string>;
+  onUndoAdd?: (item: RowItem) => void;
+  onAddAll?: (items: RowItem[]) => void;
 }
 
 export function mapMealItemToFood(
@@ -97,6 +101,9 @@ export function DefaultFoodView({
   onOpenManualEntry,
   onToggleFavorite,
   isRepeating,
+  addedKeys,
+  onUndoAdd,
+  onAddAll,
 }: DefaultFoodViewProps) {
 
   const hasYesterday = yesterdayEntries && yesterdayEntries.length > 0;
@@ -109,12 +116,13 @@ export function DefaultFoodView({
   const hasTemplates = catalogTemplates && catalogTemplates.length > 0;
 
   const hasAnyData = hasYesterday || hasFrequent || hasRecent || hasTemplates;
+  const usualItems = (frequentFoods ?? []).slice(0, 5).map((item) => mapMealItemToFood(item, catalogFoods, catalogRecipes));
 
   return (
     <div className="space-y-5 pb-4">
       {/* 1. Contextual Action: Yesterday's Meal Repeat */}
       {hasYesterday && yesterdayTotals && (
-        <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2/40 px-3.5 py-3 border-l-2 border-[var(--accent)]">
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-2 px-4 py-3.5">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-fg-3">
               <RotateCcw className="h-3 w-3 text-[var(--accent)]" />
@@ -135,7 +143,7 @@ export function DefaultFoodView({
             type="button"
             onClick={onRepeatYesterday}
             disabled={isRepeating}
-            className="btn btn-secondary btn-sm shrink-0 font-medium text-xs hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="btn btn-primary h-11 shrink-0 px-5 text-sm font-bold"
           >
             {isRepeating ? (
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-line-strong border-t-[var(--accent)]" />
@@ -153,15 +161,26 @@ export function DefaultFoodView({
           <div className="flex items-center gap-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-wider text-fg-3">
             <Sparkles className="h-3 w-3 text-[var(--accent)]" />
             Usually at {MEAL_LABELS[meal]}
+            {onAddAll && usualItems.some((it) => !addedKeys?.has(rowKey(it))) && (
+              <button
+                type="button"
+                onClick={() => onAddAll(usualItems)}
+                className="-my-2 ml-auto min-h-[44px] px-2 text-[13px] font-semibold normal-case tracking-normal text-accent"
+              >
+                Add all {usualItems.length}
+              </button>
+            )}
           </div>
           <div className="divide-y divide-line/30">
-            {frequentFoods.slice(0, 5).map((item) => (
+            {usualItems.map((it, i) => (
               <FoodResultRow
-                key={`freq-${item.id}`}
-                item={mapMealItemToFood(item, catalogFoods, catalogRecipes)}
+                key={`freq-${frequentFoods[i].id}`}
+                item={it}
                 onSelect={onSelect}
                 onQuickAdd={onQuickAdd}
                 onToggleFavorite={onToggleFavorite}
+                isAdded={addedKeys?.has(rowKey(it))}
+                onUndoAdd={onUndoAdd}
               />
             ))}
           </div>
@@ -183,6 +202,8 @@ export function DefaultFoodView({
                 onSelect={onSelect}
                 onQuickAdd={onQuickAdd}
                 onToggleFavorite={onToggleFavorite}
+                isAdded={addedKeys?.has(rowKey(mapMealItemToFood(item, catalogFoods, catalogRecipes)))}
+                onUndoAdd={onUndoAdd}
               />
             ))}
           </div>

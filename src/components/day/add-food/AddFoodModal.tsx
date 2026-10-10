@@ -7,7 +7,7 @@ import type { MealCategory, FoodSummary, RecipeSummary, MealTemplate, MealItem }
 import { MEAL_LABELS } from "@/lib/domain";
 import type { DateString } from "@/lib/dates";
 import { addDays, todayLocal } from "@/lib/dates";
-import { addEntry, copyEntries, logTemplate } from "@/lib/client/day-store";
+import { addEntry, copyEntries, deleteEntry, logTemplate, useDay } from "@/lib/client/day-store";
 import { loadCatalog, peekCatalog, invalidateCatalog, rankMatches, type Catalog } from "@/lib/client/catalog";
 import { api } from "@/lib/client/api";
 import { fmt } from "@/components/ui/primitives";
@@ -21,7 +21,7 @@ import type { FoodFilterType, EntryDraft } from "./types";
 import { MealDateHeader } from "./MealDateHeader";
 import { FoodSearchBar } from "./FoodSearchBar";
 import { FoodFilterChips } from "./FoodFilterChips";
-import { FoodResultRow, type RowItem } from "./FoodResultRow";
+import { FoodResultRow, rowKey, type RowItem } from "./FoodResultRow";
 import { FoodPortionEditor } from "./FoodPortionEditor";
 import { ManualNutritionForm } from "./ManualNutritionForm";
 import { DefaultFoodView, mapMealItemToFood } from "./DefaultFoodView";
@@ -44,6 +44,10 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal, in
   // Selection subview states
   const [selectedItem, setSelectedItem] = useState<RowItem | null>(null);
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
+
+  // Everything added during this visit: drives the check marks, undo and the running total.
+  const [sessionAdds, setSessionAdds] = useState<{ key: string; entry: MealItem }[]>([]);
+  const { day: targetDay } = useDay(date);
 
   // Catalog and data
   const [catalog, setCatalog] = useState<Catalog | null>(peekCatalog());
@@ -74,6 +78,7 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal, in
     setDate(initialDate);
     setSelectedItem(null);
     setManualEntryOpen(initialView === "manual");
+    setSessionAdds([]);
     setQuery("");
     setActiveFilter("all");
     setHighlightedIndex(0);
@@ -344,9 +349,13 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal, in
   };
 
   // Add entry handler (from portion editor or manual form)
-  const handleAddEntry = (entry: EntryDraft, keepOpen: boolean) => {
-    addEntry({ ...entry, date, mealCategory: meal });
-    toast(`Added ${entry.name} to ${MEAL_LABELS[meal]}`, { kind: "success", durationMs: 2000 });
+  const handleAddEntry = (entry: EntryDraft, keepOpen: boolean, key?: string) => {
+    const created = addEntry({ ...entry, date, mealCategory: meal });
+    const addedKey =
+      key ?? (selectedItem ? rowKey(selectedItem) : entry.foodId ? `food:${entry.foodId}` : entry.recipeId ? `recipe:${entry.recipeId}` : `name:${entry.name}`);
+    setSessionAdds((a) => [...a, { key: addedKey, entry: created }]);
+    // While the sheet stays open, the check mark and the running total are the feedback; a toast would cover the search field.
+    if (!keepOpen) toast(`Added ${entry.name} to ${MEAL_LABELS[meal]}`, { kind: "success", durationMs: 2000 });
     setSelectedItem(null);
     setManualEntryOpen(false);
 
@@ -413,10 +422,32 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal, in
       };
     }
 
+    // Stay open: quick-add is for building a meal from several foods. Done (or the close button) finishes.
     if (draft) {
-      handleAddEntry(draft, false);
+      handleAddEntry(draft, true, rowKey(item));
     }
   };
+
+  // Undo a quick-add made during this visit
+  const handleUndoAdd = (item: RowItem) => {
+    const key = rowKey(item);
+    const found = [...sessionAdds].reverse().find((a) => a.key === key);
+    if (!found) return;
+    deleteEntry(found.entry);
+    setSessionAdds((a) => a.filter((x) => x !== found));
+  };
+
+  // "Add all N" for the usual foods of this meal
+  const handleAddAll = (items: RowItem[]) => {
+    const added = new Set(sessionAdds.map((a) => a.key));
+    for (const it of items) if (!added.has(rowKey(it))) handleQuickAdd(it);
+  };
+
+  const addedKeys = useMemo(() => new Set(sessionAdds.map((a) => a.key)), [sessionAdds]);
+
+  // Running total for the meal being built: reads the same optimistic day data as the Today screen.
+  const mealTotals = useMemo(() => sumNutrients((targetDay?.entries ?? []).filter((e) => e.mealCategory === meal)), [targetDay, meal]);
+  const caloriesLeft = targetDay && targetDay.goals.calories > 0 ? targetDay.goals.calories - targetDay.totals.calories : null;
 
   // Repeat yesterday's meal
   const handleRepeatYesterday = async () => {
@@ -534,6 +565,32 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal, in
       customHeader={header}
       size="xl"
       initialFocusRef={searchInputRef}
+      footer={
+        sessionAdds.length > 0 && !selectedItem && !manualEntryOpen ? (
+          <div className="flex w-full items-center gap-3" role="status">
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-3">
+                {MEAL_LABELS[meal]} · {sessionAdds.length} added
+              </div>
+              <div className="tabular flex items-baseline gap-2">
+                <span className="text-2xl font-bold tracking-tight">{fmt.int(mealTotals.calories)}</span>
+                <span className="truncate text-[13px] text-fg-3">
+                  kcal
+                  {caloriesLeft !== null && (
+                    <>
+                      {" "}
+                      · <span className="font-semibold text-accent">{fmt.int(Math.abs(caloriesLeft))} {caloriesLeft >= 0 ? "left" : "over"} today</span>
+                    </>
+                  )}
+                </span>
+              </div>
+            </div>
+            <button type="button" onClick={onClose} className="btn btn-primary h-12 shrink-0 px-7 text-base font-bold">
+              Done
+            </button>
+          </div>
+        ) : undefined
+      }
     >
       {selectedItem ? (
         <FoodPortionEditor
@@ -648,6 +705,9 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal, in
               onOpenManualEntry={() => setManualEntryOpen(true)}
               onToggleFavorite={handleToggleFavorite}
               isRepeating={isRepeatingYesterday}
+              addedKeys={addedKeys}
+              onUndoAdd={handleUndoAdd}
+              onAddAll={handleAddAll}
             />
           ) : searchResults.length > 0 ? (
             <div className="divide-y divide-line/30">
@@ -666,6 +726,8 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal, in
                     onQuickAdd={handleQuickAdd}
                     onToggleFavorite={handleToggleFavorite}
                     isHighlighted={idx === highlightedIndex}
+                    isAdded={addedKeys.has(rowKey(item))}
+                    onUndoAdd={handleUndoAdd}
                   />
                 );
               })}

@@ -166,7 +166,7 @@ export default function RecipeLibraryPage() {
 
         <Link
           href="/recipes/new"
-          className="btn btn-primary h-10 px-4 text-xs font-semibold shadow-sm self-start sm:self-auto inline-flex items-center gap-1.5"
+          className="btn btn-primary h-11 px-5 text-sm font-bold self-start sm:self-auto inline-flex items-center gap-1.5"
         >
           <Plus className="w-4 h-4" />
           <span>New Recipe</span>
@@ -176,14 +176,14 @@ export default function RecipeLibraryPage() {
 
       {/* ─── Search Bar ─── */}
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-3" />
+        <Search className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-fg-2" />
         <input
           ref={searchInputRef}
           type="text"
           placeholder="Search recipes..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="input h-10 w-full pl-10 pr-9 text-xs sm:text-sm"
+          className="input h-[52px] w-full !rounded-full border-transparent bg-surface-2 pl-11 pr-9 text-base focus:border-accent"
           aria-label="Search recipes"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:block">
@@ -192,7 +192,7 @@ export default function RecipeLibraryPage() {
       </div>
 
       {/* ─── Filter Tabs (All, Favorites, Recent) ─── */}
-      <div className="flex items-center gap-1.5 border-b border-line/40 pb-2">
+      <div className="flex items-center gap-2 overflow-x-auto">
         {(["All", "Favorites", "Recent"] as FilterTab[]).map((tab) => {
           const isActive = activeTab === tab;
           const count =
@@ -208,10 +208,10 @@ export default function RecipeLibraryPage() {
               type="button"
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "tap-target px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer",
+                "tap-target flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-surface-2 text-fg font-semibold shadow-xs"
-                  : "text-fg-3 hover:text-fg hover:bg-surface-2/40"
+                  ? "bg-fg font-semibold text-bg"
+                  : "bg-surface-2 text-fg-2 hover:text-fg"
               )}
             >
               {tab === "Favorites" && (
@@ -242,7 +242,7 @@ export default function RecipeLibraryPage() {
           ))}
         </div>
       ) : filteredRecipes.length === 0 ? (
-        <div className="rounded-xl border border-line/40 bg-surface-1 p-10 text-center space-y-3">
+        <div className="card p-10 text-center space-y-3">
           <p className="text-sm font-semibold text-fg">
             {searchQuery ? `No recipes found matching "${searchQuery}"` : "No recipes in this view"}
           </p>
@@ -262,7 +262,7 @@ export default function RecipeLibraryPage() {
           </div>
         </div>
       ) : (
-        <div className="divide-y divide-line/30 rounded-xl bg-surface-1 border border-line/40 overflow-hidden shadow-xs">
+        <div className="card divide-y divide-line overflow-hidden">
           {filteredRecipes.map((recipe) => (
             <RecipeRow
               key={recipe.id}

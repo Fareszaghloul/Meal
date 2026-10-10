@@ -86,7 +86,7 @@ async function openRowMenu(page: Page, date: string, time: string, item: "Edit" 
 }
 
 /** The weight row of the Today summary card (the sidebar also links to /weight). */
-const todayWeight = (page: Page) => page.locator('section[aria-label="Daily nutrition summary"] a[href="/weight"]');
+const todayWeight = (page: Page) => page.locator('section[aria-label="Water and weight"] a[href="/weight"]');
 const summary = (page: Page) => page.locator('section[aria-label="Weight summary"]');
 
 test.beforeEach(async ({ page }) => {

@@ -18,7 +18,7 @@ export const FoodSearchBar = forwardRef<HTMLInputElement, FoodSearchBarProps>(
     return (
       <div className="space-y-1.5">
         <div className="relative flex items-center">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-3" />
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-fg-2" />
           <input
             ref={ref}
             type="search"
@@ -26,7 +26,7 @@ export const FoodSearchBar = forwardRef<HTMLInputElement, FoodSearchBarProps>(
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Search foods, meals, restaurants..."
-            className="input h-11 w-full pl-10 pr-20 text-[15px] placeholder:text-fg-3 border-line focus:border-fg-2 transition-colors rounded-lg bg-surface-2/60"
+            className="input h-[52px] w-full !rounded-full border-transparent bg-surface-2 pl-11 pr-20 text-base placeholder:text-fg-3 focus:border-accent transition-colors"
             autoComplete="off"
             autoFocus
             aria-label="Search foods, meals, restaurants"

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Plus, Star, Globe } from "lucide-react";
+import { Check, Plus, Star } from "lucide-react";
 import type { FoodSummary, RecipeSummary } from "@/lib/domain";
 import type { NormalizedFood } from "@/lib/nutrition/providers/types";
 import { fmt } from "@/components/ui/primitives";
@@ -14,12 +14,20 @@ export type RowItem =
   | { kind: "recipe"; recipe: RecipeSummary }
   | { kind: "online"; food: NormalizedFood };
 
+/** Stable identity of a row, used to remember what was added during this Add food visit. */
+export function rowKey(item: RowItem): string {
+  return item.kind === "food" ? `food:${item.food.id}` : item.kind === "recipe" ? `recipe:${item.recipe.id}` : `online:${item.food.id}`;
+}
+
 interface FoodResultRowProps {
   item: RowItem;
   onSelect: (item: RowItem) => void;
   onQuickAdd?: (item: RowItem) => void;
   onToggleFavorite?: (id: string, currentFav: boolean, kind?: "food" | "recipe") => void;
   isHighlighted?: boolean;
+  /** Already added to the meal during this visit: the quick-add button becomes a check that undoes it. */
+  isAdded?: boolean;
+  onUndoAdd?: (item: RowItem) => void;
 }
 
 export function FoodResultRow({
@@ -28,6 +36,8 @@ export function FoodResultRow({
   onQuickAdd,
   onToggleFavorite,
   isHighlighted,
+  isAdded,
+  onUndoAdd,
 }: FoodResultRowProps) {
   let name = "";
   let brand: string | null = null;
@@ -88,7 +98,7 @@ export function FoodResultRow({
   return (
     <div
       className={cn(
-        "group flex items-center justify-between gap-3 px-3 py-2.5 transition-colors cursor-pointer rounded-lg hover:bg-surface-2",
+        "group flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 transition-colors cursor-pointer hover:bg-surface-2",
         isHighlighted && "bg-surface-2"
       )}
       onClick={() => onSelect(item)}
@@ -118,7 +128,7 @@ export function FoodResultRow({
         </div>
 
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-fg-3">
-          <span className="text-fg-2">{servingText}</span>
+          {isAdded ? <span className="font-semibold text-accent">Added · {servingText}</span> : <span className="text-fg-2">{servingText}</span>}
           <span>·</span>
           <span>{fmt.g(protein)}P</span>
           <span>·</span>
@@ -161,13 +171,17 @@ export function FoodResultRow({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onQuickAdd(item);
+              if (isAdded) onUndoAdd?.(item);
+              else onQuickAdd(item);
             }}
-            className="btn btn-secondary btn-icon btn-sm h-8 w-8 text-fg-2 hover:bg-[var(--accent)] hover:text-[var(--on-accent)] hover:border-transparent transition-colors"
-            title="Quick add at default portion"
-            aria-label={`Quick add ${name}`}
+            className={cn(
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors",
+              isAdded ? "bg-accent text-on-accent" : "bg-surface-2 text-fg hover:bg-accent hover:text-on-accent"
+            )}
+            title={isAdded ? "Added: tap to undo" : "Quick add at default portion"}
+            aria-label={isAdded ? `Undo add ${name}` : `Quick add ${name}`}
           >
-            <Plus className="h-4 w-4" />
+            {isAdded ? <Check className="h-5 w-5" strokeWidth={2.5} /> : <Plus className="h-5 w-5" />}
           </button>
         )}
       </div>

@@ -67,7 +67,7 @@ export function RecipeRow({
     <div
       onClick={handleClick}
       className={cn(
-        "group relative flex items-center justify-between gap-3 px-3.5 py-3 transition-colors cursor-pointer hover:bg-surface-2/60",
+        "group relative flex min-h-[64px] items-center justify-between gap-3 px-4 py-3.5 transition-colors cursor-pointer hover:bg-surface-2/60",
         isHighlighted && "bg-surface-2"
       )}
       role="button"
@@ -82,7 +82,7 @@ export function RecipeRow({
       {/* Left Column: Recipe Information */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-semibold text-fg tracking-tight group-hover:text-[var(--accent)] transition-colors">
+          <span className="truncate text-base font-bold tracking-tight text-fg">
             {recipe.name}
           </span>
           {recipe.yieldWeightGrams ? (
@@ -104,11 +104,11 @@ export function RecipeRow({
             </>
           )}
           <span className="text-fg-4 select-none">·</span>
-          <span className="tabular font-medium text-fg-2">{fmt.g(recipe.proteinPerServing)}P</span>
+          <span className="tabular font-medium text-protein">{fmt.g(recipe.proteinPerServing)}P</span>
           <span className="text-fg-4 select-none">·</span>
-          <span className="tabular font-medium text-fg-2">{fmt.g(recipe.carbsPerServing)}C</span>
+          <span className="tabular font-medium text-carbs">{fmt.g(recipe.carbsPerServing)}C</span>
           <span className="text-fg-4 select-none">·</span>
-          <span className="tabular font-medium text-fg-2">{fmt.g(recipe.fatPerServing)}F</span>
+          <span className="tabular font-medium text-fat">{fmt.g(recipe.fatPerServing)}F</span>
         </div>
       </div>
 
