@@ -10,6 +10,7 @@ interface Props {
   onClose: () => void;
   date: DateString;
   initialMeal: MealCategory;
+  initialView?: "search" | "manual";
 }
 
 /**

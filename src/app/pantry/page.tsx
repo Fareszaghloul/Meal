@@ -401,7 +401,7 @@ export default function FoodsAndPantryPage() {
           <p className="text-sm text-[var(--text-muted)] font-normal">
             Nutrition catalog & inventory
           </p>
-          <h1 className="text-2xl font-semibold leading-tight tracking-[-0.03em] text-[var(--text-primary)] sm:text-[34px]">
+          <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">
             Foods &amp; Pantry
           </h1>
         </div>

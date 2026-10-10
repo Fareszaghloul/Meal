@@ -183,7 +183,7 @@ export default function WeeklyReviewPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-fg">Weekly Review</h1>
+            <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">Weekly Review</h1>
             <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">
               Intelligence
             </span>
@@ -576,7 +576,7 @@ export default function WeeklyReviewPage() {
                   </div>
 
                   {review.weight.status === "limited_data" && (
-                    <div className="rounded-lg bg-amber-500/10 p-2.5 text-xs text-amber-400">
+                    <div className="rounded-lg bg-amber-500/10 p-2.5 text-xs text-carbs">
                       Limited weight entries ({review.weight.entriesCount} logged). Log at least 3
                       days to produce a reliable rolling trend.
                     </div>
@@ -646,7 +646,7 @@ export default function WeeklyReviewPage() {
             <div className="rounded-xl border border-line bg-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-semibold text-fg">
-                  <Droplets className="h-4 w-4 text-blue-400" />
+                  <Droplets className="h-4 w-4 text-protein" />
                   Hydration & Consistency
                 </div>
                 <span className="text-xs text-fg-3">

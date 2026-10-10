@@ -61,8 +61,10 @@ test("E2E Dashboard: Full Lifecycle (View, Add, Edit, Move, Duplicate, Delete, P
   // 1. Initial State: 0 kcal consumed
   const summary = page.locator('section[aria-label="Daily nutrition summary"]');
   await expect(summary).toBeVisible();
-  await expect(summary.getByText("0", { exact: true })).toBeVisible();
-  await expect(summary.getByText("kcal remaining")).toBeVisible(); // the headline indicator, not the breakdown table header
+  // An empty day: the hero shows Eaten and Left, and nothing is logged against the goal yet.
+  await expect(summary.getByText("Eaten", { exact: true })).toBeVisible();
+  await expect(summary.getByText("Left", { exact: true })).toBeVisible();
+  await expect(summary.getByRole("progressbar", { name: /calorie progress/i })).toHaveAttribute("aria-valuenow", "0");
 
   // 2. Add an item to Lunch
   await page.getByRole("button", { name: /add food to lunch/i }).click();
@@ -163,7 +165,7 @@ test("E2E Dashboard: Hydration Logging (+250, +500, Undo)", async ({ page }) => 
   await page.goto(`/?date=${DASHBOARD_DATE}`);
   await page.waitForLoadState("networkidle");
 
-  const waterSection = page.locator('section[aria-label="Daily nutrition summary"]');
+  const waterSection = page.locator('section[aria-label="Water and weight"]');
   await expect(waterSection).toContainText("0 / 2.5 L");
 
   // Add 250ml
@@ -175,6 +177,7 @@ test("E2E Dashboard: Hydration Logging (+250, +500, Undo)", async ({ page }) => 
   await expect(waterSection).toContainText("0.75 / 2.5 L");
 
   // Undo last glass
-  await page.getByRole("button", { name: /remove 250ml water/i }).click();
+  await page.getByRole("button", { name: /water actions/i }).click();
+  await page.getByRole("menuitem", { name: /remove 250 ml/i }).click();
   await expect(waterSection).toContainText("0.5 / 2.5 L");
 });

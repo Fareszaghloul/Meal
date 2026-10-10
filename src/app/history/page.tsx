@@ -3,9 +3,8 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
-import { api } from "@/lib/client/api";
+import { fetchMonthHistory, invalidateMonthHistory, peekMonthHistory } from "@/lib/client/month-history";
 import {
-  formatMonth,
   shiftMonth,
   startOfMonth,
   todayLocal,
@@ -17,10 +16,6 @@ import { MonthCalendar } from "@/components/history/MonthCalendar";
 import { DayPreviewPanel } from "@/components/history/DayPreviewPanel";
 import { fmt } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
-
-const monthHistoryCache = new Map<string, MonthHistoryResponse>();
-// One request per month even if the effect runs twice (React strict mode) or two triggers coincide.
-const monthInflight = new Map<string, Promise<MonthHistoryResponse>>();
 
 function HistoryContent() {
   const router = useRouter();
@@ -49,9 +44,9 @@ function HistoryContent() {
   });
 
   const [historyData, setHistoryData] = useState<MonthHistoryResponse | null>(() =>
-    monthHistoryCache.get(month) ?? null
+    peekMonthHistory(month)
   );
-  const [loading, setLoading] = useState<boolean>(!monthHistoryCache.has(month));
+  const [loading, setLoading] = useState<boolean>(!peekMonthHistory(month));
   const [error, setError] = useState<string | null>(null);
 
   // Sync state to URL search parameters for refresh and back/forward persistence
@@ -68,8 +63,9 @@ function HistoryContent() {
   // Fetch month data with caching
   const loadMonth = useCallback(
     async (m: string, force = false) => {
-      if (!force && monthHistoryCache.has(m)) {
-        setHistoryData(monthHistoryCache.get(m)!);
+      const cached = peekMonthHistory(m);
+      if (!force && cached) {
+        setHistoryData(cached);
         setLoading(false);
         setError(null);
         return;
@@ -77,11 +73,7 @@ function HistoryContent() {
       setLoading(true);
       setError(null);
       try {
-        const pending = monthInflight.get(m) ?? api<MonthHistoryResponse>(`/api/history/month?month=${m}`).finally(() => monthInflight.delete(m));
-        monthInflight.set(m, pending);
-        const res = await pending;
-        monthHistoryCache.set(m, res);
-        setHistoryData(res);
+        setHistoryData(await fetchMonthHistory(m, force));
       } catch (e) {
         setError(e instanceof Error ? e.message : "Couldn't load history");
       } finally {
@@ -136,12 +128,12 @@ function HistoryContent() {
       const customEvent = e as CustomEvent<{ date: DateString | null }>;
       const updatedDate = customEvent.detail?.date;
       if (!updatedDate) {
-        monthHistoryCache.clear();
+        invalidateMonthHistory(null);
         void loadMonth(month, true);
         return;
       }
       const updatedMonth = updatedDate.slice(0, 7);
-      monthHistoryCache.delete(updatedMonth);
+      invalidateMonthHistory(updatedMonth);
       if (updatedMonth === month) {
         void loadMonth(month, true);
       }
@@ -157,92 +149,67 @@ function HistoryContent() {
   const isCurrentMonth = month === startOfMonth(today).slice(0, 7);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-5xl space-y-6">
       {/* Page Header */}
-      <header className="flex flex-wrap items-center justify-between gap-3 pt-1">
+      <header className="space-y-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-fg">History</h1>
-          <p className="mt-0.5 text-xs text-fg-3">
-            Review past nutrition totals, meal patterns, and logged days
-          </p>
+          <div className="text-xs font-semibold uppercase tracking-[0.08em] text-fg-3">Logged days and totals</div>
+          <h1 className="mt-0.5 text-4xl font-bold leading-[1.1] tracking-[-0.035em] text-fg">History</h1>
         </div>
 
         {/* Month Navigation Toolbar */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Previous Month */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            className="btn btn-ghost btn-icon btn-sm h-8 w-8"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-2 text-fg transition-colors hover:bg-surface-3"
             onClick={() => handleMonthChange(shiftMonth(month, -1))}
             aria-label="Previous month"
             title="Previous month"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5" />
           </button>
 
           {/* Month / Year Picker Popover */}
           <MonthYearPicker currentMonth={month} onChange={handleMonthChange} />
 
-          {/* Next Month */}
           <button
             type="button"
-            className="btn btn-ghost btn-icon btn-sm h-8 w-8"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-2 text-fg transition-colors hover:bg-surface-3"
             onClick={() => handleMonthChange(shiftMonth(month, 1))}
             aria-label="Next month"
             title="Next month"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5" />
           </button>
 
-          {/* Jump to Today Button */}
           {!isCurrentMonth || selectedDate !== today ? (
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm h-8 px-2.5 text-xs font-medium ml-1"
-              onClick={handleJumpToToday}
-              title="Jump to today (T)"
-            >
+            <button type="button" className="btn btn-secondary ml-1 h-11 px-4 text-sm font-semibold" onClick={handleJumpToToday} title="Jump to today (T)">
               Today
             </button>
           ) : null}
         </div>
       </header>
 
-      {/* Month Summary KPI Banner */}
+      {/* Month Summary: three stat cards */}
       {historyData && (
-        <section
-          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-1 px-4 py-2.5 text-xs text-fg-3"
-          aria-label="Month statistics"
-        >
-          <div className="flex items-center gap-1.5 font-medium text-fg">
-            <span className="tabular">{formatMonth(month)} Summary</span>
-          </div>
-
-          <div className="flex items-center gap-4 sm:gap-6 tabular">
-            <div>
-              <span className="text-fg-3 mr-1.5">Logged:</span>
-              <strong className="text-fg font-semibold">
-                {historyData.summary.loggedDays}{" "}
-                {historyData.summary.loggedDays === 1 ? "day" : "days"}
-              </strong>
+        <section className="grid grid-cols-3 gap-2.5" aria-label="Month statistics">
+          <div className="card p-3.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-3">Logged</div>
+            <div className="tabular mt-1 text-2xl font-bold leading-tight tracking-tight">
+              {historyData.summary.loggedDays}
+              <span className="text-[13px] font-medium text-fg-3"> {historyData.summary.loggedDays === 1 ? "day" : "days"}</span>
             </div>
-
-            {historyData.summary.loggedDays > 0 && (
-              <>
-                <div>
-                  <span className="text-fg-3 mr-1.5">Daily avg:</span>
-                  <strong className="text-fg font-semibold">
-                    {fmt.int(historyData.summary.avgCalories)} kcal
-                  </strong>
-                </div>
-                <div className="hidden sm:block">
-                  <span className="text-fg-3 mr-1.5">Avg protein:</span>
-                  <strong className="text-blue-400 font-semibold">
-                    {fmt.g(historyData.summary.avgProtein)}
-                  </strong>
-                </div>
-              </>
-            )}
+          </div>
+          <div className="card p-3.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-3">Avg kcal</div>
+            <div className="tabular mt-1 text-2xl font-bold leading-tight tracking-tight">{historyData.summary.loggedDays > 0 ? fmt.int(historyData.summary.avgCalories) : "—"}</div>
+          </div>
+          <div className="card p-3.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-fg-3">Avg protein</div>
+            <div className="tabular mt-1 text-2xl font-bold leading-tight tracking-tight">
+              {historyData.summary.loggedDays > 0 ? fmt.g(historyData.summary.avgProtein) : "—"}
+              {historyData.summary.loggedDays > 0 && <span className="text-[13px] font-medium text-fg-3"> g</span>}
+            </div>
           </div>
         </section>
       )}

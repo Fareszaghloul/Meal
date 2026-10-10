@@ -61,7 +61,7 @@ export default function WeightPage() {
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold">Weight</h1>
+        <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">Weight</h1>
         <div className="flex gap-2">
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => openLog("inbody")}>
             Add InBody scan

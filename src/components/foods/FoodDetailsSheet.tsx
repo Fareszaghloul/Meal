@@ -149,19 +149,19 @@ export function FoodDetailsSheet({
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg bg-surface-2/60 p-2">
               <span className="block text-[11px] font-medium uppercase text-fg-3">Protein</span>
-              <span className="text-base font-semibold tabular text-blue-400">
+              <span className="text-base font-semibold tabular text-protein">
                 {fmt.g(nPerServing.protein)}
               </span>
             </div>
             <div className="rounded-lg bg-surface-2/60 p-2">
               <span className="block text-[11px] font-medium uppercase text-fg-3">Carbs</span>
-              <span className="text-base font-semibold tabular text-amber-400">
+              <span className="text-base font-semibold tabular text-carbs">
                 {fmt.g(nPerServing.carbs)}
               </span>
             </div>
             <div className="rounded-lg bg-surface-2/60 p-2">
               <span className="block text-[11px] font-medium uppercase text-fg-3">Fat</span>
-              <span className="text-base font-semibold tabular text-rose-400">
+              <span className="text-base font-semibold tabular text-fat">
                 {fmt.g(nPerServing.fat)}
               </span>
             </div>
@@ -196,17 +196,17 @@ export function FoodDetailsSheet({
               </tr>
               <tr>
                 <td className="py-2 pl-4 text-fg font-medium">Protein</td>
-                <td className="py-2 px-3 text-right text-blue-400">{fmt.g(nPerServing.protein)}</td>
+                <td className="py-2 px-3 text-right text-protein">{fmt.g(nPerServing.protein)}</td>
                 <td className="py-2 pr-4 text-right text-fg-2">{fmt.g(nPer100g.protein)}</td>
               </tr>
               <tr>
                 <td className="py-2 pl-4 text-fg font-medium">Carbohydrates</td>
-                <td className="py-2 px-3 text-right text-amber-400">{fmt.g(nPerServing.carbs)}</td>
+                <td className="py-2 px-3 text-right text-carbs">{fmt.g(nPerServing.carbs)}</td>
                 <td className="py-2 pr-4 text-right text-fg-2">{fmt.g(nPer100g.carbs)}</td>
               </tr>
               <tr>
                 <td className="py-2 pl-4 text-fg font-medium">Fat</td>
-                <td className="py-2 px-3 text-right text-rose-400">{fmt.g(nPerServing.fat)}</td>
+                <td className="py-2 px-3 text-right text-fat">{fmt.g(nPerServing.fat)}</td>
                 <td className="py-2 pr-4 text-right text-fg-2">{fmt.g(nPer100g.fat)}</td>
               </tr>
               {food.fiberPer100g > 0 && (

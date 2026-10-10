@@ -45,7 +45,7 @@ function ReviewItem({ label, result, displayValue, onAccept, isCurrentApplied }:
           </span>
         )}
         {confidence === "medium" && (
-          <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400">
+          <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-carbs">
             <AlertCircle className="h-2.5 w-2.5" /> Check this value
           </span>
         )}
@@ -84,7 +84,7 @@ function ReviewItem({ label, result, displayValue, onAccept, isCurrentApplied }:
       </div>
 
       {warnings && warnings.length > 0 && (
-        <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400 leading-tight">
+        <p className="mt-1 text-[10px] text-amber-600 dark:text-carbs leading-tight">
           {warnings[0]}
         </p>
       )}

@@ -293,7 +293,7 @@ export function FoodFormSheet({
           </button>
           <div className="flex items-center gap-2">
             {forceCreate && (
-              <span className="text-xs text-amber-400">Saving with copy suffix</span>
+              <span className="text-xs text-carbs">Saving with copy suffix</span>
             )}
             <button
               type="submit"
@@ -322,7 +322,7 @@ export function FoodFormSheet({
             role="alert"
           >
             <div className="flex items-start gap-2.5">
-              <AlertCircle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-carbs mt-0.5" />
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="font-semibold text-amber-300">
                   Possible duplicate ({duplicateCandidate.reason})

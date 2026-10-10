@@ -31,9 +31,11 @@ interface AddFoodModalProps {
   onClose: () => void;
   date: DateString;
   initialMeal: MealCategory;
+  /** Open straight into manual nutrition entry (the quick-add menu's "Enter manually"). */
+  initialView?: "search" | "manual";
 }
 
-export function AddFoodModal({ open, onClose, date: initialDate, initialMeal }: AddFoodModalProps) {
+export function AddFoodModal({ open, onClose, date: initialDate, initialMeal, initialView = "search" }: AddFoodModalProps) {
   const [meal, setMeal] = useState<MealCategory>(initialMeal);
   const [date, setDate] = useState<DateString>(initialDate);
   const [query, setQuery] = useState("");
@@ -71,7 +73,7 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal }: 
     setMeal(initialMeal);
     setDate(initialDate);
     setSelectedItem(null);
-    setManualEntryOpen(false);
+    setManualEntryOpen(initialView === "manual");
     setQuery("");
     setActiveFilter("all");
     setHighlightedIndex(0);
@@ -100,7 +102,7 @@ export function AddFoodModal({ open, onClose, date: initialDate, initialMeal }: 
     };
     window.addEventListener("mealprep:catalog-invalidated", onInvalidate);
     return () => window.removeEventListener("mealprep:catalog-invalidated", onInvalidate);
-  }, [open, initialMeal, initialDate]);
+  }, [open, initialMeal, initialDate, initialView]);
 
   // Global keyboard shortcut '/' to focus search
   useEffect(() => {

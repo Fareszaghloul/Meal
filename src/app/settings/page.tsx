@@ -94,7 +94,7 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-16">
       <header className="pb-1">
-        <h1 className="text-xl font-bold tracking-tight text-fg">Settings</h1>
+        <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">Settings</h1>
         <p className="text-xs text-fg-3">Units, targets, goals and your data</p>
       </header>
 

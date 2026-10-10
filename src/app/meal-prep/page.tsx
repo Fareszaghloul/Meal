@@ -273,7 +273,7 @@ export default function MealPrepPage() {
               <p className="text-sm text-[var(--text-muted)] font-normal">
                 Batch cooking workstation
               </p>
-              <h1 className="text-[34px] font-semibold tracking-[-0.03em] leading-tight text-[var(--text-primary)]">
+              <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">
                 Meal Prep Mode
               </h1>
             </div>

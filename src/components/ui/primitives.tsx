@@ -112,7 +112,7 @@ export function Segmented<T extends string>({
   ariaLabel?: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className={cn("inline-flex rounded-md border border-line bg-surface-2 p-0.5", className)}>
+    <div role="radiogroup" aria-label={ariaLabel} className={cn("inline-flex rounded-full bg-surface-2 p-[3px]", className)}>
       {options.map((o) => (
         <button
           key={o.value}
@@ -121,9 +121,9 @@ export function Segmented<T extends string>({
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "seg-item flex-1 whitespace-nowrap rounded-[5px] font-medium transition-colors",
-            size === "sm" ? "tap-target px-2.5 py-1 text-xs min-h-[28px]" : "tap-target px-3 py-1.5 text-sm min-h-[32px]",
-            value === o.value ? "bg-surface text-fg shadow-[0_1px_2px_rgba(0,0,0,0.06)]" : "text-fg-2 hover:text-fg",
+            "seg-item flex-1 whitespace-nowrap rounded-full font-medium transition-colors",
+            size === "sm" ? "tap-target px-3 py-1 text-xs min-h-[28px]" : "tap-target px-4 py-1.5 text-sm min-h-[32px]",
+            value === o.value ? "bg-fg font-semibold text-bg" : "text-fg-2 hover:text-fg",
             itemClassName
           )}
         >
@@ -168,7 +168,7 @@ export function Menu({ items, label = "More actions", align = "right", trigger }
         {trigger ?? <MoreHorizontal className="h-4 w-4" />}
       </button>
       {open && (
-        <div role="menu" className={cn("anim-fade absolute z-50 mt-1 min-w-[180px] overflow-hidden rounded-md border border-line bg-surface py-1 shadow-md", align === "right" ? "right-0" : "left-0")}>
+        <div role="menu" className={cn("anim-fade absolute z-50 mt-1 min-w-[200px] overflow-hidden rounded-2xl border border-line bg-surface p-1 shadow-xl", align === "right" ? "right-0" : "left-0")}>
           {items.map((it) => (
             <button
               key={it.label}
@@ -179,7 +179,7 @@ export function Menu({ items, label = "More actions", align = "right", trigger }
                 setOpen(false);
                 it.onClick();
               }}
-              className={cn("menu-item flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-2 disabled:opacity-50", it.danger ? "text-negative" : "text-fg")}
+              className={cn("menu-item flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-surface-2 disabled:opacity-50", it.danger ? "text-negative" : "text-fg")}
             >
               {it.icon && <span className="text-fg-3">{it.icon}</span>}
               {it.label}

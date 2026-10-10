@@ -268,7 +268,7 @@ export default function SavedMealsPage() {
             </Link>
             <div>
               <p className="text-sm text-[var(--text-muted)] font-normal">Reusable combinations</p>
-              <h1 className="text-[34px] font-semibold tracking-[-0.03em] leading-tight text-[var(--text-primary)]">
+              <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">
                 Saved Meals
               </h1>
             </div>

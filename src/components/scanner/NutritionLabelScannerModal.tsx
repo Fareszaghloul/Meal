@@ -434,7 +434,7 @@ export function NutritionLabelScannerModal({
                 />
 
                 {cameraError && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+                  <p className="text-xs text-amber-600 dark:text-carbs text-center">
                     {cameraError}
                   </p>
                 )}
@@ -462,7 +462,7 @@ export function NutritionLabelScannerModal({
         {step === "error" && scanError && (
           <div className="space-y-4 py-2">
             <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-[var(--text-primary)] space-y-2">
-              <div className="flex items-center space-x-2 text-amber-700 dark:text-amber-400 font-semibold">
+              <div className="flex items-center space-x-2 text-amber-700 dark:text-carbs font-semibold">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{scanError.title}</span>
               </div>

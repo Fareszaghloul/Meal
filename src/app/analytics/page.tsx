@@ -50,7 +50,7 @@ export default function AnalyticsPage() {
       {/* Top Header */}
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-fg">Analytics</h1>
+          <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">Analytics</h1>
           <p className="text-xs text-fg-3">
             {data
               ? `${formatDate(data.current.from, { month: "short", day: "numeric" })} – ${formatDate(

@@ -225,7 +225,7 @@ export function NutritionScanReview({
 
       {/* 2. Salt Warning Notice */}
       {parsedData.saltDetected && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-400 space-y-1">
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-carbs space-y-1">
           <div className="flex items-center space-x-1.5 font-semibold">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>Salt Detected on Packaging</span>
@@ -242,7 +242,7 @@ export function NutritionScanReview({
       {duplicateCandidate && (
         <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1.5 font-semibold text-amber-700 dark:text-amber-400">
+            <div className="flex items-center space-x-1.5 font-semibold text-amber-700 dark:text-carbs">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>This food may already exist</span>
             </div>
@@ -409,7 +409,7 @@ export function NutritionScanReview({
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs text-[var(--text-secondary)]">Calories</label>
               {isUncertain("calories") && (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Verify</span>
+                <span className="text-[10px] text-amber-600 dark:text-carbs font-medium">Verify</span>
               )}
             </div>
             <div className="relative">
@@ -432,7 +432,7 @@ export function NutritionScanReview({
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs text-[var(--text-secondary)]">Protein</label>
               {isUncertain("protein") && (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Verify</span>
+                <span className="text-[10px] text-amber-600 dark:text-carbs font-medium">Verify</span>
               )}
             </div>
             <div className="relative">
@@ -455,7 +455,7 @@ export function NutritionScanReview({
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs text-[var(--text-secondary)]">Total Carbs</label>
               {isUncertain("carbohydrates") && (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Verify</span>
+                <span className="text-[10px] text-amber-600 dark:text-carbs font-medium">Verify</span>
               )}
             </div>
             <div className="relative">
@@ -478,7 +478,7 @@ export function NutritionScanReview({
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs text-[var(--text-secondary)]">Total Fat</label>
               {isUncertain("fat") && (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Verify</span>
+                <span className="text-[10px] text-amber-600 dark:text-carbs font-medium">Verify</span>
               )}
             </div>
             <div className="relative">
@@ -601,7 +601,7 @@ export function NutritionScanReview({
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs text-[var(--text-secondary)]">Sodium</label>
                 {isUncertain("sodium") && (
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Verify</span>
+                  <span className="text-[10px] text-amber-600 dark:text-carbs font-medium">Verify</span>
                 )}
               </div>
               <div className="relative">
@@ -624,7 +624,7 @@ export function NutritionScanReview({
       </div>
 
       {errorMsg && (
-        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400">
+        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-fat">
           {errorMsg}
         </div>
       )}

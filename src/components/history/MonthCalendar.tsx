@@ -80,36 +80,26 @@ export function MonthCalendar({
   );
 
   return (
-    <div
-      ref={calendarRef}
-      className="card overflow-hidden rounded-xl border border-line bg-surface"
-      role="region"
-      aria-label="Month Calendar"
-    >
+    <div ref={calendarRef} className="card px-2 pb-3 pt-4 sm:px-4" role="region" aria-label="Month Calendar">
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 border-b border-line bg-surface-1/40 text-center text-[11px] font-semibold uppercase tracking-wider text-fg-3">
+      <div className="grid grid-cols-7 pb-1.5 text-center text-xs font-semibold text-fg-3">
         {WEEKDAYS.map((w) => (
-          <div key={w} className="py-2.5">
-            {w}
+          <div key={w}>
+            <span className="hidden sm:inline">{w}</span>
+            <span className="sm:hidden" aria-hidden="true">
+              {w[0]}
+            </span>
           </div>
         ))}
       </div>
 
-      {/* Days Grid */}
-      <div className="grid grid-cols-7 divide-x divide-y divide-line/70">
+      {/* Days: each day is a ring showing how close it came to the calorie goal */}
+      <div className="grid grid-cols-7 justify-items-center gap-y-0.5">
         {cells.map((d, idx) => {
-          if (!d) {
-            return (
-              <div
-                key={`empty-${idx}`}
-                className="aspect-square bg-surface-2/30 sm:aspect-[1.25/1] pointer-events-none"
-                aria-hidden="true"
-              />
-            );
-          }
+          if (!d) return <div key={`empty-${idx}`} className="h-12" aria-hidden="true" />;
 
           const dayData = days[d];
-          const hasFood = dayData && dayData.entryCount > 0;
+          const hasFood = Boolean(dayData && dayData.entryCount > 0);
           const isSelected = d === selectedDate;
           const isCurrentDay = d === today;
           const isFuture = d > today;
@@ -117,18 +107,18 @@ export function MonthCalendar({
 
           const goalCals = goals?.calories ?? 0;
           const cals = dayData?.calories ?? 0;
-          const diff = goalCals > 0 ? cals - goalCals : 0;
-
-          // Target proximity indicator
-          const isNearTarget = goalCals > 0 && hasFood && Math.abs(diff) <= 150;
-          const isOverTarget = goalCals > 0 && hasFood && diff > 150;
+          const pct = goalCals > 0 ? (cals / goalCals) * 100 : hasFood ? 100 : 0;
+          const isOver = goalCals > 0 && hasFood && pct > 105;
+          const isNearTarget = goalCals > 0 && hasFood && pct >= 90 && !isOver;
+          const ringColor = isSelected ? "var(--on-accent)" : isOver ? "var(--carbs)" : isNearTarget ? "var(--accent)" : "var(--fg-3)";
+          const dash = `${(Math.min(100, pct) / 100) * 100.53} 100.53`;
 
           const ariaLabel = `${parseDate(d).toLocaleDateString("en-US", {
             weekday: "long",
             month: "long",
             day: "numeric",
             year: "numeric",
-          })}${hasFood ? `, ${fmt.int(cals)} kcal logged across ${dayData.entryCount} entries` : ", no entries"}${
+          })}${hasFood ? `, ${fmt.int(cals)} kcal logged across ${dayData!.entryCount} entries` : ", no entries"}${
             isCurrentDay ? ", Today" : ""
           }${isSelected ? ", Selected" : ""}`;
 
@@ -141,98 +131,45 @@ export function MonthCalendar({
               onKeyDown={handleKeyDown}
               aria-label={ariaLabel}
               aria-pressed={isSelected}
-              className={cn(
-                "group relative flex aspect-square flex-col justify-between p-1.5 text-left transition-colors sm:aspect-[1.25/1] sm:p-2 focus-visible:outline-hidden",
-                // Base background
-                isSelected
-                  ? "bg-surface-2 ring-2 ring-inset ring-fg shadow-xs z-10"
-                  : "bg-surface hover:bg-surface-2/60",
-                // Today styling
-                isCurrentDay && !isSelected && "ring-1 ring-inset ring-accent/60 bg-accent-soft/10",
-                // Future styling
-                isFuture && "text-fg-3/60"
-              )}
+              className="flex h-12 w-12 items-center justify-center rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-fg"
             >
-              {/* Day Number Header */}
-              <div className="flex items-center justify-between w-full">
+              <span className={cn("relative flex h-10 w-10 items-center justify-center rounded-full transition-colors", isSelected ? "bg-accent" : "hover:bg-surface-2")}>
+                <svg viewBox="0 0 40 40" aria-hidden="true" className="absolute inset-0 h-10 w-10 -rotate-90">
+                  {hasFood && <circle cx="20" cy="20" r="16" fill="none" strokeWidth="3" stroke={isSelected ? "rgba(0,0,0,0.18)" : "var(--surface-2)"} />}
+                  {hasFood && <circle cx="20" cy="20" r="16" fill="none" strokeWidth="3" strokeLinecap="round" stroke={ringColor} strokeDasharray={dash} />}
+                </svg>
                 <span
                   className={cn(
-                    "text-xs font-semibold tabular leading-none sm:text-sm",
-                    isCurrentDay
-                      ? "text-accent font-bold"
-                      : isSelected
-                      ? "text-fg font-bold"
-                      : isFuture
-                      ? "text-fg-3/60"
-                      : "text-fg-2"
+                    "tabular relative text-sm",
+                    isSelected ? "font-bold text-on-accent" : isCurrentDay ? "font-bold text-fg underline decoration-2 underline-offset-4" : isFuture ? "font-medium text-fg-3" : "font-medium text-fg"
                   )}
                 >
                   {dayNumber}
                 </span>
-
-                {/* Logged Indicator Dot */}
-                {hasFood ? (
-                  <span
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full shrink-0",
-                      isNearTarget
-                        ? "bg-accent"
-                        : isOverTarget
-                        ? "bg-amber-400"
-                        : "bg-fg-2"
-                    )}
-                    title={
-                      isNearTarget
-                        ? "Near target"
-                        : isOverTarget
-                        ? "Over target"
-                        : "Food logged"
-                    }
-                  />
-                ) : null}
-              </div>
-
-              {/* Calorie & Macro Info */}
-              {hasFood ? (
-                <div className="w-full min-w-0">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-[11px] font-semibold tabular text-fg leading-tight truncate sm:text-xs">
-                      {fmt.int(cals)}
-                      <span className="hidden sm:inline font-normal text-fg-3 text-[10px] ml-0.5">kcal</span>
-                    </span>
-                  </div>
-
-                  {/* Desktop Macro preview */}
-                  <div className="hidden sm:flex items-center gap-1 text-[10px] text-fg-3 font-mono mt-0.5 tabular leading-none">
-                    <span className="text-blue-400 font-medium">{fmt.g(dayData.protein)}P</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-4" aria-hidden="true" />
-              )}
+              </span>
             </button>
           );
         })}
       </div>
 
       {/* Calendar Legend */}
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-1/40 px-3.5 py-2.5 text-xs text-fg-3">
-        <div className="flex items-center gap-3">
+      <footer className="flex flex-wrap items-center justify-between gap-3 px-2 pt-3 text-xs text-fg-3">
+        <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <span className="h-2 w-2 rounded-full bg-accent" />
             <span>Near target</span>
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-fg-2" />
-            <span>Food logged</span>
+            <span className="h-2 w-2 rounded-full bg-carbs" />
+            <span>Over</span>
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-xs border border-accent" />
-            <span>Today</span>
+            <span className="h-2 w-2 rounded-full bg-fg-3" />
+            <span>Under</span>
           </span>
         </div>
 
-        <span className="hidden sm:inline text-[11px] font-mono text-fg-3">
+        <span className="hidden font-mono text-[11px] text-fg-3 sm:inline">
           Use <kbd className="rounded border border-line bg-surface-2 px-1">←</kbd> <kbd className="rounded border border-line bg-surface-2 px-1">→</kbd> to navigate · <kbd className="rounded border border-line bg-surface-2 px-1">T</kbd> for Today
         </span>
       </footer>

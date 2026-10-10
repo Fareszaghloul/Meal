@@ -65,7 +65,7 @@ export function MonthYearPicker({ currentMonth, onChange }: MonthYearPickerProps
         ref={buttonRef}
         type="button"
         onClick={() => setOpen(!open)}
-        className="tap-target flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2 focus-visible:outline-hidden"
+        className="tap-target flex h-11 items-center gap-1.5 rounded-full bg-surface-2 px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-3 focus-visible:outline-hidden"
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={`Select month and year, currently ${formatMonth(currentMonth)}`}

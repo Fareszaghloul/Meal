@@ -59,30 +59,27 @@ export function EntryRow({ entry, onEdit }: { entry: MealItem; onEdit: (e: MealI
   return (
     <li
       className={cn(
-        "group flex items-center justify-between gap-3 py-2.5 pl-4 pr-2 transition-colors hover:bg-surface-2/40 md:pl-5",
+        "group flex items-center justify-between gap-2 py-1 pl-5 pr-2 transition-colors hover:bg-surface-2/40",
         entry._pending === "saving" && "opacity-75",
-        entry._pending === "failed" && "opacity-60 bg-negative-soft/20"
+        entry._pending === "failed" && "bg-negative-soft/20 opacity-60"
       )}
     >
       <button
         type="button"
         onClick={() => onEdit(entry)}
-        className="min-h-[44px] min-w-0 flex-1 text-left focus-visible:outline-hidden"
+        className="min-h-[52px] min-w-0 flex-1 py-1 text-left focus-visible:outline-hidden"
         aria-label={`Edit ${entry.name}, ${describeQuantity(entry)}, ${fmt.int(entry.calories)} kcal`}
       >
         <div className="flex items-baseline justify-between gap-3">
-          <span className="truncate text-sm font-medium text-fg group-hover:text-accent transition-colors">
-            {entry.name}
-          </span>
-          <div className="shrink-0 text-right tabular">
-            <span className="text-sm font-semibold text-fg">{fmt.int(entry.calories)}</span>
-            <span className="ml-1 text-xs text-fg-3">kcal</span>
-          </div>
+          <span className="truncate text-[15px] font-medium text-fg">{entry.name}</span>
+          <span className="tabular shrink-0 text-[15px] font-semibold text-fg">{fmt.int(entry.calories)}</span>
         </div>
-        <div className="mt-0.5 flex items-baseline justify-between gap-3 text-xs tabular text-fg-3">
-          <span className="truncate text-fg-2">{describeQuantity(entry)}</span>
-          <span className="shrink-0 text-fg-3">
-            {fmt.g(entry.protein)}P · {fmt.g(entry.carbs)}C · {fmt.g(entry.fat)}F
+        <div className="tabular mt-0.5 flex items-baseline justify-between gap-3 text-[13px] text-fg-3">
+          <span className="truncate">{describeQuantity(entry)}</span>
+          <span className="shrink-0 space-x-1.5">
+            <span className="text-protein">{fmt.g(entry.protein)}P</span>
+            <span className="text-carbs">{fmt.g(entry.carbs)}C</span>
+            <span className="text-fat">{fmt.g(entry.fat)}F</span>
           </span>
         </div>
       </button>
@@ -104,6 +101,7 @@ interface MealSectionProps {
   onCopyTo: (c: MealCategory, entries: MealItem[]) => void;
 }
 
+/** One meal inside the grouped meals card; the page owns the card, so this is a plain section with a divider. */
 export function MealSection({
   category,
   entries,
@@ -137,14 +135,14 @@ export function MealSection({
   ];
 
   return (
-    <section className="card overflow-hidden" aria-labelledby={`meal-${category}`}>
-      <header className="flex items-center justify-between gap-2 border-b border-line bg-surface px-4 py-2.5 md:px-5">
-        <div className="flex items-center gap-2">
+    <section className="border-t border-line first:border-t-0" aria-labelledby={`meal-${category}`}>
+      <header className="flex items-center justify-between gap-2 py-2.5 pl-5 pr-2">
+        <div className="flex min-w-0 items-center gap-2">
           {entries.length > 0 && (
             <button
               type="button"
               onClick={() => setCollapsed((c) => !c)}
-              className="btn btn-ghost btn-icon btn-sm h-6 w-6 text-fg-3 hover:text-fg"
+              className="btn btn-ghost btn-icon btn-sm -ml-2 h-9 w-9 text-fg-3 hover:text-fg"
               aria-label={collapsed ? `Expand ${MEAL_LABELS[category]}` : `Collapse ${MEAL_LABELS[category]}`}
               aria-expanded={!collapsed}
             >
@@ -152,20 +150,19 @@ export function MealSection({
             </button>
           )}
 
-          <h2 id={`meal-${category}`} className="text-sm font-semibold text-fg">
+          <h2 id={`meal-${category}`} className="text-base font-bold tracking-tight text-fg">
             {MEAL_LABELS[category]}
           </h2>
 
-          <div className="flex items-baseline gap-1.5 tabular text-xs text-fg-3">
+          <div className="tabular flex items-baseline gap-1.5 text-[13px] text-fg-3">
             {entries.length > 0 ? (
               <>
-                <span className="font-semibold text-fg">{fmt.int(totals.calories)}</span>
-                <span>kcal</span>
-                <span className="hidden text-fg-3 sm:inline">
+                <span>{fmt.int(totals.calories)} kcal</span>
+                <span className="hidden sm:inline">
                   · {fmt.g(totals.protein)}P · {fmt.g(totals.carbs)}C · {fmt.g(totals.fat)}F
                 </span>
                 {collapsed && (
-                  <span className="ml-1 rounded-sm bg-surface-3 px-1 py-0.2 text-[10px] text-fg-3">
+                  <span className="ml-1 rounded-full bg-surface-3 px-1.5 text-[10px] text-fg-3">
                     {entries.length} {entries.length === 1 ? "item" : "items"}
                   </span>
                 )}
@@ -176,44 +173,35 @@ export function MealSection({
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => onAdd(category)}
-            className="btn btn-ghost btn-sm h-7 text-xs font-medium text-fg-2 hover:text-fg"
+            className="btn btn-ghost btn-sm h-9 text-[13px] font-semibold text-fg hover:text-fg"
             aria-label={`Add food to ${MEAL_LABELS[category]}`}
           >
-            <Plus className="h-3.5 w-3.5 mr-0.5" /> Add
+            <Plus className="mr-0.5 h-4 w-4" /> Add
           </button>
           <Menu items={menu} label={`${MEAL_LABELS[category]} actions`} />
         </div>
       </header>
 
-      {/* Content */}
       {entries.length === 0 ? (
-        <div className="flex items-center justify-between px-4 py-2.5 text-xs text-fg-3 md:px-5">
+        <div className="flex items-center justify-between px-5 pb-3 text-[13px] text-fg-3">
           <span>Nothing logged yet.</span>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onCopyYesterday(category)}
-              className="text-fg-2 hover:text-fg hover:underline transition-colors"
-            >
+            <button type="button" onClick={() => onCopyYesterday(category)} className="min-h-[36px] text-fg-2 transition-colors hover:text-fg hover:underline">
               Copy yesterday
             </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => onAdd(category)}
-              className="font-medium text-fg hover:underline transition-colors"
-            >
+            <span aria-hidden="true">·</span>
+            <button type="button" onClick={() => onAdd(category)} className="min-h-[36px] font-medium text-fg transition-colors hover:underline">
               + Add food
             </button>
           </div>
         </div>
       ) : (
         !collapsed && (
-          <ul className="divide-y divide-line">
+          <ul className="pb-1">
             {entries.map((e) => (
               <EntryRow key={e.id} entry={e} onEdit={onEdit} />
             ))}

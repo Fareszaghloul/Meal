@@ -49,7 +49,7 @@ export function DayPreviewPanel({
   // The latest daily weigh-in for this date, chosen on the server.
   const weightBadge =
     dayData?.weightKg != null && dayData.weightKg > 0 ? (
-      <div className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface-1 px-2.5 py-1 text-xs text-fg-2" data-testid="history-weight">
+      <div className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-fg-2" data-testid="history-weight">
         <Scale className="h-3.5 w-3.5 text-accent" />
         <span className="tabular font-medium">
           {formatWeight(dayData.weightKg, weightUnit)} {weightUnit}
@@ -74,30 +74,26 @@ export function DayPreviewPanel({
       ? { label: "Near target", color: "text-accent" }
       : calDiff < 0
       ? { label: `${fmt.int(Math.abs(calDiff))} kcal remaining`, color: "text-fg-3" }
-      : { label: `${fmt.int(calDiff)} kcal over target`, color: "text-amber-400" };
+      : { label: `${fmt.int(calDiff)} kcal over target`, color: "text-carbs" };
 
   return (
     <aside
-      className="card flex flex-col overflow-hidden rounded-xl border border-line bg-surface p-4 sm:p-5 space-y-4"
+      className="card flex flex-col space-y-6 p-5"
       aria-label={`Details for ${formattedTitle}`}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-line pb-3">
+      <div className="flex items-start justify-between gap-3 border-b border-line pb-5">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-fg truncate">{formattedTitle}</h2>
-            <span
-              className={cn(
-                "rounded px-1.5 py-0.5 text-[11px] font-medium shrink-0",
-                isCurrentDay
-                  ? "bg-accent/15 text-accent border border-accent/30 font-semibold"
-                  : "bg-surface-2 text-fg-3 border border-line"
-              )}
-            >
-              {relativeLabel}
-            </span>
-          </div>
-          <p className="mt-0.5 text-xs text-fg-3">
+          <span
+            className={cn(
+              "mb-2 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+              isCurrentDay ? "bg-accent text-on-accent" : "bg-surface-2 text-fg-3"
+            )}
+          >
+            {relativeLabel}
+          </span>
+          <h2 className="text-lg font-bold leading-tight tracking-tight text-fg">{formattedTitle}</h2>
+          <p className="mt-1 text-[13px] text-fg-3">
             {hasEntries
               ? `${dayData.entryCount} ${dayData.entryCount === 1 ? "entry" : "entries"} across ${dayData.mealsLogged} ${dayData.mealsLogged === 1 ? "meal" : "meals"}`
               : isFuture
@@ -109,7 +105,7 @@ export function DayPreviewPanel({
         <button
           type="button"
           onClick={() => onOpenDay(date)}
-          className="btn btn-primary btn-sm shrink-0 gap-1"
+          className="btn btn-primary h-11 shrink-0 gap-1 px-4 font-bold"
           aria-label={`Open full daily log for ${formattedTitle}`}
         >
           <span>Open day</span>
@@ -125,12 +121,12 @@ export function DayPreviewPanel({
       ) : hasEntries ? (
         <>
           {/* Calorie & Macro Hero */}
-          <div className="rounded-xl border border-line bg-surface-1 p-3.5 space-y-2.5">
+          <div className="space-y-3">
             <div className="flex items-baseline justify-between">
               <div>
                 <span className="text-xs font-medium uppercase tracking-wider text-fg-3">Calories</span>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-2xl font-bold tabular tracking-tight text-fg">
+                  <span className="text-4xl font-bold tabular tracking-[-0.035em] text-fg">
                     {fmt.int(calories)}
                   </span>
                   <span className="text-xs text-fg-3 font-normal">kcal</span>
@@ -163,9 +159,9 @@ export function DayPreviewPanel({
             )}
 
             {/* Macros Row */}
-            <div className="grid grid-cols-3 gap-2 border-t border-line/60 pt-2.5 text-xs">
+            <div className="grid grid-cols-3 gap-3 border-t border-line/60 pt-4 text-xs">
               <div>
-                <span className="text-[11px] font-medium text-blue-400">Protein</span>
+                <span className="text-[11px] font-medium text-protein">Protein</span>
                 <p className="font-semibold tabular text-fg mt-0.5">
                   {fmt.g(protein)}
                   {goals?.protein ? (
@@ -174,7 +170,7 @@ export function DayPreviewPanel({
                 </p>
               </div>
               <div>
-                <span className="text-[11px] font-medium text-amber-400">Carbs</span>
+                <span className="text-[11px] font-medium text-carbs">Carbs</span>
                 <p className="font-semibold tabular text-fg mt-0.5">
                   {fmt.g(carbs)}
                   {goals?.carbs ? (
@@ -183,7 +179,7 @@ export function DayPreviewPanel({
                 </p>
               </div>
               <div>
-                <span className="text-[11px] font-medium text-rose-400">Fat</span>
+                <span className="text-[11px] font-medium text-fat">Fat</span>
                 <p className="font-semibold tabular text-fg mt-0.5">
                   {fmt.g(fat)}
                   {goals?.fat ? (
@@ -195,18 +191,18 @@ export function DayPreviewPanel({
           </div>
 
           {/* Meal Breakdown List */}
-          <div className="space-y-1.5">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-3 px-1">
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-3">
               Meal Breakdown
             </h3>
-            <div className="divide-y divide-line/60 rounded-xl border border-line bg-surface-1">
+            <div className="divide-y divide-line/60 rounded-2xl bg-surface-2/50">
               {MEAL_CATEGORIES.map(({ key, label }) => {
                 const mealCals = dayData.mealCalories?.[key] ?? 0;
                 const pct = calories > 0 && mealCals > 0 ? Math.round((mealCals / calories) * 100) : 0;
                 return (
                   <div
                     key={key}
-                    className="flex items-center justify-between px-3.5 py-2 text-xs"
+                    className="flex items-center justify-between px-4 py-3 text-sm"
                   >
                     <span className={cn("font-medium", mealCals > 0 ? "text-fg" : "text-fg-3")}>
                       {label}
@@ -234,8 +230,8 @@ export function DayPreviewPanel({
           {/* Context Badges (Water & Weight) */}
           <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
             {dayData.waterMl > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface-1 px-2.5 py-1 text-fg-2">
-                <Droplets className="h-3.5 w-3.5 text-blue-400" />
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-fg-2">
+                <Droplets className="h-3.5 w-3.5 text-protein" />
                 <span className="tabular font-medium">{dayData.waterMl} ml</span>
                 {goals?.waterMl ? (
                   <span className="text-fg-3 text-[10px]">/ {goals.waterMl} ml</span>

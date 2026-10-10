@@ -92,7 +92,7 @@ export default function AdminPage() {
     return (
       <div className="p-8 text-center max-w-md mx-auto bg-[var(--surface)] rounded-3xl space-y-4">
         <ShieldAlert className="w-12 h-12 text-[var(--status-over-target)] mx-auto" />
-        <h1 className="text-xl font-bold text-[var(--text-primary)]">Access Forbidden</h1>
+        <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">Access Forbidden</h1>
         <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
           You do not have administrative privileges to view this page. All administrative operations are enforced on the server.
         </p>
@@ -227,7 +227,7 @@ export default function AdminPage() {
         <div>
           <p className="text-sm text-[var(--text-muted)] font-normal">Administration</p>
           <div className="flex items-center space-x-3">
-            <h1 className="text-[34px] leading-tight font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+            <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">
               User Management
             </h1>
             <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)]">

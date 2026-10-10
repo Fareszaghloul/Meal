@@ -182,7 +182,7 @@ export default function FoodsPage() {
       <header className="flex flex-wrap items-center justify-between gap-3 pt-1">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold tracking-tight text-fg">My Foods</h1>
+            <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">My Foods</h1>
             {foods && (
               <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium tabular text-fg-3">
                 {foods.length} {foods.length === 1 ? "food" : "foods"}
@@ -411,11 +411,11 @@ export default function FoodsPage() {
 
                       {/* Scannable Macro Breakdown */}
                       <span className="shrink-0 font-mono text-[11px] space-x-1.5">
-                        <span className="text-blue-400 font-medium">{fmt.g(n.protein)}P</span>
+                        <span className="text-protein font-medium">{fmt.g(n.protein)}P</span>
                         <span className="text-fg-3">·</span>
-                        <span className="text-amber-400 font-medium">{fmt.g(n.carbs)}C</span>
+                        <span className="text-carbs font-medium">{fmt.g(n.carbs)}C</span>
                         <span className="text-fg-3">·</span>
-                        <span className="text-rose-400 font-medium">{fmt.g(n.fat)}F</span>
+                        <span className="text-fat font-medium">{fmt.g(n.fat)}F</span>
                       </span>
                     </div>
                   </button>

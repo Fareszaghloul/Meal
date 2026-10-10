@@ -24,12 +24,16 @@ import {
   Warehouse,
   Flame,
   Sunrise,
+  LayoutDashboard,
+  ChefHat,
+  Plus,
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { useAuth } from "@/context/AuthContext";
 import { useSyncStatus } from "@/lib/client/day-store";
 import { cn } from "@/lib/utils";
 import { Sheet } from "@/components/ui/Sheet";
+import { QuickAddSheet } from "./QuickAddSheet";
 
 const AUTH_PATHS = ["/login"];
 
@@ -51,17 +55,17 @@ const MORE = [
   { label: "Pantry", href: "/pantry", icon: Warehouse },
 ];
 
-/** Phone tab bar: the daily loop. Everything else lives under More. */
-const TABS = [
-  { label: "Today", href: "/", icon: Sunrise },
-  { label: "Plan", href: "/meal-plan", icon: LayoutList },
-  { label: "Recipes", href: "/recipes", icon: BookOpen },
-  { label: "Pantry", href: "/pantry", icon: Warehouse },
+/** Phone tab bar: the daily loop around a raised "+". Everything else lives under More. */
+const TABS_LEFT = [
+  { label: "Today", href: "/", icon: LayoutDashboard },
+  { label: "History", href: "/history", icon: CalendarDays },
 ];
+const TABS_RIGHT = [{ label: "Recipes", href: "/recipes", icon: ChefHat }];
+const TABS = [...TABS_LEFT, ...TABS_RIGHT];
 
 const MORE_GROUPS = [
-  { title: "Track", items: [PRIMARY[1], PRIMARY[2], PRIMARY[3], PRIMARY[4]] },
-  { title: "Plan & cook", items: [MORE[0], MORE[3], MORE[4], MORE[2]] },
+  { title: "Track", items: [PRIMARY[2], PRIMARY[3], PRIMARY[4]] },
+  { title: "Plan & cook", items: [MORE[1], MORE[0], MORE[3], MORE[4], MORE[2], MORE[5]] },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -156,9 +160,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { serverError } = useAuth();
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const isAuthPage = AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  useEffect(() => setMoreOpen(false), [pathname]);
+  useEffect(() => {
+    setMoreOpen(false);
+    setQuickAddOpen(false);
+  }, [pathname]);
 
   if (isAuthPage) {
     return <main className="flex min-h-screen w-full items-center justify-center bg-bg p-4">{children}</main>;
@@ -177,18 +185,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Mobile header */}
-        <header className="safe-top flex items-center justify-between border-b border-line px-3 pb-2.5 sm:px-5 md:hidden">
-          <Link href="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-fg text-[13px] font-semibold text-bg">M</span>
-            MealPrep
-          </Link>
+        {/* Phone: no title bar (each screen carries its own heading). Only the sync status and the safe-area inset live here. */}
+        <header className="safe-top flex items-center justify-end px-4 md:hidden">
           <SyncBadgeDot />
         </header>
 
         {serverError && (
           <div className="mx-auto w-full max-w-5xl px-3 pt-3 sm:px-5 md:px-8">
-            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-400">
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs text-carbs">
               <CloudOff className="h-4 w-4 shrink-0" />
               <span>{serverError}</span>
             </div>
@@ -197,24 +201,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <main className="pb-tabbar mx-auto w-full min-w-0 max-w-5xl flex-1 px-3 pt-3 sm:px-5 sm:pt-4 md:px-8 md:pb-10 md:pt-8">{children}</main>
 
-        {/* Mobile bottom tabs */}
-        <nav aria-label="Primary" className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface md:hidden">
-          <div className="mx-auto grid max-w-lg grid-cols-5">
-            {TABS.map((i) => {
-              const active = isActive(pathname, i.href);
-              const Icon = i.icon;
-              return (
-                <Link
-                  key={i.href}
-                  href={i.href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn("flex min-h-[52px] flex-col items-center justify-center gap-0.5 text-[11px]", active ? "font-medium text-fg" : "text-fg-3")}
-                >
-                  <Icon className="h-5 w-5" />
-                  {i.label}
-                </Link>
-              );
-            })}
+        {/* Mobile bottom tabs: Today, History, raised "+", Recipes, More */}
+        <nav aria-label="Primary" className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg md:hidden">
+          <div className="mx-auto grid max-w-lg grid-cols-5 items-end">
+            {TABS_LEFT.map((i) => (
+              <TabLink key={i.href} {...i} active={isActive(pathname, i.href)} />
+            ))}
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => setQuickAddOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={quickAddOpen}
+                aria-label="Add"
+                className="-mt-5 flex h-[58px] w-[58px] items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_0_0_6px_var(--bg)] transition-transform active:scale-95"
+              >
+                <Plus className="h-7 w-7" strokeWidth={2.25} aria-hidden="true" />
+              </button>
+            </div>
+            {TABS_RIGHT.map((i) => (
+              <TabLink key={i.href} {...i} active={isActive(pathname, i.href)} />
+            ))}
             <button
               type="button"
               onClick={() => setMoreOpen(true)}
@@ -222,10 +229,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               aria-expanded={moreOpen}
               className={cn(
                 "flex min-h-[52px] flex-col items-center justify-center gap-0.5 text-[11px]",
-                !TABS.some((t) => isActive(pathname, t.href)) ? "font-medium text-fg" : "text-fg-3"
+                !TABS.some((t) => isActive(pathname, t.href)) ? "font-semibold text-fg" : "font-medium text-fg-3"
               )}
             >
-              <MoreHorizontal className="h-5 w-5" />
+              <MoreHorizontal className="h-[22px] w-[22px]" />
               More
             </button>
           </div>
@@ -233,7 +240,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
+      <QuickAddSheet open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
     </div>
+  );
+}
+
+function TabLink({ href, label, icon: Icon, active }: { href: string; label: string; icon: React.ComponentType<{ className?: string }>; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={cn("flex min-h-[52px] flex-col items-center justify-center gap-0.5 text-[11px]", active ? "font-semibold text-fg" : "font-medium text-fg-3")}
+    >
+      <Icon className="h-[22px] w-[22px]" />
+      {label}
+    </Link>
   );
 }
 

@@ -82,7 +82,7 @@ export function Sheet({ open, onClose, title, description, children, footer, siz
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "modal-panel anim-sheet flex max-h-[92dvh] w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:max-h-[85vh] sm:rounded-xl",
+          "modal-panel anim-sheet flex max-h-[92dvh] w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-3xl border border-line bg-surface sm:max-h-[85vh] sm:rounded-3xl",
           size === "sm" && "sm:max-w-sm",
           size === "md" && "sm:max-w-lg",
           size === "lg" && "sm:max-w-2xl",

@@ -335,7 +335,7 @@ export default function ProfilePage() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <p className="text-sm text-[var(--text-muted)] font-normal">Account & Body Profile</p>
-          <h1 className="text-[34px] leading-tight font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+          <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">
             User Profile
           </h1>
         </div>

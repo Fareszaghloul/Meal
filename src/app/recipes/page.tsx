@@ -156,7 +156,7 @@ export default function RecipeLibraryPage() {
       {/* ─── Page Header ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-fg sm:text-3xl">
+          <h1 className="text-[34px] font-bold leading-[1.1] tracking-[-0.035em] text-fg">
             Recipes
           </h1>
           <p className="text-xs text-fg-3 mt-0.5">
