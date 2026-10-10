@@ -208,7 +208,7 @@ export default function RecipeLibraryPage() {
               type="button"
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer",
+                "tap-target px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer",
                 isActive
                   ? "bg-surface-2 text-fg font-semibold shadow-xs"
                   : "text-fg-3 hover:text-fg hover:bg-surface-2/40"

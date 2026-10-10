@@ -86,11 +86,11 @@ export function ReplaceMealModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-2xl"
+        className="modal-panel w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -112,7 +112,7 @@ export function ReplaceMealModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+             aria-label="Close" className="tap-target inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -244,7 +244,7 @@ export function ReplaceMealModal({
                         type="button"
                         disabled={isLogged || isBusy}
                         onClick={() => handleExecuteReplace(alt)}
-                        className="px-4 py-2 min-h-[36px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="tap-target px-4 py-2 min-h-[36px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {isBusy ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />

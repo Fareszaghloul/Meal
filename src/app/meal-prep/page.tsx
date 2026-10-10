@@ -264,7 +264,7 @@ export default function MealPrepPage() {
           <div className="flex items-center space-x-2">
             <Link
               href="/meal-plan"
-              className="p-2 rounded-full hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition mr-1"
+              className="tap-target inline-flex items-center justify-center p-2 rounded-full hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition mr-1"
               aria-label="Back to meal plan"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -286,7 +286,7 @@ export default function MealPrepPage() {
             type="button"
             onClick={() => setActiveTab("workstation")}
             className={cn(
-              "px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer",
+              "tap-target px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer",
               activeTab === "workstation"
                 ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-sm"
                 : "bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -298,7 +298,7 @@ export default function MealPrepPage() {
             type="button"
             onClick={() => setActiveTab("scheduler")}
             className={cn(
-              "px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer",
+              "tap-target px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer",
               activeTab === "scheduler"
                 ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-sm"
                 : "bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -469,7 +469,7 @@ export default function MealPrepPage() {
                   <button
                     type="button"
                     onClick={handleResetChecklist}
-                    className="p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                    className="tap-target inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
                     title="Reset tasks from meal plan"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -489,21 +489,23 @@ export default function MealPrepPage() {
                   {prepData?.prepSession.tasks.map((task) => (
                     <div
                       key={task.id}
-                      className="py-3 flex items-start justify-between gap-3 group"
+                      className="py-1 flex items-center justify-between gap-2 group"
                     >
                       <button
                         type="button"
                         onClick={() => handleToggleTask(task.id, task.completed)}
-                        className="flex items-start gap-2.5 text-left flex-1 min-w-0 cursor-pointer"
+                        role="checkbox"
+                        aria-checked={task.completed}
+                        className="flex min-h-[44px] items-center gap-3 text-left flex-1 min-w-0 cursor-pointer"
                       >
                         {task.completed ? (
-                          <CheckCircle2 className="w-4 h-4 text-[var(--accent)] shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-5 h-5 text-[var(--accent)] shrink-0" />
                         ) : (
-                          <Circle className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] shrink-0 mt-0.5" />
+                          <Circle className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] shrink-0" />
                         )}
                         <span
                           className={cn(
-                            "text-xs leading-relaxed transition",
+                            "text-sm leading-snug transition sm:text-xs",
                             task.completed
                               ? "line-through text-[var(--text-muted)]"
                               : "text-[var(--text-primary)] font-medium"
@@ -516,8 +518,9 @@ export default function MealPrepPage() {
                       <button
                         type="button"
                         onClick={() => handleDeleteTask(task.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-[var(--text-muted)] hover:text-red-400 transition shrink-0 cursor-pointer"
+                        className="tap-target flex items-center justify-center p-1 text-[var(--text-muted)] hover:text-red-400 transition shrink-0 cursor-pointer [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                         title="Delete task"
+                        aria-label={`Delete task: ${task.label}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -537,7 +540,8 @@ export default function MealPrepPage() {
                   <button
                     type="submit"
                     disabled={isAddingTask || !newTaskLabel.trim()}
-                    className="p-2 rounded-full bg-[var(--accent)] text-[var(--on-accent)] disabled:opacity-50 hover:bg-[var(--accent-hover)] transition cursor-pointer"
+                    aria-label="Add prep step"
+                    className="tap-target flex items-center justify-center p-2 rounded-full bg-[var(--accent)] text-[var(--on-accent)] disabled:opacity-50 hover:bg-[var(--accent-hover)] transition cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -739,14 +743,14 @@ export default function MealPrepPage() {
                     <button
                       type="button"
                       onClick={selectWeekdays}
-                      className="px-3 py-1.5 rounded-full bg-[var(--background)] hover:bg-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium transition cursor-pointer"
+                      className="tap-target px-3 py-1.5 rounded-full bg-[var(--background)] hover:bg-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium transition cursor-pointer"
                     >
                       Weekdays
                     </button>
                     <button
                       type="button"
                       onClick={selectAllDays}
-                      className="px-3 py-1.5 rounded-full bg-[var(--background)] hover:bg-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium transition cursor-pointer"
+                      className="tap-target px-3 py-1.5 rounded-full bg-[var(--background)] hover:bg-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium transition cursor-pointer"
                     >
                       All 7 days
                     </button>

@@ -308,3 +308,66 @@ describe("restore plan (id remapping)", () => {
     expect(() => plan(dupRev)).toThrow(/duplicate goal revision date/);
   });
 });
+
+describe("backup format: Phases 1–3 tables", () => {
+  const ext = () => {
+    const b = sample();
+    b.data.foodLog[1].id = "log1";
+    b.data.mealPlans[0].meals[0].id = "meal1";
+    b.data.mealPlans[0].meals[0].status = "logged";
+    b.data.mealPlans[0].meals[0].foodLogEntryId = "log1";
+    b.data.pantry[0].id = "pan1";
+    b.data.pantryTransactions = [
+      { pantryItemId: "pan1", type: "MEAL_USAGE", quantity: 80, unit: "g", sourceType: "meal", sourceId: "meal1", createdAt: T },
+      { pantryItemId: "pan1", type: "ADJUSTMENT", quantity: -5, unit: "g", sourceType: "manual", sourceId: "whatever", createdAt: T },
+    ];
+    b.data.savedMeals = [
+      { id: "sm1", name: "Usual", mealCategory: "breakfast", isFavorite: true, useCount: 1, createdAt: T, items: [{ foodId: "f1", recipeId: "r1", customName: null, quantity: 1, servingUnit: "serving", ...nutr, sortOrder: 0 }] },
+    ];
+    b.data.dayTemplates = [
+      { name: "Day", description: null, isFavorite: false, useCount: 0, createdAt: T, items: [{ mealCategory: "lunch", foodId: null, recipeId: null, savedMealId: "sm1", customName: null, servings: 1, servingUnit: "serving", ...nutr, sortOrder: 0 }] },
+    ];
+    return b;
+  };
+  let n = 0;
+  const plan = (b: BackupFile) => planRestore("u", b.data, { systemFoodIds: new Set(), newId: () => `n${++n}` });
+
+  it("still accepts a Phase 9-era file without the new tables or fields", () => {
+    const old = JSON.parse(JSON.stringify(sample()));
+    delete old.data.pantryTransactions;
+    delete old.data.savedMeals;
+    delete old.data.dayTemplates;
+    delete old.data.prepSessions;
+    delete old.data.nutritionRecommendations;
+    delete old.data.pantry[0].storageLocation;
+    delete old.data.mealPlans[0].meals[0].status;
+    const parsed = parseBackup(JSON.stringify(old));
+    expect(parsed.data.savedMeals).toEqual([]);
+    expect(parsed.data.pantry[0].storageLocation).toBe("Pantry");
+    expect(parsed.data.mealPlans[0].meals[0].status).toBe("planned");
+  });
+
+  it("remaps the planned-meal log link, pantry history and saved-meal references to the new ids", () => {
+    const p = plan(backupFile.parse(ext()));
+    const log = p.foodLog[1];
+    const meal = p.meals[0];
+    expect(meal.foodLogEntryId).toBe(log.id);
+    expect(meal.status).toBe("logged");
+    expect(p.pantryTransactions[0]).toMatchObject({ pantryItemId: p.pantry[0].id, sourceId: meal.id });
+    expect(p.pantryTransactions[1].sourceId).toBeNull(); // "manual" sources point at nothing restorable
+    expect(p.savedMealItems[0]).toMatchObject({ savedMealId: p.savedMeals[0].id, foodId: p.foods[0].id, recipeId: p.recipes[0].id });
+    expect(p.dayTemplateItems[0].savedMealId).toBe(p.savedMeals[0].id);
+  });
+
+  it("rejects day templates and pantry history pointing outside the backup, and duplicate log links", () => {
+    const badTemplate = ext();
+    badTemplate.data.dayTemplates[0].items[0].savedMealId = "nope";
+    expect(() => plan(badTemplate)).toThrow(/saved meal that isn't in the backup/);
+    const badTx = ext();
+    badTx.data.pantryTransactions[0].pantryItemId = "nope";
+    expect(() => plan(badTx)).toThrow(/pantry item that isn't in the backup/);
+    const dupLink = ext();
+    dupLink.data.mealPlans[0].meals.push({ ...dupLink.data.mealPlans[0].meals[0], id: "meal2", dayOfWeek: "tuesday" });
+    expect(() => plan(dupLink)).toThrow(/duplicate planned-meal log link/);
+  });
+});

@@ -62,7 +62,7 @@ test("E2E Dashboard: Full Lifecycle (View, Add, Edit, Move, Duplicate, Delete, P
   const summary = page.locator('section[aria-label="Daily nutrition summary"]');
   await expect(summary).toBeVisible();
   await expect(summary.getByText("0", { exact: true })).toBeVisible();
-  await expect(summary.getByText(/remaining/i)).toBeVisible();
+  await expect(summary.getByText("kcal remaining")).toBeVisible(); // the headline indicator, not the breakdown table header
 
   // 2. Add an item to Lunch
   await page.getByRole("button", { name: /add food to lunch/i }).click();
@@ -114,10 +114,10 @@ test("E2E Dashboard: Full Lifecycle (View, Add, Edit, Move, Duplicate, Delete, P
   // 5. Duplicate food entry in Dinner
   const dinnerMenuBtn = dinnerSection.getByRole("button", { name: /actions for/i }).first();
   await dinnerMenuBtn.click();
-  await page.getByRole("menuitem", { name: /duplicate/i }).click();
+  await page.getByRole("menuitem", { name: /^repeat$/i }).click(); // renamed from "Duplicate" in Phases 1–3
 
   // Verify toast appears
-  await expect(page.getByText(/duplicated/i)).toBeVisible();
+  await expect(page.getByText(/repeated/i)).toBeVisible();
 
   // 6. Delete one entry from Dinner
   await dinnerSection.scrollIntoViewIfNeeded();

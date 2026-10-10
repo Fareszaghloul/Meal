@@ -517,7 +517,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer",
+                      "tap-target px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer",
                       isSelected
                         ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                         : "bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -580,6 +580,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                     <div className="relative w-28 h-24 my-1 flex items-center justify-center">
                       {item.image ? (
                         <img
+                decoding="async"
                           src={item.image}
                           alt={item.name}
                           className="max-h-full max-w-full object-contain drop-shadow-xs"
@@ -640,7 +641,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                     <button
                       onClick={() => handleOpenInspectModal(item)}
                       title="Customize ingredients before adding"
-                      className="p-2 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)] transition-colors cursor-pointer"
+                      className="tap-target inline-flex items-center justify-center p-2 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)] transition-colors cursor-pointer"
                     >
                       <SlidersHorizontal className="w-3.5 h-3.5" />
                     </button>
@@ -796,6 +797,8 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                           <div className="flex items-center gap-2.5 min-w-0">
                             {ti.item.image && (
                               <img
+                loading="lazy"
+                decoding="async"
                                 src={ti.item.image}
                                 alt={ti.item.name}
                                 className="w-8 h-8 object-contain shrink-0"
@@ -838,7 +841,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                             </button>
                             <button
                               onClick={() => removeTrayItem(ti.instanceId)}
-                              className="p-1 text-[var(--text-secondary)] hover:text-[var(--ui-error)] ml-1 transition-colors cursor-pointer"
+                              className="tap-target inline-flex items-center justify-center p-1 text-[var(--text-secondary)] hover:text-[var(--ui-error)] ml-1 transition-colors cursor-pointer"
                               title="Delete from tray"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -886,7 +889,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
                                       key={ing.name}
                                       onClick={() => toggleTrayIngredient(ti.instanceId, ing.name)}
                                       className={cn(
-                                        "px-2 py-1 rounded-lg text-[10px] font-medium transition-all flex items-center gap-1.5 border cursor-pointer",
+                                        "tap-target px-2 py-1 rounded-lg text-[10px] font-medium transition-all flex items-center gap-1.5 border cursor-pointer",
                                         isRemoved
                                           ? "bg-[var(--ui-error-bg)] border-[var(--ui-error-border)] text-[var(--ui-error)] line-through"
                                           : "bg-[var(--surface)] hover:bg-[var(--background)] border-[var(--border)] text-[var(--text-primary)]"
@@ -941,7 +944,7 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
               <button
                 onClick={addSelectedToPantry}
                 disabled={trayItems.length === 0 || isAddingToPantry}
-                className="w-full py-2.5 px-4 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-primary)] font-medium text-xs flex items-center justify-center gap-2 border border-[var(--border)] transition-all active:scale-98 disabled:opacity-40 cursor-pointer"
+                className="tap-target w-full py-2.5 px-4 rounded-xl bg-[var(--background)] hover:bg-[var(--surface)] text-[var(--text-primary)] font-medium text-xs flex items-center justify-center gap-2 border border-[var(--border)] transition-all active:scale-98 disabled:opacity-40 cursor-pointer"
               >
                 <PackagePlus className="w-4 h-4 text-[var(--accent)]" />
                 <span>
@@ -955,8 +958,8 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
 
       {/* Item Nutrition Details & Pre-Customization Modal */}
       {inspectingItem && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto text-[var(--text-primary)]">
+        <div className="modal-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="modal-panel bg-[var(--surface)] border border-[var(--border)] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto text-[var(--text-primary)]">
             <button
               onClick={() => setInspectingItem(null)}
               className="absolute top-5 right-5 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full bg-[var(--background)] border border-[var(--border)] cursor-pointer"
@@ -969,6 +972,8 @@ export function McDonaldsCalculator({ onImportSuccess }: McDonaldsCalculatorProp
               <div className="w-20 h-20 bg-[var(--background)] border border-[var(--border)] rounded-2xl flex items-center justify-center p-2 shrink-0">
                 {inspectingItem.image ? (
                   <img
+                loading="lazy"
+                decoding="async"
                     src={inspectingItem.image}
                     alt={inspectingItem.name}
                     className="max-h-full max-w-full object-contain"

@@ -392,7 +392,7 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
                 type="button"
                 onClick={() => setNutritionView("perServing")}
                 className={cn(
-                  "px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
+                  "tap-target px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
                   nutritionView === "perServing"
                     ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                     : "text-fg-3 hover:text-fg"
@@ -404,7 +404,7 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
                 type="button"
                 onClick={() => setNutritionView("total")}
                 className={cn(
-                  "px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
+                  "tap-target px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
                   nutritionView === "total"
                     ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                     : "text-fg-3 hover:text-fg"
@@ -417,7 +417,7 @@ export function RecipeDetailView({ initialRecipe }: RecipeDetailProps) {
                   type="button"
                   onClick={() => setNutritionView("per100g")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
+                    "tap-target px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
                     nutritionView === "per100g"
                       ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                       : "text-fg-3 hover:text-fg"

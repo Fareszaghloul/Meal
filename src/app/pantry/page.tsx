@@ -394,25 +394,25 @@ export default function FoodsAndPantryPage() {
 
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-16 px-4 sm:px-6">
+    <div className="mx-auto max-w-6xl space-y-5 pb-6 sm:space-y-6">
       {/* Header & Main Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center lg:gap-4">
         <div>
           <p className="text-sm text-[var(--text-muted)] font-normal">
             Nutrition catalog & inventory
           </p>
-          <h1 className="text-[34px] font-semibold tracking-[-0.03em] leading-tight text-[var(--text-primary)]">
+          <h1 className="text-2xl font-semibold leading-tight tracking-[-0.03em] text-[var(--text-primary)] sm:text-[34px]">
             Foods &amp; Pantry
           </h1>
         </div>
 
         {/* Segmented Control (Pill group on var(--surface)) */}
-        <div className="flex items-center p-1 rounded-full bg-[var(--surface)] text-xs overflow-x-auto max-w-full scrollbar-none shrink-0 shadow-none">
+        <div className="flex max-w-full items-center overflow-x-auto rounded-full bg-[var(--surface)] p-1 text-xs scrollbar-none shadow-none lg:shrink-0" role="tablist" aria-label="Foods and pantry views">
           <button
             type="button"
             onClick={() => setActiveTab("foods")}
             className={cn(
-              "px-4 py-2 min-h-[38px] rounded-full font-semibold transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer",
+              "tap-target px-4 py-2 min-h-[38px] rounded-full font-semibold transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer",
               activeTab === "foods"
                 ? "bg-[var(--accent)] text-[var(--on-accent)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -426,7 +426,7 @@ export default function FoodsAndPantryPage() {
             type="button"
             onClick={() => setActiveTab("pantry")}
             className={cn(
-              "px-4 py-2 min-h-[38px] rounded-full font-semibold transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer",
+              "tap-target px-4 py-2 min-h-[38px] rounded-full font-semibold transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer",
               activeTab === "pantry"
                 ? "bg-[var(--accent)] text-[var(--on-accent)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -440,7 +440,7 @@ export default function FoodsAndPantryPage() {
             type="button"
             onClick={() => setActiveTab("what-can-i-make")}
             className={cn(
-              "px-4 py-2 min-h-[38px] rounded-full font-semibold transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer",
+              "tap-target px-4 py-2 min-h-[38px] rounded-full font-semibold transition flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer",
               activeTab === "what-can-i-make"
                 ? "bg-[var(--accent)] text-[var(--on-accent)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -550,7 +550,7 @@ export default function FoodsAndPantryPage() {
                   type="button"
                   onClick={() => setFoodCategoryFilter(cat)}
                   className={cn(
-                    "px-4 py-1.5 min-h-[36px] rounded-full text-xs font-medium transition cursor-pointer whitespace-nowrap",
+                    "tap-target px-4 py-1.5 min-h-[36px] rounded-full text-xs font-medium transition cursor-pointer whitespace-nowrap",
                     isSelected
                       ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                       : "bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -565,7 +565,7 @@ export default function FoodsAndPantryPage() {
           {/* Two-Column Grid: Left Foods Table, Right Side Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left: Borderless Table inside Surface Card */}
-            <div className="lg:col-span-8 rounded-3xl bg-[var(--surface)] p-6 shadow-none overflow-hidden space-y-4">
+            <div className="lg:col-span-8 rounded-3xl bg-[var(--surface)] p-4 shadow-none overflow-hidden space-y-4 sm:p-6">
               <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
                 <h3 className="font-semibold text-sm text-[var(--text-primary)]">
                   Food items ({filteredFoods.length})
@@ -581,7 +581,35 @@ export default function FoodsAndPantryPage() {
                   <p>No food items match your filter.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                {/* Phones: one compact row per food; the comparison table needs room, so it starts at sm. */}
+                <ul className="divide-y divide-[var(--border)] sm:hidden">
+                  {filteredFoods.map((f) => (
+                    <li key={f.id} className="flex items-center gap-2 py-2.5">
+                      <button type="button" onClick={() => setSelectedFoodDetails(f)} className="min-h-[44px] min-w-0 flex-1 text-left">
+                        <div className="truncate text-sm font-semibold text-[var(--text-primary)]">{f.name}</div>
+                        <div className="truncate text-xs text-[var(--text-muted)] font-tabular">
+                          {f.caloriesPer100g} kcal · P {f.proteinPer100g} · C {f.carbsPer100g} · F {f.fatPer100g} g{f.brand ? ` · ${f.brand}` : ""}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFoodToEdit(f);
+                          setIsEditFoodModalOpen(true);
+                        }}
+                        className="tap-target flex items-center justify-center rounded-lg text-[var(--text-muted)]"
+                        aria-label={`Edit ${f.name}`}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button type="button" onClick={() => handleDeleteFood(f.id)} className="tap-target flex items-center justify-center rounded-lg text-[var(--text-muted)]" aria-label={`Delete ${f.name}`}>
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <div className="hidden overflow-x-auto sm:block">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="text-[var(--text-muted)] font-normal border-b border-[var(--border)]">
@@ -629,7 +657,7 @@ export default function FoodsAndPantryPage() {
                                   setFoodToEdit(f);
                                   setIsEditFoodModalOpen(true);
                                 }}
-                                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                                className="tap-target inline-flex items-center justify-center p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
                                 title="Edit"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -637,7 +665,7 @@ export default function FoodsAndPantryPage() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedFoodDetails(f)}
-                                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                                className="tap-target inline-flex items-center justify-center p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
                                 title="Details"
                               >
                                 <Info className="w-3.5 h-3.5" />
@@ -645,7 +673,7 @@ export default function FoodsAndPantryPage() {
                               <button
                                 type="button"
                                 onClick={() => handleDeleteFood(f.id)}
-                                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition cursor-pointer"
+                                className="tap-target inline-flex items-center justify-center p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition cursor-pointer"
                                 title="Delete"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -657,6 +685,7 @@ export default function FoodsAndPantryPage() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
 
               {/* Per 100 g note under it */}
@@ -750,7 +779,7 @@ export default function FoodsAndPantryPage() {
                           </div>
                           <Link
                             href="/shopping-list"
-                            className="px-3 py-1 rounded-full bg-[var(--surface)] text-[var(--text-primary)] hover:bg-[var(--accent-subtle)] text-[10px] font-semibold transition"
+                            className="tap-target px-3 py-1 rounded-full bg-[var(--surface)] text-[var(--text-primary)] hover:bg-[var(--accent-subtle)] text-[10px] font-semibold transition"
                           >
                             + List
                           </Link>
@@ -768,7 +797,7 @@ export default function FoodsAndPantryPage() {
       {activeTab === "pantry" && (
         <div className="space-y-5 animate-in fade-in duration-300">
           {/* Controls Bar: Search, Category Pills, Sort Selector, Action Buttons */}
-          <div className="space-y-4 p-6 sm:p-8 rounded-3xl bg-[var(--surface)]">
+          <div className="space-y-4 rounded-3xl bg-[var(--surface)] p-4 sm:p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               {/* Search */}
               <div className="relative flex-1 w-full">
@@ -792,12 +821,12 @@ export default function FoodsAndPantryPage() {
 
               {/* Sort by */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full bg-[var(--background)] text-xs text-[var(--text-primary)] w-full sm:w-auto">
+                <div className="flex items-center gap-2 px-4 rounded-full bg-[var(--background)] text-xs text-[var(--text-primary)] w-full sm:w-auto">
                   <ArrowUpDown className="w-3.5 h-3.5 text-[var(--text-secondary)] shrink-0" />
                   <select
                     value={pantrySortBy}
                     onChange={(e) => setPantrySortBy(e.target.value as any)}
-                    className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer w-full"
+                    className="min-h-[44px] bg-transparent text-xs font-medium focus:outline-none cursor-pointer w-full"
                   >
                     <option value="category">Sort: By Category</option>
                     <option value="name">Sort: Name (A → Z)</option>
@@ -849,7 +878,7 @@ export default function FoodsAndPantryPage() {
                     key={cat}
                     onClick={() => setPantryCategoryFilter(cat)}
                     className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0",
+                      "tap-target justify-center px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0",
                       isSelected
                         ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                         : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -878,7 +907,7 @@ export default function FoodsAndPantryPage() {
               <span>
                 Showing <strong>{filteredPantryItems.length}</strong> of {pantryItems.length} inventory items
               </span>
-              <span>Use +/- to update quantity instantly</span>
+              <span className="hidden sm:inline">Use +/- to update quantity instantly</span>
             </div>
 
             {filteredPantryItems.length === 0 ? (
@@ -896,11 +925,11 @@ export default function FoodsAndPantryPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2 xl:grid-cols-3">
                 {filteredPantryItems.map((item) => (
                   <div
                     key={item.id}
-                    className="p-5 rounded-3xl bg-[var(--surface)] hover:bg-[var(--surface)]/90 transition-all flex flex-col justify-between space-y-3"
+                    className="flex flex-col justify-between space-y-3 rounded-3xl bg-[var(--surface)] p-4 transition-all hover:bg-[var(--surface)]/90 sm:p-5"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -917,7 +946,8 @@ export default function FoodsAndPantryPage() {
                         <button
                           onClick={() => handleDeletePantryItem(item.id)}
                           title="Delete item"
-                          className="p-1 text-[var(--text-secondary)] hover:text-red-400 rounded-md transition cursor-pointer"
+                          aria-label={`Delete ${item.name}`}
+                          className="tap-target -mr-2 flex items-center justify-center p-1 text-[var(--text-secondary)] hover:text-red-400 rounded-md transition cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -972,7 +1002,8 @@ export default function FoodsAndPantryPage() {
                         {(item.unit === "g" || item.unit === "ml") && (
                           <button
                             onClick={() => handleUpdatePantryQuantity(item, -50)}
-                            className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[var(--surface)] hover:bg-[var(--border)] text-[var(--text-secondary)] transition"
+                            aria-label={`Decrease ${item.name} by 50 ${item.unit}`}
+                            className="tap-target flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[var(--surface)] hover:bg-[var(--border)] text-[var(--text-secondary)] transition"
                             title="Decrease by 50"
                           >
                             -50
@@ -980,7 +1011,8 @@ export default function FoodsAndPantryPage() {
                         )}
                         <button
                           onClick={() => handleUpdatePantryQuantity(item, -1)}
-                          className="w-6 h-6 rounded-full bg-[var(--surface)] hover:bg-[var(--border)] flex items-center justify-center text-[var(--text-primary)] transition"
+                          aria-label={`Decrease ${item.name} by 1`}
+                          className="tap-target w-6 h-6 rounded-full bg-[var(--surface)] hover:bg-[var(--border)] flex items-center justify-center text-[var(--text-primary)] transition"
                           title="Decrease by 1"
                         >
                           <Minus className="w-3 h-3" />
@@ -990,7 +1022,8 @@ export default function FoodsAndPantryPage() {
                         </span>
                         <button
                           onClick={() => handleUpdatePantryQuantity(item, 1)}
-                          className="w-6 h-6 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] flex items-center justify-center text-[var(--on-accent)] font-bold transition"
+                          aria-label={`Increase ${item.name} by 1`}
+                          className="tap-target w-6 h-6 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] flex items-center justify-center text-[var(--on-accent)] font-bold transition"
                           title="Increase by 1"
                         >
                           <Plus className="w-3 h-3" />
@@ -998,7 +1031,8 @@ export default function FoodsAndPantryPage() {
                         {(item.unit === "g" || item.unit === "ml") && (
                           <button
                             onClick={() => handleUpdatePantryQuantity(item, 50)}
-                            className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] transition"
+                            aria-label={`Increase ${item.name} by 50 ${item.unit}`}
+                            className="tap-target flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] transition"
                             title="Increase by 50"
                           >
                             +50
@@ -1142,11 +1176,11 @@ export default function FoodsAndPantryPage() {
       {/* Modal: Food Details Inspector */}
       {selectedFoodDetails && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
+          className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
           onClick={() => setSelectedFoodDetails(null)}
         >
           <div
-            className="w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto"
+            className="modal-panel w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -1172,7 +1206,7 @@ export default function FoodsAndPantryPage() {
               </div>
               <button
                 onClick={() => setSelectedFoodDetails(null)}
-                className="p-1.5 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                className="tap-target inline-flex items-center justify-center p-1.5 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1346,11 +1380,11 @@ export default function FoodsAndPantryPage() {
       {/* Modal: Add Custom Food */}
       {isAddFoodModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
           onClick={() => setIsAddFoodModalOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto"
+            className="modal-panel w-full max-w-lg rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
@@ -1360,7 +1394,7 @@ export default function FoodsAndPantryPage() {
               <button
                 type="button"
                 onClick={() => setIsAddFoodModalOpen(false)}
-                className="p-1.5 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                className="tap-target inline-flex items-center justify-center p-1.5 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1724,11 +1758,11 @@ export default function FoodsAndPantryPage() {
       {/* Modal: Add to Pantry */}
       {isAddPantryModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
           onClick={() => setIsAddPantryModalOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-5"
+            className="modal-panel w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 sm:p-8 space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -1738,7 +1772,7 @@ export default function FoodsAndPantryPage() {
               <button
                 type="button"
                 onClick={() => setIsAddPantryModalOpen(false)}
-                className="p-1.5 rounded-full text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                className="tap-target inline-flex items-center justify-center p-1.5 rounded-full text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>

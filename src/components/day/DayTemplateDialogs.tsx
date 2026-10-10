@@ -263,7 +263,7 @@ export function ApplyDayTemplateSheet({
                       type="button"
                       onClick={() => setMode("append")}
                       className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-semibold border transition text-left cursor-pointer",
+                        "tap-target px-3 py-1.5 rounded-lg text-xs font-semibold border transition text-left cursor-pointer",
                         mode === "append"
                           ? "bg-[var(--accent)] text-[var(--on-accent)] border-transparent"
                           : "bg-surface-2 text-fg-2 border-line hover:bg-surface-3"
@@ -275,7 +275,7 @@ export function ApplyDayTemplateSheet({
                       type="button"
                       onClick={() => setMode("replace")}
                       className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-semibold border transition text-left cursor-pointer",
+                        "tap-target px-3 py-1.5 rounded-lg text-xs font-semibold border transition text-left cursor-pointer",
                         mode === "replace"
                           ? "bg-warning text-white border-transparent"
                           : "bg-surface-2 text-fg-2 border-line hover:bg-surface-3"

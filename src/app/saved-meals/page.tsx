@@ -261,7 +261,7 @@ export default function SavedMealsPage() {
           <div className="flex items-center space-x-2">
             <Link
               href="/foods"
-              className="p-2 rounded-full hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition mr-1"
+              className="tap-target inline-flex items-center justify-center p-2 rounded-full hover:bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition mr-1"
               aria-label="Back to foods"
             >
               <Utensils className="w-5 h-5" />
@@ -312,7 +312,7 @@ export default function SavedMealsPage() {
               type="button"
               onClick={() => setCategoryFilter(cat.id)}
               className={cn(
-                "whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs transition cursor-pointer",
+                "tap-target whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs transition cursor-pointer",
                 categoryFilter === cat.id
                   ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold shadow-sm"
                   : "bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
@@ -365,7 +365,7 @@ export default function SavedMealsPage() {
                         type="button"
                         onClick={() => handleToggleFavorite(meal)}
                         className={cn(
-                          "transition cursor-pointer",
+                          "tap-target -m-2 inline-flex items-center justify-center transition cursor-pointer",
                           meal.isFavorite
                             ? "text-[var(--accent)] fill-current"
                             : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -392,7 +392,7 @@ export default function SavedMealsPage() {
                     <button
                       type="button"
                       onClick={() => handleDuplicate(meal)}
-                      className="p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                      className="tap-target inline-flex items-center justify-center p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
                       title="Duplicate"
                     >
                       <Copy className="w-3.5 h-3.5" />
@@ -400,7 +400,7 @@ export default function SavedMealsPage() {
                     <button
                       type="button"
                       onClick={() => openEditModal(meal)}
-                      className="p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+                      className="tap-target inline-flex items-center justify-center p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
                       title="Edit"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -408,7 +408,7 @@ export default function SavedMealsPage() {
                     <button
                       type="button"
                       onClick={() => handleDelete(meal)}
-                      className="p-1.5 rounded-full text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--background)] transition cursor-pointer"
+                      className="tap-target inline-flex items-center justify-center p-1.5 rounded-full text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--background)] transition cursor-pointer"
                       title="Delete"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -441,7 +441,7 @@ export default function SavedMealsPage() {
                   <button
                     type="button"
                     onClick={() => setExpandedId(isExpanded ? null : meal.id)}
-                    className="flex items-center justify-between w-full text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition py-1 cursor-pointer"
+                    className="flex min-h-[44px] items-center justify-between w-full text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition py-1 cursor-pointer"
                   >
                     <span>{isExpanded ? "Hide items" : `View items (${meal.items.length})`}</span>
                     {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -470,7 +470,7 @@ export default function SavedMealsPage() {
                 <button
                   type="button"
                   onClick={() => openLogModal(meal)}
-                  className="w-full py-2.5 rounded-full bg-[var(--lime)] hover:bg-[var(--accent-hover)] text-[var(--on-lime)] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-none"
+                  className="tap-target w-full py-2.5 rounded-full bg-[var(--lime)] hover:bg-[var(--accent-hover)] text-[var(--on-lime)] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-none"
                 >
                   <Flame className="w-3.5 h-3.5" />
                   <span>Log this meal</span>
@@ -666,7 +666,7 @@ export default function SavedMealsPage() {
                     <button
                       type="button"
                       onClick={() => setDraftItems((prev) => prev.filter((_, i) => i !== idx))}
-                      className="p-1 text-[var(--text-muted)] hover:text-red-400 transition"
+                      className="tap-target inline-flex items-center justify-center p-1 text-[var(--text-muted)] hover:text-red-400 transition"
                       title="Remove item"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -741,7 +741,7 @@ export default function SavedMealsPage() {
               type="button"
               onClick={handleAddItemToDraft}
               disabled={!newItemName.trim()}
-              className="px-4 py-1.5 rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold hover:bg-[var(--accent-hover)] transition disabled:opacity-50 cursor-pointer"
+              className="tap-target px-4 py-1.5 rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold hover:bg-[var(--accent-hover)] transition disabled:opacity-50 cursor-pointer"
             >
               + Add item to meal
             </button>

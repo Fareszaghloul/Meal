@@ -379,7 +379,7 @@ export function RecipeBuilder({ initialRecipe, mode }: RecipeBuilderProps) {
       <div className="flex items-center justify-between gap-4">
         <Link
           href={mode === "edit" ? `/recipes/${initialRecipe!.id}` : "/recipes"}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-fg-3 hover:text-fg transition-colors"
+          className="inline-flex min-h-[44px] items-center gap-1.5 text-xs font-semibold text-fg-3 hover:text-fg transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{mode === "edit" ? "Cancel & Return" : "Cancel"}</span>
@@ -850,7 +850,7 @@ export function RecipeBuilder({ initialRecipe, mode }: RecipeBuilderProps) {
           role="dialog"
           aria-modal="true"
           aria-label="Ingredient Picker"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+          className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
           onClick={() => {
             setIsPickerOpen(false);
             setSelectedFoodForPortion(null);
@@ -858,7 +858,7 @@ export function RecipeBuilder({ initialRecipe, mode }: RecipeBuilderProps) {
           }}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-surface-1 border border-line p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-150"
+            className="modal-panel w-full max-w-lg rounded-2xl bg-surface-1 border border-line p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}

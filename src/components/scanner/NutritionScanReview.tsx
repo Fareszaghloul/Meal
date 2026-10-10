@@ -262,14 +262,14 @@ export function NutritionScanReview({
             <button
               type="button"
               onClick={() => onSaveSuccess(duplicateCandidate)}
-              className="px-2.5 py-1 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-[11px] font-medium text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+              className="tap-target px-2.5 py-1 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-[11px] font-medium text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
             >
               Use existing food
             </button>
             <button
               type="button"
               onClick={() => handleSave(true)}
-              className="px-3.5 py-1.5 rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold hover:bg-[var(--accent-hover)] transition cursor-pointer"
+              className="tap-target px-3.5 py-1.5 rounded-full bg-[var(--accent)] text-[var(--on-accent)] text-xs font-semibold hover:bg-[var(--accent-hover)] transition cursor-pointer"
             >
               Save as new food
             </button>

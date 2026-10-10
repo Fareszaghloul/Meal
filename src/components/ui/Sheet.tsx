@@ -45,7 +45,11 @@ export function Sheet({ open, onClose, title, description, children, footer, siz
         if (nodes.length === 0) return;
         const first = nodes[0];
         const last = nodes[nodes.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
+        // Focus can fall to <body> (e.g. a button disabled while saving): pull it back into the dialog.
+        if (!panel.current.contains(document.activeElement)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+        } else if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
           last.focus();
         } else if (!e.shiftKey && document.activeElement === last) {
@@ -67,7 +71,7 @@ export function Sheet({ open, onClose, title, description, children, footer, siz
 
   return (
     <div
-      className="anim-fade fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
+      className="modal-overlay anim-fade fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -78,7 +82,7 @@ export function Sheet({ open, onClose, title, description, children, footer, siz
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "anim-sheet flex max-h-[92dvh] w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:max-h-[85vh] sm:rounded-xl",
+          "modal-panel anim-sheet flex max-h-[92dvh] w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:max-h-[85vh] sm:rounded-xl",
           size === "sm" && "sm:max-w-sm",
           size === "md" && "sm:max-w-lg",
           size === "lg" && "sm:max-w-2xl",

@@ -164,11 +164,11 @@ export function WhatShouldIEatModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-2xl"
+        className="modal-panel w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -190,7 +190,7 @@ export function WhatShouldIEatModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+             aria-label="Close" className="tap-target inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -288,7 +288,7 @@ export function WhatShouldIEatModal({
                   return (
                     <div
                       key={rec.id}
-                      className="p-3.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] hover:border-[var(--accent)]/50 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                      className="p-3 sm:p-3.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] hover:border-[var(--accent)]/50 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
                     >
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -347,7 +347,7 @@ export function WhatShouldIEatModal({
                                 type="button"
                                 onClick={() => setPlanningSlot(s)}
                                 className={cn(
-                                  "px-2 py-1 rounded-md text-[10px] font-semibold capitalize transition cursor-pointer",
+                                  "tap-target px-2 py-1 rounded-md text-[10px] font-semibold capitalize transition cursor-pointer",
                                   planningSlot === s
                                     ? "bg-[var(--accent)] text-[var(--on-accent)]"
                                     : "bg-[var(--surface)] text-[var(--text-secondary)]"
@@ -360,14 +360,14 @@ export function WhatShouldIEatModal({
                               type="button"
                               disabled={isPlanning}
                               onClick={() => handleAddToPlan(rec)}
-                              className="px-2.5 py-1 rounded-md bg-[var(--accent)] text-[var(--on-accent)] text-[10px] font-bold transition cursor-pointer ml-1"
+                              className="tap-target px-2.5 py-1 rounded-md bg-[var(--accent)] text-[var(--on-accent)] text-[10px] font-bold transition cursor-pointer ml-1"
                             >
                               Confirm
                             </button>
                             <button
                               type="button"
                               onClick={() => setShowSlotPickerFor(null)}
-                              className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                              className="tap-target px-2 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
                             >
                               Cancel
                             </button>
@@ -376,12 +376,12 @@ export function WhatShouldIEatModal({
                       </div>
 
                       {/* Action buttons */}
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex sm:items-center">
                         <button
                           type="button"
                           disabled={isLogging}
                           onClick={() => handleLogNow(rec)}
-                          className="px-3.5 py-2 min-h-[36px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                          className="tap-target px-3.5 py-2 min-h-[36px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                         >
                           {isLogging ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -395,7 +395,7 @@ export function WhatShouldIEatModal({
                           type="button"
                           disabled={isPlanning}
                           onClick={() => setShowSlotPickerFor(isPickingSlot ? null : rec.id)}
-                          className="px-3 py-2 min-h-[36px] rounded-full bg-[var(--surface)] hover:bg-[var(--surface-active)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold transition cursor-pointer flex items-center gap-1"
+                          className="tap-target px-3 py-2 min-h-[36px] rounded-full bg-[var(--surface)] hover:bg-[var(--surface-active)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1"
                           title="Add to planned meals"
                         >
                           <CalendarDays className="w-3.5 h-3.5" />
@@ -411,7 +411,7 @@ export function WhatShouldIEatModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[var(--border)] flex justify-end bg-[var(--surface)]">
+        <div className="hidden shrink-0 p-4 border-t border-[var(--border)] justify-end bg-[var(--surface)] sm:flex">
           <button
             type="button"
             onClick={onClose}

@@ -148,11 +148,11 @@ export function AddMealModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
+        className="modal-panel w-full max-w-md rounded-3xl bg-[var(--surface)] p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -166,7 +166,7 @@ export function AddMealModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+             aria-label="Close" className="tap-target inline-flex items-center justify-center p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>

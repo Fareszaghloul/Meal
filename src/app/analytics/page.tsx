@@ -204,7 +204,7 @@ export default function AnalyticsPage() {
                 <h2 id="weight-heading" className="text-sm font-semibold text-fg">Body Weight Trend</h2>
                 <span className="text-xs text-fg-3">Trailing 7-day average</span>
               </div>
-              <Link href="/weight" className="text-xs font-normal text-fg-2 hover:text-fg hover:underline">
+              <Link href="/weight" className="tap-target inline-flex items-center text-xs font-normal text-fg-2 hover:text-fg hover:underline">
                 Weight details →
               </Link>
             </div>
@@ -220,7 +220,7 @@ export default function AnalyticsPage() {
           </section>
 
           {/* Lower Two-Column Section: Macros & Meal Patterns, Frequent Foods */}
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="space-y-6">
               <MacroBreakdownCard stats={data.stats} goals={data.goals} goalHistoryFrom={data.goalHistoryFrom} />
               <MealPatternsCard distribution={data.mealDistribution} daysLogged={data.stats.daysLogged} />

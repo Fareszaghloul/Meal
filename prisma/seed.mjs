@@ -298,11 +298,20 @@ async function main() {
 
   const createdFoods = new Map();
   for (const food of foodsData) {
-    const record = await prisma.food.upsert({
-      where: { name: food.name },
-      update: food,
-      create: food,
+    const existing = await prisma.food.findFirst({
+      where: { name: food.name, userId: null },
     });
+    let record;
+    if (existing) {
+      record = await prisma.food.update({
+        where: { id: existing.id },
+        data: food,
+      });
+    } else {
+      record = await prisma.food.create({
+        data: { ...food, userId: null },
+      });
+    }
     createdFoods.set(food.name, record);
   }
 

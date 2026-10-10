@@ -9,7 +9,7 @@ import { invalidateAll as invalidateDays } from "@/lib/client/day-store";
 import { invalidateAnalyticsCache } from "@/lib/client/analytics-store";
 import { formatDate, todayInTimezone } from "@/lib/dates";
 import { formatWeight, toKg, weightInputValue, weightUnitFor, type WeightUnit } from "@/lib/weight-units";
-import { fmt, NumberField, Segmented, Spinner } from "@/components/ui/primitives";
+import { fmt, NumberField, Segmented } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/Toast";
 import { Row, SaveError, Section } from "@/components/settings/layout";
@@ -81,9 +81,10 @@ export default function SettingsPage() {
   }
   if (!settings) {
     return (
-      <div className="flex justify-center py-16" aria-busy="true">
-        <Spinner />
-        <span className="sr-only">Loading settings</span>
+      <div className="mx-auto max-w-3xl space-y-4" aria-busy="true" aria-label="Loading settings">
+        <div className="skeleton h-7 w-32" />
+        <div className="skeleton h-44 rounded-lg" />
+        <div className="skeleton h-64 rounded-lg" />
       </div>
     );
   }
@@ -360,7 +361,7 @@ function GoalHistory({ history }: { history: GoalRevisionDto[] }) {
   const first = history[history.length - 1];
   return (
     <details className="group px-4 py-3" data-testid="goal-history">
-      <summary className="cursor-pointer select-none text-xs font-medium text-fg-2 hover:text-fg">
+      <summary className="flex min-h-[44px] cursor-pointer select-none items-center text-xs font-medium text-fg-2 hover:text-fg">
         Goal history · tracked since {longDate(first.effectiveDate)}
       </summary>
       <ol className="mt-2 divide-y divide-line text-xs tabular">

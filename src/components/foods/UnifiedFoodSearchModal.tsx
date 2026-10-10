@@ -246,12 +246,12 @@ export function UnifiedFoodSearchModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl bg-[var(--surface)] overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="modal-panel w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl bg-[var(--surface)] overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-[var(--border)] flex items-center justify-between gap-3 bg-[var(--surface)]">
           <div className="flex items-center space-x-2.5">
@@ -269,7 +269,7 @@ export function UnifiedFoodSearchModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+             aria-label="Close" className="tap-target inline-flex items-center justify-center p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -314,7 +314,7 @@ export function UnifiedFoodSearchModal({
                   key={tab.id}
                   onClick={() => setSourceFilter(tab.id as any)}
                   className={cn(
-                    "px-2.5 py-1 rounded-full text-[11px] font-medium transition cursor-pointer whitespace-nowrap",
+                    "tap-target px-2.5 py-1 rounded-full text-[11px] font-medium transition cursor-pointer whitespace-nowrap",
                     sourceFilter === tab.id
                       ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                       : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -338,7 +338,7 @@ export function UnifiedFoodSearchModal({
                   key={t.id}
                   onClick={() => setTypeFilter(t.id)}
                   className={cn(
-                    "px-2 py-0.5 rounded-md text-[10px] font-medium transition cursor-pointer",
+                    "tap-target px-2 py-0.5 rounded-md text-[10px] font-medium transition cursor-pointer",
                     typeFilter === t.id
                       ? "bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] font-semibold"
                       : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -481,7 +481,7 @@ export function UnifiedFoodSearchModal({
                         e.stopPropagation();
                         handleSelectFood(food);
                       }}
-                      className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--background)] text-xs font-medium text-[var(--text-primary)] transition"
+                      className="tap-target px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--background)] text-xs font-medium text-[var(--text-primary)] transition"
                     >
                       View Details
                     </button>
@@ -594,7 +594,7 @@ export function UnifiedFoodSearchModal({
                     disabled={isImporting || importSuccess}
                     onClick={handleImportFood}
                     className={cn(
-                      "px-3.5 py-2 rounded-xl border text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5",
+                      "tap-target px-3.5 py-2 rounded-xl border text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5",
                       importSuccess
                         ? "bg-[var(--accent-subtle)] text-[var(--accent)] border-[var(--border)]"
                         : "bg-[var(--surface)] text-[var(--text-primary)] border-[var(--border)] hover:bg-[var(--background)]"

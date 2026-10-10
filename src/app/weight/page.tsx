@@ -138,7 +138,7 @@ export default function WeightPage() {
                   ))}
                 </ul>
                 {readings.length > 14 && (
-                  <button type="button" className="w-full border-t border-line py-2.5 text-xs text-fg-2 hover:bg-surface-2" onClick={() => setShowAll((v) => !v)}>
+                  <button type="button" className="min-h-[44px] w-full border-t border-line py-2.5 text-xs text-fg-2 hover:bg-surface-2" onClick={() => setShowAll((v) => !v)}>
                     {showAll ? "Show fewer" : `Show all ${readings.length}`}
                   </button>
                 )}

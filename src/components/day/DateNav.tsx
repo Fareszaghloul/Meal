@@ -51,7 +51,7 @@ export function DateNav({ date, onChange }: DateNavProps) {
           <button
             type="button"
             onClick={() => inputRef.current?.showPicker?.() ?? inputRef.current?.click()}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium text-fg transition-colors hover:text-fg-2 focus-visible:outline-hidden"
+            className="tap-target flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium text-fg transition-colors hover:text-fg-2 focus-visible:outline-hidden"
             aria-label={`Choose date, currently ${dayName}, ${formattedDate}`}
           >
             <Calendar className="h-3.5 w-3.5 text-fg-3" />

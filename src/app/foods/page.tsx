@@ -377,7 +377,7 @@ export default function FoodsPage() {
                     type="button"
                     onClick={() => setDetailsFood(f)}
                     aria-label={`View details for ${f.name}`}
-                    className="min-w-0 flex-1 text-left focus:outline-none"
+                    className="min-h-[44px] min-w-0 flex-1 text-left focus:outline-none"
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -459,7 +459,7 @@ export default function FoodsPage() {
               <li>
                 <button
                   type="button"
-                  className="w-full py-3 text-xs font-medium text-fg-2 hover:bg-surface-2 transition-colors"
+                  className="min-h-[44px] w-full py-3 text-xs font-medium text-fg-2 hover:bg-surface-2 transition-colors"
                   onClick={() => setShowAll(true)}
                 >
                   Show all {list.length} foods

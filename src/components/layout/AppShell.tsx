@@ -12,8 +12,9 @@ import {
   CloudOff,
   LayoutList,
   LogOut,
-  Menu as MenuIcon,
   Moon,
+  MoreHorizontal,
+  User as UserIcon,
   Scale,
   Settings,
   ShoppingCart,
@@ -21,7 +22,6 @@ import {
   Users,
   Utensils,
   Warehouse,
-  X,
   Flame,
   Sunrise,
 } from "lucide-react";
@@ -29,6 +29,7 @@ import { useTheme } from "./ThemeProvider";
 import { useAuth } from "@/context/AuthContext";
 import { useSyncStatus } from "@/lib/client/day-store";
 import { cn } from "@/lib/utils";
+import { Sheet } from "@/components/ui/Sheet";
 
 const AUTH_PATHS = ["/login"];
 
@@ -48,6 +49,19 @@ const MORE = [
   { label: "Meal prep", href: "/meal-prep", icon: Flame },
   { label: "Shopping list", href: "/shopping-list", icon: ShoppingCart },
   { label: "Pantry", href: "/pantry", icon: Warehouse },
+];
+
+/** Phone tab bar: the daily loop. Everything else lives under More. */
+const TABS = [
+  { label: "Today", href: "/", icon: Sunrise },
+  { label: "Plan", href: "/meal-plan", icon: LayoutList },
+  { label: "Recipes", href: "/recipes", icon: BookOpen },
+  { label: "Pantry", href: "/pantry", icon: Warehouse },
+];
+
+const MORE_GROUPS = [
+  { title: "Track", items: [PRIMARY[1], PRIMARY[2], PRIMARY[3], PRIMARY[4]] },
+  { title: "Plan & cook", items: [MORE[0], MORE[3], MORE[4], MORE[2]] },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -141,16 +155,10 @@ function UserFooter({ onNavigate }: { onNavigate?: () => void }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { serverError } = useAuth();
   const pathname = usePathname();
-  const [drawer, setDrawer] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const isAuthPage = AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  useEffect(() => setDrawer(false), [pathname]);
-  useEffect(() => {
-    document.body.style.overflow = drawer ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [drawer]);
+  useEffect(() => setMoreOpen(false), [pathname]);
 
   if (isAuthPage) {
     return <main className="flex min-h-screen w-full items-center justify-center bg-bg p-4">{children}</main>;
@@ -170,20 +178,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-bg/95 px-3 py-2 backdrop-blur-sm md:hidden">
-          <button type="button" onClick={() => setDrawer(true)} className="btn btn-ghost btn-icon" aria-label="Open menu">
-            <MenuIcon className="h-5 w-5" />
-          </button>
-          <Link href="/" className="text-sm font-semibold tracking-tight">
+        <header className="safe-top flex items-center justify-between border-b border-line px-3 pb-2.5 sm:px-5 md:hidden">
+          <Link href="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-fg text-[13px] font-semibold text-bg">M</span>
             MealPrep
           </Link>
-          <div className="w-9">
-            <SyncBadgeDot />
-          </div>
+          <SyncBadgeDot />
         </header>
 
         {serverError && (
-          <div className="mx-auto w-full max-w-5xl px-4 pt-3 md:px-8">
+          <div className="mx-auto w-full max-w-5xl px-3 pt-3 sm:px-5 md:px-8">
             <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-400">
               <CloudOff className="h-4 w-4 shrink-0" />
               <span>{serverError}</span>
@@ -191,12 +195,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 pt-4 md:px-8 md:pb-10 md:pt-8">{children}</main>
+        <main className="pb-tabbar mx-auto w-full min-w-0 max-w-5xl flex-1 px-3 pt-3 sm:px-5 sm:pt-4 md:px-8 md:pb-10 md:pt-8">{children}</main>
 
         {/* Mobile bottom tabs */}
         <nav aria-label="Primary" className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface md:hidden">
-          <div className="mx-auto flex max-w-md items-stretch justify-around">
-            {[PRIMARY[0], PRIMARY[1], PRIMARY[4], PRIMARY[3], PRIMARY[2]].map((i) => {
+          <div className="mx-auto grid max-w-lg grid-cols-5">
+            {TABS.map((i) => {
               const active = isActive(pathname, i.href);
               const Icon = i.icon;
               return (
@@ -204,33 +208,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   key={i.href}
                   href={i.href}
                   aria-current={active ? "page" : undefined}
-                  className={cn("flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-0.5 text-[11px]", active ? "text-fg" : "text-fg-3")}
+                  className={cn("flex min-h-[52px] flex-col items-center justify-center gap-0.5 text-[11px]", active ? "font-medium text-fg" : "text-fg-3")}
                 >
                   <Icon className="h-5 w-5" />
                   {i.label}
                 </Link>
               );
             })}
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={moreOpen}
+              className={cn(
+                "flex min-h-[52px] flex-col items-center justify-center gap-0.5 text-[11px]",
+                !TABS.some((t) => isActive(pathname, t.href)) ? "font-medium text-fg" : "text-fg-3"
+              )}
+            >
+              <MoreHorizontal className="h-5 w-5" />
+              More
+            </button>
           </div>
         </nav>
       </div>
 
-      {/* Mobile drawer */}
-      {drawer && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setDrawer(false)} aria-hidden="true" />
-          <aside className="anim-sheet absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-line bg-surface p-3" role="dialog" aria-label="Menu">
-            <div className="mb-3 flex items-center justify-between px-2.5">
-              <span className="text-sm font-semibold">MealPrep</span>
-              <button type="button" onClick={() => setDrawer(false)} className="btn btn-ghost btn-icon btn-sm" aria-label="Close menu">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <NavSections onNavigate={() => setDrawer(false)} />
-            <UserFooter onNavigate={() => setDrawer(false)} />
-          </aside>
-        </div>
-      )}
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
     </div>
   );
 }
@@ -242,5 +244,48 @@ function SyncBadgeDot() {
     <span className="flex items-center justify-end" title={`${pending} pending`} role="status" aria-label={`${pending} changes pending`}>
       {state === "offline" ? <CloudOff className="h-4 w-4 text-fg-2" /> : <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />}
     </span>
+  );
+}
+
+/** Phone "More": every page that isn't a tab, plus account actions. A sheet, not a cramped dropdown. */
+function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { user, logout } = useAuth();
+  const { isDark, setTheme } = useTheme();
+  const pathname = usePathname();
+  const row = "flex min-h-[48px] items-center gap-3 rounded-md px-3 text-sm";
+  const link = (href: string, label: string, Icon: React.ComponentType<{ className?: string }>) => {
+    const active = isActive(pathname, href);
+    return (
+      <Link key={href} href={href} onClick={onClose} aria-current={active ? "page" : undefined} className={cn(row, active ? "bg-surface-2 font-medium text-fg" : "text-fg-2 hover:bg-surface-2")}>
+        <Icon className="h-5 w-5 shrink-0 text-fg-3" />
+        {label}
+      </Link>
+    );
+  };
+  return (
+    <Sheet open={open} onClose={onClose} title="More" size="sm">
+      <nav aria-label="More" className="-mx-1 space-y-4">
+        {MORE_GROUPS.map((g) => (
+          <section key={g.title}>
+            <h3 className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-fg-3">{g.title}</h3>
+            {g.items.map((i) => link(i.href, i.label, i.icon))}
+          </section>
+        ))}
+        <section>
+          <h3 className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-fg-3">Account</h3>
+          {link("/settings", "Settings", Settings)}
+          {link("/profile", user?.displayName || "Profile", UserIcon)}
+          {user?.role === "admin" && link("/admin", "Accounts", Users)}
+          <button type="button" onClick={() => setTheme(isDark ? "light" : "dark")} className={cn(row, "w-full text-fg-2 hover:bg-surface-2")}>
+            {isDark ? <Sun className="h-5 w-5 shrink-0 text-fg-3" /> : <Moon className="h-5 w-5 shrink-0 text-fg-3" />}
+            {isDark ? "Light appearance" : "Dark appearance"}
+          </button>
+          <button type="button" onClick={() => logout()} className={cn(row, "w-full text-fg-2 hover:bg-surface-2")}>
+            <LogOut className="h-5 w-5 shrink-0 text-fg-3" />
+            Sign out
+          </button>
+        </section>
+      </nav>
+    </Sheet>
   );
 }

@@ -477,11 +477,11 @@ export function BarcodeScannerModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={handleClose}
     >
       <div 
-        className="relative w-full max-w-lg rounded-3xl bg-[var(--surface)] overflow-hidden flex flex-col max-h-[92vh]"
+        className="modal-panel relative w-full max-w-lg rounded-3xl bg-[var(--surface)] overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -502,7 +502,7 @@ export function BarcodeScannerModal({
               type="button"
               onClick={() => setIsContinuousMode((v) => !v)}
               className={cn(
-                "px-2.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5 border touch-manipulation",
+                "tap-target px-2.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5 border touch-manipulation",
                 isContinuousMode
                   ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold rounded-full"
                   : "bg-[var(--background)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full"
@@ -520,7 +520,7 @@ export function BarcodeScannerModal({
             <button
               type="button"
               onClick={handleClose}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
+               aria-label="Close" className="tap-target inline-flex items-center justify-center p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition touch-manipulation"
             >
               <X className="w-5 h-5" />
             </button>
@@ -656,7 +656,7 @@ export function BarcodeScannerModal({
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={resetToScanAgain}
-                    className="px-3 py-1 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--background)] transition"
+                    className="tap-target px-3 py-1 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--background)] transition"
                   >
                     Scan another
                   </button>

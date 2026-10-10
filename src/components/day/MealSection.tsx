@@ -67,7 +67,7 @@ export function EntryRow({ entry, onEdit }: { entry: MealItem; onEdit: (e: MealI
       <button
         type="button"
         onClick={() => onEdit(entry)}
-        className="min-w-0 flex-1 text-left focus-visible:outline-hidden"
+        className="min-h-[44px] min-w-0 flex-1 text-left focus-visible:outline-hidden"
         aria-label={`Edit ${entry.name}, ${describeQuantity(entry)}, ${fmt.int(entry.calories)} kcal`}
       >
         <div className="flex items-baseline justify-between gap-3">

@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppShell } from "@/components/layout/AppShell";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ViewportVars } from "@/components/layout/ViewportVars";
 
 const generalSans = localFont({
   src: [
@@ -20,12 +21,20 @@ export const metadata: Metadata = {
   title: "MealPrep",
   description: "Private meal and nutrition tracker.",
   robots: { index: false, follow: false },
+  // Add to Home Screen: manifest + iOS standalone metadata. No service worker on purpose: personal API
+  // data is never cached on the device, so the app needs a connection like a normal tab.
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, title: "MealPrep", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png", icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }] },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Android Chrome: the keyboard resizes the layout instead of covering it. Zoom stays enabled.
+  interactiveWidget: "resizes-content",
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#0f1012" },
     { media: "(prefers-color-scheme: light)", color: "#f6f6f4" },
@@ -42,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full bg-bg text-fg">
+        <ViewportVars />
         <ThemeProvider>
           <AuthProvider>
             <ToastProvider>

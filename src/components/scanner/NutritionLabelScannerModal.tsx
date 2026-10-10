@@ -255,14 +255,14 @@ export function NutritionLabelScannerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs animate-in fade-in"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs animate-in fade-in"
       onClick={() => step !== "processing" && onClose()}
       role="dialog"
       aria-modal="true"
       aria-labelledby="scanner-modal-title"
     >
       <div
-        className="w-full max-w-lg rounded-3xl bg-[var(--surface)] p-6 space-y-5 max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-150"
+        className="modal-panel w-full max-w-lg rounded-3xl bg-[var(--surface)] p-6 space-y-5 max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -282,7 +282,7 @@ export function NutritionLabelScannerModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+             className="tap-target inline-flex items-center justify-center p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -374,7 +374,7 @@ export function NutritionLabelScannerModal({
                       type="button"
                       onClick={flipCamera}
                       aria-label="Switch camera"
-                      className="p-2 rounded-full bg-black/40 text-white hover:bg-black/60 backdrop-blur-md transition cursor-pointer"
+                      className="tap-target inline-flex items-center justify-center p-2 rounded-full bg-black/40 text-white hover:bg-black/60 backdrop-blur-md transition cursor-pointer"
                     >
                       <RefreshCw className="w-4 h-4" />
                     </button>

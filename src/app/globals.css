@@ -271,6 +271,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .anim-sheet { animation: sheet-up 160ms ease-out; }
 .anim-fade { animation: fade 120ms ease-out; }
 .safe-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem)); }
+.safe-top { padding-top: max(0.625rem, env(safe-area-inset-top, 0px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -280,3 +281,47 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
+
+/* ───────── Mobile ─────────
+ * Unlayered on purpose: these must win over component and utility classes.
+ * --vvh / --kb come from <ViewportVars/> (visual viewport height and on-screen keyboard height).
+ */
+
+/* Touch devices: 44px hit areas and 16px form text (iOS zooms the page into smaller inputs).
+   Pointer-based, not width-based, so a narrow desktop window keeps its density. */
+@media (pointer: coarse) {
+  .btn, .btn-sm { min-height: 44px; }
+  .btn-icon, .btn-icon.btn-sm { width: 44px; min-width: 44px; }
+  .seg-item, .menu-item { min-height: 44px; }
+  .seg-item { min-width: 44px; }
+  .input, .input-field { min-height: 44px; }
+  .tap-target { min-width: 44px; min-height: 44px; }
+  /* Controls already sized "almost touch" (36–40px) across older pages: lift them to 44 rather than edit each one. */
+  .min-h-\[32px\], .min-h-\[36px\], .min-h-\[38px\], .min-h-\[40px\] { min-height: 44px; }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea { font-size: 16px; }
+}
+
+/* Any dialog (Sheet and the custom modals): a bottom sheet on phones that stays above the keyboard
+   and the home indicator; centered dialog from 640px up. */
+@media (max-width: 639px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+    bottom: var(--kb, 0px);
+  }
+  .modal-panel {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(var(--vvh, 100dvh) * 0.94);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 16px 16px 0 0;
+    border-bottom: env(safe-area-inset-bottom, 0px) solid var(--surface);
+    animation: sheet-up 160ms ease-out;
+  }
+}
+
+/* Room for the fixed bottom tab bar (52px) plus the home indicator. */
+.pb-tabbar { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px) + 1.5rem); }

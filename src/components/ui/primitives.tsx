@@ -121,8 +121,8 @@ export function Segmented<T extends string>({
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "flex-1 whitespace-nowrap rounded-[5px] font-medium transition-colors",
-            size === "sm" ? "px-2.5 py-1 text-xs min-h-[28px]" : "px-3 py-1.5 text-sm min-h-[32px]",
+            "seg-item flex-1 whitespace-nowrap rounded-[5px] font-medium transition-colors",
+            size === "sm" ? "tap-target px-2.5 py-1 text-xs min-h-[28px]" : "tap-target px-3 py-1.5 text-sm min-h-[32px]",
             value === o.value ? "bg-surface text-fg shadow-[0_1px_2px_rgba(0,0,0,0.06)]" : "text-fg-2 hover:text-fg",
             itemClassName
           )}
@@ -179,7 +179,7 @@ export function Menu({ items, label = "More actions", align = "right", trigger }
                 setOpen(false);
                 it.onClick();
               }}
-              className={cn("flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-2 disabled:opacity-50", it.danger ? "text-negative" : "text-fg")}
+              className={cn("menu-item flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-2 disabled:opacity-50", it.danger ? "text-negative" : "text-fg")}
             >
               {it.icon && <span className="text-fg-3">{it.icon}</span>}
               {it.label}

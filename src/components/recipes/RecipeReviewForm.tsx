@@ -311,7 +311,7 @@ export function RecipeReviewForm({
             <button
               type="button"
               onClick={onCancel}
-              className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition"
+              className="tap-target px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition"
             >
               Cancel
             </button>
@@ -506,14 +506,14 @@ export function RecipeReviewForm({
                     type="button"
                     title="Lookup in USDA / Open Food Facts"
                     onClick={() => openIngredientLookup(ing.id, ing.rawName)}
-                    className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition"
+                    className="tap-target inline-flex items-center justify-center p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition"
                   >
                     <Globe className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => removeIngredient(ing.id)}
-                    className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
+                    className="tap-target inline-flex items-center justify-center p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -572,7 +572,7 @@ export function RecipeReviewForm({
                     type="button"
                     title="Lookup in USDA / Open Food Facts"
                     onClick={() => openIngredientLookup(ing.id, ing.rawName)}
-                    className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition"
+                    className="tap-target inline-flex items-center justify-center p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition"
                   >
                     <Globe className="w-4 h-4" />
                   </button>
@@ -580,7 +580,7 @@ export function RecipeReviewForm({
                   <button
                     type="button"
                     onClick={() => removeIngredient(ing.id)}
-                    className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
+                    className="tap-target inline-flex items-center justify-center p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -629,7 +629,7 @@ export function RecipeReviewForm({
               <button
                 type="button"
                 onClick={() => removeInstruction(inst.id)}
-                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition mt-1"
+                className="tap-target inline-flex items-center justify-center p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--ui-error)] hover:bg-[var(--ui-error-bg)] transition mt-1"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -716,7 +716,7 @@ export function RecipeReviewForm({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] min-h-[38px] flex items-center justify-center touch-manipulation"
+              className="tap-target px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] min-h-[38px] flex items-center justify-center touch-manipulation"
             >
               Cancel
             </button>
@@ -734,11 +734,11 @@ export function RecipeReviewForm({
       {/* External Ingredient Lookup Modal */}
       {isLookupOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
           onClick={() => setIsLookupOpen(false)}
         >
           <div 
-            className="w-full max-w-xl rounded-3xl bg-[var(--surface)] p-6 space-y-5 max-h-[85vh] flex flex-col"
+            className="modal-panel w-full max-w-xl rounded-3xl bg-[var(--surface)] p-6 space-y-5 max-h-[85vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -827,7 +827,7 @@ export function RecipeReviewForm({
                       type="button"
                       disabled={isImportingLookup}
                       onClick={() => applyLookupSelection(candidate)}
-                      className="px-3.5 py-1.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold shrink-0 transition"
+                      className="tap-target px-3.5 py-1.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold shrink-0 transition"
                     >
                       Select &amp; Link
                     </button>

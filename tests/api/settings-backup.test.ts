@@ -128,8 +128,48 @@ async function seedComplex(userId: string) {
       meals: { create: [{ dayOfWeek: "monday", mealCategory: "breakfast", recipeId: recipe.id, servings: 1, calories: 410 }, { dayOfWeek: "tuesday", mealCategory: "dinner", customName: "Out", servings: 1, calories: 900, isCompleted: true, sortOrder: 1 }] },
     },
   });
-  await db.pantryItem.create({ data: { userId, foodId: oats.id, name: "Oats", quantity: 500, unit: "g", category: "Grains" } });
-  await db.shoppingListItem.create({ data: { userId, foodId: systemFoodId, name: "System thing", quantity: 2, unit: "piece", category: "Produce", isChecked: true, notes: "ripe" } });
+  const pantryOats = await db.pantryItem.create({
+    data: { userId, foodId: oats.id, name: "Oats", quantity: 500, unit: "g", category: "Grains", storageLocation: "Fridge", expiryDate: "2026-10-20", lowStockThreshold: 200 },
+  });
+  const shopping = await db.shoppingListItem.create({ data: { userId, foodId: systemFoodId, name: "System thing", quantity: 2, unit: "piece", category: "Produce", isChecked: true, notes: "ripe" } });
+
+  // Phases 1–3 data: a planned meal logged as a food entry (with the pantry usage it caused), saved meals,
+  // day templates that reference them, prep tasks and an adaptive-nutrition recommendation.
+  const loggedEntry = await db.foodLogEntry.create({
+    data: { userId, date: "2026-08-31", mealCategory: "breakfast", name: "P9 Overnight Oats (planned)", servings: 1, calories: 410, protein: 30, carbs: 50, fat: 9, recipeId: recipe.id, loggedAt: new Date("2026-08-31T08:00:00Z") },
+  });
+  const plannedBreakfast = await db.meal.findFirstOrThrow({ where: { mealPlan: { userId }, dayOfWeek: "monday" } });
+  await db.meal.update({ where: { id: plannedBreakfast.id }, data: { status: "logged", foodLogEntryId: loggedEntry.id, loggedAt: new Date("2026-08-31T08:00:00Z") } });
+  await db.pantryTransaction.createMany({
+    data: [
+      { userId, pantryItemId: pantryOats.id, type: "MEAL_USAGE", quantity: 80, unit: "g", sourceType: "meal", sourceId: plannedBreakfast.id, createdAt: new Date("2026-08-31T08:00:01Z") },
+      { userId, pantryItemId: pantryOats.id, type: "ADD", quantity: 500, unit: "g", sourceType: "shopping", sourceId: shopping.id, createdAt: new Date("2026-08-30T10:00:00Z") },
+      { userId, pantryItemId: pantryOats.id, type: "ADJUSTMENT", quantity: -20, unit: "g", sourceType: "manual", sourceId: null, createdAt: new Date("2026-08-30T11:00:00Z") },
+    ],
+  });
+  const savedBreakfast = await db.savedMeal.create({
+    data: {
+      userId,
+      name: "P9 Saved breakfast",
+      mealCategory: "breakfast",
+      isFavorite: true,
+      useCount: 4,
+      items: { create: [{ foodId: oats.id, quantity: 1, servingUnit: "cup", calories: 300, protein: 10, carbs: 50, fat: 5, sortOrder: 0 }, { recipeId: recipe.id, quantity: 1, calories: 410, protein: 30, carbs: 50, fat: 9, sortOrder: 1 }, { foodId: systemFoodId, customName: "Side", calories: 80, sortOrder: 2 }] },
+    },
+  });
+  await db.dayTemplate.create({
+    data: {
+      userId,
+      name: "P9 Training day",
+      description: "High carb",
+      useCount: 2,
+      items: { create: [{ mealCategory: "breakfast", savedMealId: savedBreakfast.id, calories: 710, sortOrder: 0 }, { mealCategory: "lunch", recipeId: recipe.id, servings: 2, calories: 820, sortOrder: 1 }, { mealCategory: "snack", foodId: whey.id, customName: "Shake", calories: 120, sortOrder: 2 }] },
+    },
+  });
+  await db.prepSession.create({ data: { userId, weekStart: "2026-08-31", tasks: { create: [{ label: "Soak oats", completed: true, sortOrder: 0 }, { label: "Portion jars", sortOrder: 1 }] } } });
+  await db.nutritionRecommendation.create({
+    data: { userId, dataStartDate: "2026-08-01", dataEndDate: "2026-08-28", previousCalories: 2300, recommendedCalories: 2400, calorieChange: 100, observedWeeklyRate: -0.9, targetWeeklyRate: -0.5, confidence: "medium", reason: "Losing faster than planned", status: "accepted" },
+  });
   await db.goalRevision.createMany({
     data: [
       { userId, effectiveDate: "2026-08-01", dailyCalories: 2300, dailyProtein: 160, dailyCarbs: 220, dailyFat: 70, goalType: "lose", goalWeeklyRateKg: 0.5, goalWeightKg: 80 },
@@ -158,6 +198,25 @@ interface Backup {
 /** Domain state independent of generated ids: references become content keys, arrays become sorted multisets. */
 function normalize(file: Backup) {
   const d = structuredClone(file.data);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const x = d as any;
+  // Backup-local ids on the rows added in Phases 1–3 become content keys too.
+  const logKey = new Map<string, string>((x.foodLog ?? []).map((e: any) => [e.id, `log:${e.date}|${e.name}|${e.loggedAt}`]));
+  const mealKey = new Map<string, string>(
+    (x.mealPlans ?? []).flatMap((p: any) => p.meals.map((m: any) => [m.id, `meal:${p.weekStartDate}|${m.dayOfWeek}|${m.mealCategory}|${m.sortOrder}`]))
+  );
+  const pantryKey = new Map<string, string>((x.pantry ?? []).map((p: any) => [p.id, `pantry:${p.name}`]));
+  const shopKey = new Map<string, string>((x.shoppingList ?? []).map((i: any) => [i.id, `shop:${i.name}`]));
+  const savedKey = new Map<string, string>((x.savedMeals ?? []).map((m: any) => [m.id, `saved:${m.name}`]));
+  (x.foodLog ?? []).forEach((e: any) => (e.id = logKey.get(e.id)));
+  (x.mealPlans ?? []).forEach((p: any) => p.meals.forEach((m: any) => ((m.id = mealKey.get(m.id)), (m.foodLogEntryId = m.foodLogEntryId ? (logKey.get(m.foodLogEntryId) ?? "MISSING") : null))));
+  (x.pantry ?? []).forEach((p: any) => (p.id = pantryKey.get(p.id)));
+  (x.shoppingList ?? []).forEach((i: any) => (i.id = shopKey.get(i.id)));
+  (x.pantryTransactions ?? []).forEach((t: any) => {
+    t.pantryItemId = pantryKey.get(t.pantryItemId) ?? "MISSING";
+    t.sourceId = t.sourceId === null ? null : t.sourceType === "meal" ? (mealKey.get(t.sourceId) ?? "MISSING") : (shopKey.get(t.sourceId) ?? "MISSING");
+  });
+  (x.savedMeals ?? []).forEach((m: any) => (m.id = savedKey.get(m.id)));
   const foodKey = new Map(d.foods.map((f) => [f.id, `food:${f.name}`]));
   const recipeKey = new Map(d.recipes.map((r) => [r.id, `recipe:${r.name}`]));
   const f = (id: string | null) => (id === null ? null : (foodKey.get(id) ?? `system:${id}`));
@@ -172,6 +231,10 @@ function normalize(file: Backup) {
   d.mealPlans.forEach((p) => p.meals.forEach((m) => (m.recipeId = r(m.recipeId))));
   d.pantry.forEach((p) => (p.foodId = f(p.foodId)));
   d.shoppingList.forEach((s) => (s.foodId = f(s.foodId)));
+  (x.savedMeals ?? []).forEach((m: any) => m.items.forEach((i: any) => ((i.foodId = f(i.foodId)), (i.recipeId = r(i.recipeId)))));
+  (x.dayTemplates ?? []).forEach((t: any) =>
+    t.items.forEach((i: any) => ((i.foodId = f(i.foodId)), (i.recipeId = r(i.recipeId)), (i.savedMealId = i.savedMealId ? (savedKey.get(i.savedMealId) ?? "MISSING") : null)))
+  );
   const sortDeep = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(sortDeep).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
     if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, sortDeep(x)]));
@@ -453,7 +516,12 @@ describe("Backup download", () => {
     expect(b.version).toBe(1);
     expect(b.data.foods).toHaveLength(2);
     expect(b.data.recipes).toHaveLength(1);
-    expect(b.data.foodLog).toHaveLength(4);
+    expect(b.data.foodLog).toHaveLength(5);
+    expect(b.data.savedMeals as unknown[]).toHaveLength(1);
+    expect(b.data.dayTemplates as unknown[]).toHaveLength(1);
+    expect(b.data.pantryTransactions as unknown[]).toHaveLength(3);
+    expect(b.data.prepSessions as unknown[]).toHaveLength(1);
+    expect(b.data.nutritionRecommendations as unknown[]).toHaveLength(1);
     expect(b.data.weight as unknown[]).toHaveLength(4);
     expect(b.data.goalRevisions as unknown[]).toHaveLength(2);
     expect(b.data.mealPlans[0].meals).toHaveLength(2);
@@ -523,7 +591,7 @@ describe("Restore", () => {
     expect(res.status).toBe(200);
     expect(res.body.supported).toBe(true);
     expect(res.body.version).toBe(1);
-    expect(res.body.counts.foodLog).toBe(4);
+    expect(res.body.counts.foodLog).toBe(5);
     expect(res.body.counts.recipes).toBe(1);
     expect(normalize((await backupOf("other")).body)).toEqual(before);
   });
@@ -545,7 +613,7 @@ describe("Restore", () => {
 
     const res = await restore("owner", original);
     expect(res.status).toBe(200);
-    expect(res.body.counts.foodLog).toBe(4);
+    expect(res.body.counts.foodLog).toBe(5);
 
     const after = (await backupOf("owner")).body;
     expect(normalize(after)).toEqual(originalNorm);
@@ -559,6 +627,19 @@ describe("Restore", () => {
     expect(snap.protein).toBe(4.4);
     // Account and sessions untouched.
     expect((await req("owner", "/api/auth/me")).status).toBe(200);
+  }, 60_000);
+
+  it("keeps Phases 1–3 links working after restore: unlogging a restored planned meal removes its log entry and returns its pantry usage", async () => {
+    const userId = users.owner.id;
+    const meal = await db.meal.findFirstOrThrow({ where: { mealPlan: { userId }, status: "logged" } });
+    expect(meal.foodLogEntryId).not.toBeNull();
+    const pantryBefore = await db.pantryItem.findFirstOrThrow({ where: { userId, name: "Oats" } });
+    const res = await req("owner", "/api/meal-plan/unlog", { method: "POST", json: { mealId: meal.id } });
+    expect(res.status).toBe(200);
+    expect(await db.foodLogEntry.count({ where: { id: meal.foodLogEntryId! } })).toBe(0);
+    expect((await db.pantryItem.findUniqueOrThrow({ where: { id: pantryBefore.id } })).quantity).toBe(pantryBefore.quantity + 80);
+    // Put the owner back to the original backup for the tests below.
+    expect((await restore("owner", original)).status).toBe(200);
   }, 60_000);
 
   it("restores into a fresh account and reconstructs the same domain data; the source account is unchanged", async () => {

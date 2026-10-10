@@ -111,11 +111,11 @@ export function CreateUserModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
       onClick={handleResetAndClose}
     >
       <div
-        className="w-full max-w-md rounded-3xl bg-[var(--surface)] overflow-hidden animate-in zoom-in-95 duration-150"
+        className="modal-panel w-full max-w-md rounded-3xl bg-[var(--surface)] overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

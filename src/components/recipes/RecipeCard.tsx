@@ -144,6 +144,8 @@ export function RecipeCard({ recipe, index = 0, onDelete, onDuplicate }: RecipeC
           {recipe.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
+                loading="lazy"
+                decoding="async"
               src={recipe.imageUrl}
               alt={recipe.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -199,7 +201,7 @@ export function RecipeCard({ recipe, index = 0, onDelete, onDuplicate }: RecipeC
                 aria-label="Recipe actions"
                 aria-expanded={isMenuOpen}
                 aria-haspopup="true"
-                className="p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors cursor-pointer"
+                className="tap-target inline-flex items-center justify-center p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors cursor-pointer"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>

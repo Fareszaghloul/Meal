@@ -15,6 +15,7 @@ import { copyEntries, prefetchDay, useDay } from "@/lib/client/day-store";
 import { MEAL_CATEGORIES, MEAL_LABELS, type MealCategory, type MealItem } from "@/lib/domain";
 import { addDays, isDateString, todayLocal } from "@/lib/dates";
 import { toast } from "@/components/ui/Toast";
+import { Menu } from "@/components/ui/primitives";
 
 function suggestMeal(): MealCategory {
   const h = new Date().getHours();
@@ -99,13 +100,14 @@ function DashboardInner() {
   return (
     <div className="space-y-4">
       {/* Top Header */}
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-3">
         <DateNav date={date} onChange={setDate} />
-        <div className="flex items-center gap-2">
+        {/* Phones: the two everyday actions plus an overflow menu; desktop keeps every action visible. */}
+        <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 sm:flex sm:justify-end lg:justify-start">
           <button
             type="button"
             onClick={() => setApplyingTemplateOpen(true)}
-            className="btn btn-secondary h-9 px-3 text-xs font-medium shadow-xs"
+            className="btn btn-secondary hidden h-9 px-3 text-xs font-medium shadow-xs lg:inline-flex"
             aria-label="Apply day template"
             title="Populate day from a saved day template"
           >
@@ -115,7 +117,7 @@ function DashboardInner() {
             <button
               type="button"
               onClick={() => setSavingDayTemplateOpen(true)}
-              className="btn btn-secondary h-9 px-3 text-xs font-medium shadow-xs hidden sm:inline-flex"
+              className="btn btn-secondary hidden h-9 px-3 text-xs font-medium shadow-xs lg:inline-flex"
               aria-label="Save day as template"
               title="Save this day as a template"
             >
@@ -125,7 +127,7 @@ function DashboardInner() {
           <button
             type="button"
             onClick={() => setCopyingDayOpen(true)}
-            className="btn btn-secondary h-9 px-3 text-xs font-medium shadow-xs"
+            className="btn btn-secondary hidden h-9 px-3 text-xs font-medium shadow-xs lg:inline-flex"
             aria-label="Copy entire day"
             title="Copy all entries from another day"
           >
@@ -147,8 +149,18 @@ function DashboardInner() {
             aria-label="Add food"
           >
             <Plus className="h-4 w-4" /> Add food
-            <span className="kbd ml-1.5 hidden md:inline text-[10px]">N</span>
+            <span className="kbd ml-1.5 hidden lg:inline text-[10px]">N</span>
           </button>
+          <div className="lg:hidden">
+            <Menu
+              label="More day actions"
+              items={[
+                { label: "Apply day template", icon: <Layers className="h-4 w-4" />, onClick: () => setApplyingTemplateOpen(true) },
+                ...(day?.entries.length ? [{ label: "Save day as template", onClick: () => setSavingDayTemplateOpen(true) }] : []),
+                { label: "Copy another day", icon: <Copy className="h-4 w-4" />, onClick: () => setCopyingDayOpen(true) },
+              ]}
+            />
+          </div>
         </div>
       </header>
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   ChevronLeft,
@@ -26,6 +27,7 @@ import { AddMealModal } from "@/components/meal-plan/AddMealModal";
 import { EditMealModal } from "@/components/meal-plan/EditMealModal";
 import { GenerateWeekModal } from "@/components/meal-plan/GenerateWeekModal";
 import { ReplaceMealModal } from "@/components/meal-plan/ReplaceMealModal";
+import { Menu } from "@/components/ui/primitives";
 
 const DAYS_OF_WEEK = [
   { key: "monday", label: "Monday", short: "Mon" },
@@ -56,6 +58,7 @@ function formatDate(d: Date): string {
 }
 
 export default function MealPlannerPage() {
+  const router = useRouter();
   const [currentMonday, setCurrentMonday] = useState<Date>(() => getMondayDate());
   const [mealPlan, setMealPlan] = useState<any>(null);
   const [allRecipes, setAllRecipes] = useState<any[]>([]);
@@ -74,6 +77,8 @@ export default function MealPlannerPage() {
   const [loggingMealId, setLoggingMealId] = useState<string | null>(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [replacingMeal, setReplacingMeal] = useState<any | null>(null);
+  // Phones/tablets show one day at a time; defaults to today.
+  const [selectedDay, setSelectedDay] = useState<string>(() => ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][new Date().getDay()]);
 
   const weekStartStr = formatDate(currentMonday);
 
@@ -268,20 +273,130 @@ export default function MealPlannerPage() {
     return recipeIds.size;
   }, [mealPlan]);
 
+  /** Below xl: day tabs + one day, meals stacked by category; Log/Unlog stays visible, the rest sits in an overflow menu. */
+  const renderMobileWeek = () => {
+    const meals = getDayMeals(selectedDay);
+    const stats = calculateDayNutrition(selectedDay);
+    const remaining = userGoals.dailyCalories - stats.calories;
+    const day = DAYS_OF_WEEK.find((d) => d.key === selectedDay) ?? DAYS_OF_WEEK[0];
+    return (
+      <section className="space-y-3 xl:hidden" aria-label="Day plan">
+        <div role="tablist" aria-label="Day of week" className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 scrollbar-none sm:mx-0 sm:px-0">
+          {DAYS_OF_WEEK.map((d, idx) => {
+            const date = new Date(currentMonday);
+            date.setDate(date.getDate() + idx);
+            const active = d.key === selectedDay;
+            const kcal = calculateDayNutrition(d.key).calories;
+            const isToday = isCurrentWeek && d.key === todayDayKey;
+            return (
+              <button
+                key={d.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-label={`${d.label} ${date.getDate()}${kcal ? `, ${kcal} kcal planned` : ""}`}
+                onClick={() => setSelectedDay(d.key)}
+                className={cn(
+                  "flex min-h-[52px] min-w-[52px] shrink-0 flex-col items-center justify-center rounded-xl px-2.5 text-xs transition",
+                  active ? "bg-[var(--accent)] text-[var(--on-accent)]" : "bg-[var(--surface)] text-[var(--text-secondary)]"
+                )}
+              >
+                <span className={cn("font-semibold", isToday && !active && "text-[var(--accent)]")}>{d.short}</span>
+                <span className="font-tabular text-[11px] opacity-80">{date.getDate()}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="rounded-2xl bg-[var(--surface)] p-3 sm:p-4">
+          <div className="flex items-baseline justify-between gap-2 border-b border-[var(--border)] pb-2.5">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">{day.label}</h2>
+            <span className="font-tabular text-xs text-[var(--text-secondary)]">
+              <span className="font-semibold text-[var(--text-primary)]">{stats.calories.toLocaleString()} kcal</span>
+              {" · "}
+              <span className={remaining < 0 ? "text-[var(--status-over-target)]" : undefined}>
+                {remaining < 0 ? `+${Math.abs(remaining)} over` : `${remaining} left`}
+              </span>
+            </span>
+          </div>
+          <div className="pt-1.5 font-tabular text-[11px] text-[var(--text-muted)]">
+            P {stats.protein} g · C {stats.carbs} g · F {stats.fat} g
+          </div>
+
+          <div className="divide-y divide-[var(--border)]">
+            {MEAL_CATEGORIES.map((cat) => {
+              const catMeals = meals.filter((m: any) => m.mealCategory === cat.key);
+              return (
+                <div key={cat.key} className="py-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-medium text-[var(--text-muted)]">{cat.label}</h3>
+                    <button
+                      type="button"
+                      onClick={() => setActiveModalSlot({ day: selectedDay, category: cat.key })}
+                      className="tap-target flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                      aria-label={`Add ${cat.label.toLowerCase()} on ${day.label}`}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {catMeals.length === 0 && <p className="pb-1 text-xs text-[var(--text-muted)]">Nothing planned</p>}
+                  {catMeals.map((meal: any) => {
+                    const isLogged = meal.status === "logged" || Boolean(meal.foodLogEntryId);
+                    const isBusy = loggingMealId === meal.id;
+                    const name = meal.recipe?.name || meal.customName || "Meal";
+                    return (
+                      <div key={meal.id} className="flex items-center gap-1.5">
+                        <button type="button" onClick={() => setEditingMeal(meal)} className="min-h-[44px] min-w-0 flex-1 py-1 text-left" aria-label={`Edit ${name}`}>
+                          <div className={cn("truncate text-sm font-medium text-[var(--text-primary)]", isLogged && "text-[var(--text-secondary)]")}>{name}</div>
+                          <div className="font-tabular text-[11px] text-[var(--text-muted)]">
+                            {Math.round(meal.calories)} kcal · {Math.round(meal.protein)} g P{meal.servings > 1 ? ` · ${meal.servings} serv.` : ""}
+                            {isLogged && <span className="ml-1.5 font-semibold text-[var(--accent)]">Logged</span>}
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          onClick={() => (isLogged ? handleUnlogMeal(meal) : handleLogMeal(meal))}
+                          className="btn btn-secondary btn-sm shrink-0"
+                          aria-label={isLogged ? `Unlog ${name}` : `Log ${name}`}
+                        >
+                          {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : isLogged ? <RotateCcw className="h-3.5 w-3.5" /> : <Utensils className="h-3.5 w-3.5" />}
+                          {isLogged ? "Unlog" : "Log"}
+                        </button>
+                        <Menu
+                          label={`More actions for ${name}`}
+                          items={[
+                            { label: "Edit", icon: <Pencil className="h-4 w-4" />, onClick: () => setEditingMeal(meal) },
+                            { label: isLogged ? "Replace (unlog first)" : "Replace", icon: <ArrowLeftRight className="h-4 w-4" />, onClick: () => setReplacingMeal(meal), disabled: isLogged },
+                            { label: "Delete", icon: <Trash2 className="h-4 w-4" />, onClick: () => handleDeleteMeal(meal.id), danger: true },
+                          ]}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+    <div className="mx-auto max-w-7xl space-y-5 pb-6 sm:space-y-6">
       {/* ─── Page Header ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <p className="text-sm text-[var(--text-muted)] font-normal">
             Weekly planning
           </p>
-          <h1 className="text-[34px] font-semibold tracking-[-0.03em] leading-tight text-[var(--text-primary)]">
+          <h1 className="text-2xl font-semibold leading-tight tracking-[-0.03em] text-[var(--text-primary)] sm:text-[34px]">
             Meal Plan
           </h1>
         </div>
 
-        <div className="flex items-center space-x-2 flex-wrap">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setIsGenerateModalOpen(true)}
@@ -292,17 +407,26 @@ export default function MealPlannerPage() {
           </button>
           <Link
             href="/meal-prep"
-            className="inline-flex items-center space-x-2 px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--surface)]/80 transition"
+            className="hidden sm:inline-flex items-center space-x-2 px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--surface)]/80 transition"
           >
             <Flame className="w-4 h-4" />
             <span>Weekly prep mode</span>
           </Link>
           <Link
             href="/shopping-list"
-            className="inline-flex items-center px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--surface)]/80 transition"
+            className="hidden sm:inline-flex items-center px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--surface)]/80 transition"
           >
             Shopping list
           </Link>
+          <div className="sm:hidden">
+            <Menu
+              label="More plan actions"
+              items={[
+                { label: "Weekly prep mode", icon: <Flame className="h-4 w-4" />, onClick: () => router.push("/meal-prep") },
+                { label: "Shopping list", onClick: () => router.push("/shopping-list") },
+              ]}
+            />
+          </div>
         </div>
       </div>
 
@@ -321,7 +445,7 @@ export default function MealPlannerPage() {
         {/* Pill 3: Lime-subtle recipes to cook Sunday */}
         <Link
           href="/meal-prep"
-          className="px-4 py-2 min-h-[40px] rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition"
+          className="tap-target px-4 py-2 min-h-[40px] rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition"
         >
           <Flame className="w-3.5 h-3.5 text-[var(--lime)]" />
           <span>{uniquePrepRecipesCount || 5} recipes to cook Sunday</span>
@@ -335,7 +459,7 @@ export default function MealPlannerPage() {
           <button
             type="button"
             onClick={handlePrevWeek}
-            className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+            className="tap-target flex items-center justify-center p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
             aria-label="Previous week"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -343,14 +467,14 @@ export default function MealPlannerPage() {
           <button
             type="button"
             onClick={handleToday}
-            className="px-4 py-1.5 min-h-[36px] rounded-full text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+            className="tap-target px-4 py-1.5 min-h-[36px] rounded-full text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
           >
             Today
           </button>
           <button
             type="button"
             onClick={handleNextWeek}
-            className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+            className="tap-target flex items-center justify-center p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
             aria-label="Next week"
           >
             <ChevronRight className="w-4 h-4" />
@@ -364,7 +488,9 @@ export default function MealPlannerPage() {
       </div>
 
       {/* ─── 7-Column Grid of Borderless Surface Cells (rounded 16px) ─── */}
-      <div className="overflow-x-auto pb-4">
+      {renderMobileWeek()}
+
+      <div className="hidden overflow-x-auto pb-4 xl:block">
         <div className="grid grid-cols-7 gap-3 min-w-[980px]">
           {DAYS_OF_WEEK.map((day, idx) => {
             const dayDate = new Date(currentMonday);
@@ -471,7 +597,7 @@ export default function MealPlannerPage() {
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition">
+                                  <div className="flex items-center gap-0.5 shrink-0 transition [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
                                     {isLogged ? (
                                       <button
                                         type="button"
@@ -505,7 +631,7 @@ export default function MealPlannerPage() {
                                     <button
                                       type="button"
                                       onClick={() => setEditingMeal(meal)}
-                                      className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                                      className="tap-target inline-flex items-center justify-center p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
                                       title="Edit meal"
                                     >
                                       <Pencil className="w-3.5 h-3.5" />
@@ -529,7 +655,7 @@ export default function MealPlannerPage() {
                                     <button
                                       type="button"
                                       onClick={() => handleDeleteMeal(meal.id)}
-                                      className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--ui-error)] cursor-pointer"
+                                      className="tap-target inline-flex items-center justify-center p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--ui-error)] cursor-pointer"
                                       title="Delete meal"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />

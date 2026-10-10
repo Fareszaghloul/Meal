@@ -538,7 +538,7 @@ export default function ProfilePage() {
               type="button"
               onClick={() => setMeasurementSystem("metric")}
               className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-medium transition cursor-pointer",
+                "tap-target px-4 py-1.5 rounded-full text-xs font-medium transition cursor-pointer",
                 measurementSystem === "metric"
                   ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -550,7 +550,7 @@ export default function ProfilePage() {
               type="button"
               onClick={() => setMeasurementSystem("imperial")}
               className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-medium transition cursor-pointer",
+                "tap-target px-4 py-1.5 rounded-full text-xs font-medium transition cursor-pointer",
                 measurementSystem === "imperial"
                   ? "bg-[var(--accent)] text-[var(--on-accent)] font-semibold"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -665,7 +665,7 @@ export default function ProfilePage() {
                 <span className="text-sm font-semibold font-tabular text-[var(--text-primary)]">
                   {currentWeightInput !== "" ? currentWeightInput : <span className="font-normal text-[var(--text-muted)]">No weigh-in yet</span>}
                 </span>
-                <Link href="/weight" className="text-xs font-medium text-[var(--accent)] hover:underline">
+                <Link href="/weight" className="inline-flex min-h-[44px] items-center text-xs font-medium text-[var(--accent)] hover:underline">
                   {weightFromLog ? "Manage" : "Log weight"}
                 </Link>
               </div>
@@ -739,7 +739,7 @@ export default function ProfilePage() {
           <div className="pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-[var(--border)]">
             <Link
               href="/settings"
-              className="text-xs font-semibold text-[var(--accent)] hover:underline inline-flex items-center gap-1.5"
+              className="inline-flex min-h-[44px] items-center text-xs font-semibold text-[var(--accent)] hover:underline inline-flex items-center gap-1.5"
             >
               <span>Adjust nutrition targets & TDEE</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -777,7 +777,7 @@ export default function ProfilePage() {
             </h3>
             <Link
               href="/weight"
-              className="text-xs font-semibold text-[var(--accent)] hover:underline inline-flex items-center gap-1"
+              className="inline-flex min-h-[44px] items-center text-xs font-semibold text-[var(--accent)] hover:underline inline-flex items-center gap-1"
             >
               <span>Open full weight log</span>
               <ArrowRight className="w-3 h-3" />

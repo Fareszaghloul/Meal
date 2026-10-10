@@ -28,17 +28,17 @@ function MacroProgress({ label, consumed, goal, colorVar, isPriority }: MacroCar
   const isOver = remaining !== null && remaining < 0;
 
   return (
-    <div className={cn("flex flex-col justify-between rounded-lg bg-surface-2/50 p-3 transition-colors", isPriority && "bg-surface-2/80 ring-1 ring-line")}>
-      <div className="flex items-center justify-between text-xs">
+    <div className={cn("flex min-w-0 flex-col justify-between rounded-lg bg-surface-2/50 p-2.5 transition-colors sm:p-3", isPriority && "bg-surface-2/80 ring-1 ring-line")}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs">
         <span className={cn("font-medium", isPriority ? "text-fg" : "text-fg-2")}>
           {label}
         </span>
-        <span className="tabular text-fg-3">
+        <span className="tabular text-[11px] text-fg-3 sm:text-xs">
           {remaining !== null ? (
             isOver ? (
-              <span className="text-warning font-medium">{fmt.g(Math.abs(remaining))}g over target</span>
+              <span className="text-warning font-medium">+{fmt.g(Math.abs(remaining))} g over</span>
             ) : (
-              <span>{fmt.g(remaining)}g left</span>
+              <span>{fmt.g(remaining)} g left</span>
             )
           ) : (
             <span>No goal</span>
@@ -46,14 +46,14 @@ function MacroProgress({ label, consumed, goal, colorVar, isPriority }: MacroCar
         </span>
       </div>
 
-      <div className="my-2 flex items-baseline justify-between gap-1 tabular">
+      <div className="my-1.5 flex flex-wrap items-baseline justify-between gap-x-1 tabular sm:my-2">
         <span className="text-base font-semibold text-fg">
           {fmt.g(consumed)}
           <span className="ml-0.5 text-xs font-normal text-fg-3">g</span>
         </span>
         {hasGoal && (
-          <span className="text-xs text-fg-3">
-            / {fmt.g(goal)}g
+          <span className="text-[11px] text-fg-3 sm:text-xs">
+            / {fmt.g(goal)} g
           </span>
         )}
       </div>
@@ -150,7 +150,7 @@ export function DaySummary({ day }: { day: DayData }) {
         )}
 
         {/* Macros Breakdown */}
-        <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:mt-5 sm:gap-2.5">
           <MacroProgress
             label="Protein"
             consumed={totals.protein}
@@ -187,7 +187,7 @@ export function DaySummary({ day }: { day: DayData }) {
         )}
 
         {/* ─── Target · Consumed · Remaining Table ─── */}
-        <div className="mt-4 rounded-xl border border-line bg-surface-2/20 p-3 text-xs">
+        <div className="mt-4 hidden rounded-xl border border-line bg-surface-2/20 p-3 text-xs sm:block">
           <div className="grid grid-cols-4 gap-2 font-semibold text-fg-3 text-[10px] uppercase tracking-wider pb-1.5 border-b border-line">
             <span>Nutrient</span>
             <span className="text-right">Target</span>
@@ -262,12 +262,12 @@ export function DaySummary({ day }: { day: DayData }) {
       {/* ─── Compact Hydration & Weight Bottom Strip ─── */}
       <div className="grid grid-cols-1 divide-y divide-line border-t border-line bg-surface-2/30 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
         {/* Hydration */}
-        <div className="flex items-center justify-between px-4 py-2.5 md:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2.5 md:px-5">
           <div className="flex items-center gap-2">
             <Droplet className="h-4 w-4 text-[var(--water)]" />
             <div>
               <span className="text-xs text-fg-3 font-medium uppercase tracking-wide">Water</span>
-              <div className="tabular text-sm font-semibold text-fg">
+              <div className="whitespace-nowrap tabular text-sm font-semibold text-fg">
                 {liters(water.totalMl)}
                 <span className="text-xs font-normal text-fg-3"> / {liters(water.goalMl)} L</span>
               </div>

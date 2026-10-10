@@ -117,11 +117,11 @@ export function LogRecipeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-surface-1 border border-line p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150"
+        className="modal-panel w-full max-w-md rounded-2xl bg-surface-1 border border-line p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -189,7 +189,7 @@ export function LogRecipeModal({
                     type="button"
                     onClick={() => handleUnitSwitch("serving")}
                     className={cn(
-                      "px-2.5 py-0.5 rounded-md font-medium transition-colors",
+                      "tap-target px-2.5 py-0.5 rounded-md font-medium transition-colors",
                       unitMode === "serving"
                         ? "bg-[var(--accent)] text-[var(--on-accent)]"
                         : "text-fg-3 hover:text-fg"
@@ -201,7 +201,7 @@ export function LogRecipeModal({
                     type="button"
                     onClick={() => handleUnitSwitch("g")}
                     className={cn(
-                      "px-2.5 py-0.5 rounded-md font-medium transition-colors",
+                      "tap-target px-2.5 py-0.5 rounded-md font-medium transition-colors",
                       unitMode === "g"
                         ? "bg-[var(--accent)] text-[var(--on-accent)]"
                         : "text-fg-3 hover:text-fg"

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Check, CheckCircle2, AlertCircle, HelpCircle, Loader2 } from "lucide-react";
 import { api } from "@/lib/client/api";
 import { currentTimeString, todayLocal } from "@/lib/dates";
 import type { WeightEntry } from "@/lib/domain";
@@ -9,6 +9,7 @@ import { NumberField, Segmented, Spinner, TextField, parseNum } from "@/componen
 import { Sheet } from "@/components/ui/Sheet";
 import { WEIGHT_KG_MAX, WEIGHT_KG_MIN, WEIGHT_NOTES_MAX } from "@/lib/validation";
 import { fromKg, toKg, weightInputValue, weightUnitFor } from "@/lib/weight-units";
+import type { ParsedInBodyScan, InBodyFieldResult } from "@/lib/nutrition/inbody-parser";
 
 interface LogWeightModalProps {
   isOpen: boolean;
@@ -23,7 +24,82 @@ type EntryType = "daily" | "inbody";
 
 const OCR_ACCEPT = "image/jpeg,image/png,image/webp";
 
-export function LogWeightModal({ isOpen, onClose, onSuccess, initialEntry, measurementSystem = "metric", defaultType = "daily" }: LogWeightModalProps) {
+interface ReviewItemProps {
+  label: string;
+  result: InBodyFieldResult;
+  displayValue: string | null;
+  onAccept: () => void;
+  isCurrentApplied: boolean;
+}
+
+function ReviewItem({ label, result, displayValue, onAccept, isCurrentApplied }: ReviewItemProps) {
+  const { confidence, warnings } = result;
+
+  return (
+    <div className="rounded-md border border-line bg-surface p-2 flex flex-col justify-between">
+      <div className="flex items-center justify-between gap-1 mb-1">
+        <span className="font-medium text-fg-1">{label}</span>
+        {confidence === "high" && (
+          <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium bg-positive-soft text-positive">
+            <CheckCircle2 className="h-2.5 w-2.5" /> High confidence
+          </span>
+        )}
+        {confidence === "medium" && (
+          <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <AlertCircle className="h-2.5 w-2.5" /> Check this value
+          </span>
+        )}
+        {confidence === "low" && (
+          <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium bg-line text-fg-muted">
+            <HelpCircle className="h-2.5 w-2.5" /> Low confidence
+          </span>
+        )}
+        {confidence === "missing" && (
+          <span className="text-[10px] text-fg-muted">Not detected</span>
+        )}
+      </div>
+
+      <div className="text-sm">
+        {displayValue ? (
+          <div className="flex items-baseline justify-between gap-1">
+            <span className="font-semibold text-fg-1">{displayValue}</span>
+            {confidence === "low" && !isCurrentApplied && (
+              <button
+                type="button"
+                onClick={onAccept}
+                className="tap-target px-2 text-[11px] text-primary hover:underline font-medium"
+              >
+                Accept
+              </button>
+            )}
+            {isCurrentApplied && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] text-fg-muted">
+                <Check className="h-3 w-3 text-positive" /> In form
+              </span>
+            )}
+          </div>
+        ) : (
+          <span className="text-fg-muted italic">—</span>
+        )}
+      </div>
+
+      {warnings && warnings.length > 0 && (
+        <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400 leading-tight">
+          {warnings[0]}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function LogWeightModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  initialEntry,
+  measurementSystem = "metric",
+  defaultType = "daily",
+}: LogWeightModalProps) {
   const unit = weightUnitFor(measurementSystem);
   const editing = !!initialEntry;
 
@@ -40,13 +116,16 @@ export function LogWeightModal({ isOpen, onClose, onSuccess, initialEntry, measu
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState<"save" | "delete" | "scan" | null>(null);
+  const [scanReview, setScanReview] = useState<ParsedInBodyScan | null>(null);
   const weightRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     setError(null);
     setInfo(null);
+    setScanReview(null);
     if (initialEntry) {
       const w = weightInputValue(initialEntry.weightKg, unit);
       const s = initialEntry.smmKg != null ? weightInputValue(initialEntry.smmKg, unit) : "";
@@ -133,35 +212,67 @@ export function LogWeightModal({ isOpen, onClose, onSuccess, initialEntry, measu
     setBusy("scan");
     setError(null);
     setInfo(null);
+    setScanReview(null);
+
     try {
       const form = new FormData();
       form.append("image", file);
-      const { data } = await api<{ data: { weightKg?: number; smmKg?: number; bodyFatPct?: number; bmi?: number; date?: string; time?: string } }>("/api/weight/scan", {
+      const res = await api<{ success: boolean; data: ParsedInBodyScan }>("/api/weight/scan", {
         method: "POST",
         body: form,
         timeoutMs: 60_000,
       });
+
+      const parsed = res.data;
+      setScanReview(parsed);
+
       let found = 0;
-      if (data.weightKg) {
-        setWeight(weightInputValue(data.weightKg, unit));
-        found++;
+
+      // 1. Weight: auto-fill HIGH or MEDIUM confidence; never LOW
+      if (parsed.weightKg.value != null) {
+        if (parsed.weightKg.confidence === "high" || parsed.weightKg.confidence === "medium") {
+          setWeight(weightInputValue(parsed.weightKg.value, unit));
+          found++;
+        }
       }
-      if (data.smmKg) {
-        setSmm(weightInputValue(data.smmKg, unit));
-        found++;
+
+      // 2. SMM: auto-fill HIGH or MEDIUM confidence; never LOW
+      if (parsed.smmKg.value != null) {
+        if (parsed.smmKg.confidence === "high" || parsed.smmKg.confidence === "medium") {
+          setSmm(weightInputValue(parsed.smmKg.value, unit));
+          found++;
+        }
       }
-      if (data.bodyFatPct) {
-        setBodyFat(String(data.bodyFatPct));
-        found++;
+
+      // 3. Body Fat: auto-fill HIGH or MEDIUM confidence; never LOW
+      if (parsed.bodyFatPct.value != null) {
+        if (parsed.bodyFatPct.confidence === "high" || parsed.bodyFatPct.confidence === "medium") {
+          setBodyFat(String(parsed.bodyFatPct.value));
+          found++;
+        }
       }
-      if (data.bmi) {
-        setBmi(String(data.bmi));
-        found++;
+
+      // 4. BMI: auto-fill HIGH or MEDIUM confidence; never LOW
+      if (parsed.bmi.value != null) {
+        if (parsed.bmi.confidence === "high" || parsed.bmi.confidence === "medium") {
+          setBmi(String(parsed.bmi.value));
+          found++;
+        }
       }
-      if (data.date && data.date <= todayLocal()) setDate(data.date);
-      if (data.time) setTime(data.time);
-      if (found > 0) setInfo(`Read ${found} value${found === 1 ? "" : "s"} from the sheet. Check them before saving.`);
-      else setError("Couldn't read the numbers clearly. You can enter them manually.");
+
+      // 5. Date & Time
+      if (parsed.date.value && parsed.date.value <= todayLocal() && parsed.date.confidence !== "low") {
+        setDate(parsed.date.value);
+      }
+      if (parsed.time.value && parsed.time.confidence !== "low") {
+        setTime(parsed.time.value);
+      }
+
+      if (found > 0) {
+        setInfo(`Extracted ${found} metric${found === 1 ? "" : "s"}. Review values against your sheet before saving.`);
+      } else {
+        setError("Couldn't confidently detect measurements. You can enter them manually.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't read that image");
     } finally {
@@ -176,13 +287,22 @@ export function LogWeightModal({ isOpen, onClose, onSuccess, initialEntry, measu
       open={isOpen}
       onClose={onClose}
       title={title}
-      description={isDaily ? "Several weigh-ins in a day are all kept; the trend uses the day's average." : "Body composition from an InBody scan."}
+      description={
+        isDaily
+          ? "Several weigh-ins in a day are all kept; the trend uses the day's average."
+          : "Body composition from an InBody scan."
+      }
       size="sm"
       initialFocusRef={weightRef}
       footer={
         <>
           {editing && (
-            <button type="button" className="btn btn-ghost mr-auto text-negative" onClick={remove} disabled={busy !== null}>
+            <button
+              type="button"
+              className="btn btn-ghost mr-auto text-negative"
+              onClick={remove}
+              disabled={busy !== null}
+            >
               {busy === "delete" ? <Spinner /> : "Delete"}
             </button>
           )}
@@ -221,32 +341,158 @@ export function LogWeightModal({ isOpen, onClose, onSuccess, initialEntry, measu
         )}
 
         {!isDaily && (
-          <div className="flex items-center justify-between gap-3 rounded-md border border-line px-3 py-2">
-            <span className="text-sm text-fg-2">{busy === "scan" ? "Reading the sheet…" : "Have an InBody printout?"}</span>
-            <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => fileRef.current?.click()}>
-              {busy === "scan" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-              Scan photo
-            </button>
-            <input ref={fileRef} type="file" accept={OCR_ACCEPT} className="hidden" onChange={scan} aria-label="InBody sheet photo" />
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2">
+            <span className="text-sm text-fg-2">
+              {busy === "scan" ? "Reading the sheet…" : "Have an InBody printout?"}
+            </span>
+            {/* Phones: open the rear camera directly, or pick an existing photo. Both feed the same upload. */}
+            <div className="flex shrink-0 items-center gap-2">
+              <button type="button" className="btn btn-secondary btn-sm sm:hidden" disabled={busy !== null} onClick={() => cameraRef.current?.click()}>
+                {busy === "scan" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                Take photo
+              </button>
+              <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => fileRef.current?.click()}>
+                <Camera className="hidden h-4 w-4 sm:inline" />
+                <span className="sm:hidden">Choose</span>
+                <span className="hidden sm:inline">Scan photo</span>
+              </button>
+            </div>
+            <input ref={cameraRef} type="file" accept={OCR_ACCEPT} capture="environment" className="hidden" onChange={scan} aria-label="Take InBody sheet photo" />
+            <input ref={fileRef} type="file" accept={OCR_ACCEPT} className="hidden" onChange={scan} aria-label="Choose InBody sheet photo" />
+          </div>
+        )}
+
+        {/* Structured InBody Review UI */}
+        {!isDaily && scanReview && (
+          <div className="rounded-lg border border-line bg-surface-2 p-3 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-fg-2">
+                InBody Scan Result
+              </span>
+              <button
+                type="button"
+                className="tap-target px-2 text-[11px] text-fg-muted hover:text-fg-1 underline"
+                onClick={() => setScanReview(null)}
+              >
+                Dismiss
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+              <ReviewItem
+                label="Weight"
+                result={scanReview.weightKg}
+                displayValue={
+                  scanReview.weightKg.value != null
+                    ? `${weightInputValue(scanReview.weightKg.value, unit)} ${unit}`
+                    : null
+                }
+                onAccept={() =>
+                  scanReview.weightKg.value != null &&
+                  setWeight(weightInputValue(scanReview.weightKg.value, unit))
+                }
+                isCurrentApplied={
+                  scanReview.weightKg.value != null &&
+                  weight === weightInputValue(scanReview.weightKg.value, unit)
+                }
+              />
+
+              <ReviewItem
+                label="Body Fat"
+                result={scanReview.bodyFatPct}
+                displayValue={
+                  scanReview.bodyFatPct.value != null ? `${scanReview.bodyFatPct.value}%` : null
+                }
+                onAccept={() =>
+                  scanReview.bodyFatPct.value != null &&
+                  setBodyFat(String(scanReview.bodyFatPct.value))
+                }
+                isCurrentApplied={
+                  scanReview.bodyFatPct.value != null &&
+                  bodyFat === String(scanReview.bodyFatPct.value)
+                }
+              />
+
+              <ReviewItem
+                label="SMM"
+                result={scanReview.smmKg}
+                displayValue={
+                  scanReview.smmKg.value != null
+                    ? `${weightInputValue(scanReview.smmKg.value, unit)} ${unit}`
+                    : null
+                }
+                onAccept={() =>
+                  scanReview.smmKg.value != null &&
+                  setSmm(weightInputValue(scanReview.smmKg.value, unit))
+                }
+                isCurrentApplied={
+                  scanReview.smmKg.value != null &&
+                  smm === weightInputValue(scanReview.smmKg.value, unit)
+                }
+              />
+
+              <ReviewItem
+                label="BMI"
+                result={scanReview.bmi}
+                displayValue={scanReview.bmi.value != null ? String(scanReview.bmi.value) : null}
+                onAccept={() =>
+                  scanReview.bmi.value != null && setBmi(String(scanReview.bmi.value))
+                }
+                isCurrentApplied={
+                  scanReview.bmi.value != null && bmi === String(scanReview.bmi.value)
+                }
+              />
+            </div>
+
+            <p className="text-[11px] text-fg-muted">
+              Verify values against the InBody sheet before saving.
+            </p>
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <TextField label="Date" type="date" required value={date} max={todayLocal()} onChange={(e) => setDate(e.target.value)} className="min-w-0" />
-          <TextField label="Time" type="time" value={time} onChange={(e) => setTime(e.target.value)} className="min-w-0" />
+          <TextField
+            label="Date"
+            type="date"
+            required
+            value={date}
+            max={todayLocal()}
+            onChange={(e) => setDate(e.target.value)}
+            className="min-w-0"
+          />
+          <TextField
+            label="Time"
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="min-w-0"
+          />
         </div>
 
-        <NumberField ref={weightRef} label={`Weight (${unit})`} unit={unit} value={weight} onChange={setWeight} placeholder={unit === "lbs" ? "e.g. 181.5" : "e.g. 82.4"} />
+        <NumberField
+          ref={weightRef}
+          label={`Weight (${unit})`}
+          unit={unit}
+          value={weight}
+          onChange={setWeight}
+          placeholder={unit === "lbs" ? "e.g. 181.5" : "e.g. 82.4"}
+        />
 
         {!isDaily && (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <NumberField label="Body fat" unit="%" value={bodyFat} onChange={setBodyFat} />
             <NumberField label={`SMM (${unit})`} value={smm} onChange={setSmm} />
             <NumberField label="BMI" value={bmi} onChange={setBmi} />
           </div>
         )}
 
-        <TextField label="Notes (optional)" value={notes} maxLength={WEIGHT_NOTES_MAX} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. morning, after workout" />
+        <TextField
+          label="Notes (optional)"
+          value={notes}
+          maxLength={WEIGHT_NOTES_MAX}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="e.g. morning, after workout"
+        />
       </form>
     </Sheet>
   );

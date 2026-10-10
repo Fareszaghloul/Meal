@@ -15,7 +15,13 @@ import pkg from "../../../package.json";
  *
  * Included: settings (preferences + targets), goal revisions, custom foods + servings, recipes
  * (+ ingredients, steps, tag names), food log (historical nutrition snapshots), water, weight,
- * workout routines, meal templates, meal plans + meals, pantry, shopping list.
+ * workout routines, meal templates, saved meals (+ items), day templates (+ items), meal plans + meals
+ * (with their log links), pantry (+ stock transactions), shopping list, prep sessions (+ tasks),
+ * adaptive nutrition recommendations.
+ *
+ * Version 1 grew additively after Phases 1–3: every field/table added since is optional with the app's own
+ * default, so files written before then still restore. Every table is exported with an explicit field list
+ * (never a column spread), so adding a database column can't silently make backups unrestorable.
  *
  * Excluded on purpose:
  * - User / Session rows, password hashes, session tokens: authentication, not domain data.
@@ -163,6 +169,8 @@ const recipeSchema = z
 
 const foodLogSchema = z
   .object({
+    /** Backup-local reference, so planned meals can point at the entry they were logged as. */
+    id: ref.optional(),
     date: dateString,
     mealCategory: z.enum(MEAL_CATEGORIES),
     name: str(200).min(1),
@@ -201,6 +209,11 @@ const mealPlanSchema = z
           .object({
             dayOfWeek: str(16),
             mealCategory: str(32),
+            id: ref.optional(),
+            status: z.enum(["planned", "logged", "completed", "skipped"]).default("planned"),
+            /** The food log entry this planned meal was logged as (backup-local id). */
+            foodLogEntryId: ref.nullable().default(null),
+            loggedAt: optTs.default(null),
             recipeId: ref.nullable(),
             customName: optStr(200),
             servings: n(0, 10_000),
@@ -220,6 +233,77 @@ const mealPlanSchema = z
           .strict()
       )
       .max(500),
+  })
+  .strict();
+
+const savedMealSchema = z
+  .object({
+    id: ref,
+    name: str(200).min(1),
+    mealCategory: z.enum(MEAL_CATEGORIES).nullable(),
+    isFavorite: z.boolean(),
+    useCount: int(0, 10_000_000),
+    createdAt: ts,
+    items: z
+      .array(
+        z
+          .object({
+            foodId: ref.nullable(),
+            recipeId: ref.nullable(),
+            customName: optStr(200),
+            quantity: n(0, 100_000),
+            servingUnit: str(32),
+            calories: nut,
+            protein: nut,
+            carbs: nut,
+            fat: nut,
+            fiber: optNut,
+            totalSugars: optNut,
+            addedSugars: optNut,
+            saturatedFat: optNut,
+            transFat: optNut,
+            sodium: optNut,
+            sortOrder: int(0, 10_000),
+          })
+          .strict()
+      )
+      .max(100),
+  })
+  .strict();
+
+const dayTemplateSchema = z
+  .object({
+    name: str(200).min(1),
+    description: optStr(2_000),
+    isFavorite: z.boolean(),
+    useCount: int(0, 10_000_000),
+    createdAt: ts,
+    items: z
+      .array(
+        z
+          .object({
+            mealCategory: z.enum(MEAL_CATEGORIES),
+            foodId: ref.nullable(),
+            recipeId: ref.nullable(),
+            savedMealId: ref.nullable(),
+            customName: optStr(200),
+            servings: n(0, 100_000),
+            servingUnit: str(32),
+            calories: nut,
+            protein: nut,
+            carbs: nut,
+            fat: nut,
+            fiber: optNut,
+            totalSugars: optNut,
+            addedSugars: optNut,
+            saturatedFat: optNut,
+            transFat: optNut,
+            sodium: optNut,
+            sortOrder: int(0, 10_000),
+          })
+          .strict()
+      )
+      .max(200),
   })
   .strict();
 
@@ -252,12 +336,45 @@ export const backupFile = z
           .max(2_000),
         mealPlans: z.array(mealPlanSchema).max(2_000),
         pantry: z
-          .array(z.object({ foodId: ref.nullable(), name: str(200), quantity: n(-1_000_000, 1_000_000), unit: str(32), category: str(100) }).strict())
+          .array(
+            z
+              .object({
+                id: ref.optional(),
+                foodId: ref.nullable(),
+                name: str(200),
+                quantity: n(-1_000_000, 1_000_000),
+                unit: str(32),
+                category: str(100),
+                storageLocation: str(32).default("Pantry"),
+                expiryDate: dateString.nullable().default(null),
+                lowStockThreshold: n(0, 1_000_000).nullable().default(null),
+                createdAt: ts.optional(),
+              })
+              .strict()
+          )
           .max(10_000),
+        pantryTransactions: z
+          .array(
+            z
+              .object({
+                pantryItemId: ref,
+                type: str(32),
+                quantity: n(-1_000_000, 1_000_000),
+                unit: str(32),
+                sourceType: optStr(32),
+                /** A meal or shopping-list id from this backup (remapped on restore); anything else is dropped. */
+                sourceId: ref.nullable(),
+                createdAt: ts,
+              })
+              .strict()
+          )
+          .max(100_000)
+          .default([]),
         shoppingList: z
           .array(
             z
               .object({
+                id: ref.optional(),
                 foodId: ref.nullable(),
                 name: str(200),
                 quantity: n(-1_000_000, 1_000_000),
@@ -272,6 +389,40 @@ export const backupFile = z
               .strict()
           )
           .max(10_000),
+        savedMeals: z.array(savedMealSchema).max(2_000).default([]),
+        dayTemplates: z.array(dayTemplateSchema).max(500).default([]),
+        prepSessions: z
+          .array(
+            z
+              .object({
+                weekStart: dateString,
+                createdAt: ts,
+                tasks: z.array(z.object({ label: str(500).min(1), completed: z.boolean(), sortOrder: int(0, 10_000), createdAt: ts }).strict()).max(500),
+              })
+              .strict()
+          )
+          .max(2_000)
+          .default([]),
+        nutritionRecommendations: z
+          .array(
+            z
+              .object({
+                dataStartDate: dateString,
+                dataEndDate: dateString,
+                previousCalories: n(0, 20_000),
+                recommendedCalories: n(0, 20_000),
+                calorieChange: n(-20_000, 20_000),
+                observedWeeklyRate: n(-50, 50),
+                targetWeeklyRate: n(-50, 50),
+                confidence: z.enum(["low", "medium", "high"]),
+                reason: str(2_000),
+                status: z.enum(["pending", "accepted", "dismissed"]),
+                createdAt: ts,
+              })
+              .strict()
+          )
+          .max(5_000)
+          .default([]),
       })
       .strict(),
   })
@@ -318,6 +469,23 @@ export async function createBackup(userId: string): Promise<{ file: BackupFile; 
       });
       const pantry = await tx.pantryItem.findMany({ where, orderBy: [{ name: "asc" }, { id: "asc" }] });
       const shopping = await tx.shoppingListItem.findMany({ where, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
+      const pantryTransactions = await tx.pantryTransaction.findMany({ where, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
+      const savedMeals = await tx.savedMeal.findMany({
+        where,
+        include: { items: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] } },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      });
+      const dayTemplates = await tx.dayTemplate.findMany({
+        where,
+        include: { items: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] } },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      });
+      const prepSessions = await tx.prepSession.findMany({
+        where,
+        include: { tasks: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] } },
+        orderBy: { weekStart: "asc" },
+      });
+      const recommendations = await tx.nutritionRecommendation.findMany({ where, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
 
       const s = settings;
       const data: BackupData = {
@@ -348,6 +516,9 @@ export async function createBackup(userId: string): Promise<{ file: BackupFile; 
               useSimpleActivityMode: s.useSimpleActivityMode,
               ...(s.simpleActivityLevel ? { simpleActivityLevel: s.simpleActivityLevel as "moderate" } : {}),
               useThermicEffectAdjustment: s.useThermicEffectAdjustment,
+              pantryUsageBehavior: s.pantryUsageBehavior as "manual" | "ask" | "auto",
+              defaultMealCategory: s.defaultMealCategory as (typeof MEAL_CATEGORIES)[number] | null,
+              ...(s.defaultCopyMode ? { defaultCopyMode: s.defaultCopyMode as "append" | "replace" } : {}),
             }
           : {},
         goalRevisions: goalRevisions.map(({ id, userId: _u, createdAt, ...r }) => {
@@ -383,12 +554,28 @@ export async function createBackup(userId: string): Promise<{ file: BackupFile; 
             tags: tags.map((t) => t.tag.name).sort(),
           };
         }),
-        foodLog: foodLog.map(({ id, userId: _u, updatedAt, loggedAt, createdAt, mealCategory, ...e }) => {
-          void id;
-          void _u;
-          void updatedAt;
-          return { ...e, mealCategory: mealCategory as (typeof MEAL_CATEGORIES)[number], loggedAt: loggedAt.toISOString(), createdAt: createdAt.toISOString() };
-        }),
+        foodLog: foodLog.map((e) => ({
+          id: e.id,
+          date: e.date,
+          mealCategory: e.mealCategory as (typeof MEAL_CATEGORIES)[number],
+          name: e.name,
+          servings: e.servings,
+          servingUnit: e.servingUnit,
+          calories: e.calories,
+          protein: e.protein,
+          carbs: e.carbs,
+          fat: e.fat,
+          fiber: e.fiber,
+          totalSugars: e.totalSugars,
+          addedSugars: e.addedSugars,
+          saturatedFat: e.saturatedFat,
+          transFat: e.transFat,
+          sodium: e.sodium,
+          foodId: e.foodId,
+          recipeId: e.recipeId,
+          loggedAt: e.loggedAt.toISOString(),
+          createdAt: e.createdAt.toISOString(),
+        })),
         water: water.map((w) => ({ date: w.date, amountMl: w.amountMl, loggedAt: w.loggedAt.toISOString() })),
         weight: weight.map((w) => ({
           date: w.date,
@@ -418,14 +605,124 @@ export async function createBackup(userId: string): Promise<{ file: BackupFile; 
           weekStartDate: p.weekStartDate,
           notes: p.notes,
           createdAt: p.createdAt.toISOString(),
-          meals: p.meals.map(({ id, mealPlanId, ...m }) => {
-            void id;
-            void mealPlanId;
-            return m;
-          }),
+          meals: p.meals.map((m) => ({
+            id: m.id,
+            dayOfWeek: m.dayOfWeek,
+            mealCategory: m.mealCategory,
+            status: m.status as "planned" | "logged" | "completed" | "skipped",
+            foodLogEntryId: m.foodLogEntryId,
+            loggedAt: iso(m.loggedAt),
+            recipeId: m.recipeId,
+            customName: m.customName,
+            servings: m.servings,
+            calories: m.calories,
+            protein: m.protein,
+            carbs: m.carbs,
+            fat: m.fat,
+            fiber: m.fiber,
+            totalSugars: m.totalSugars,
+            addedSugars: m.addedSugars,
+            saturatedFat: m.saturatedFat,
+            transFat: m.transFat,
+            sodium: m.sodium,
+            isCompleted: m.isCompleted,
+            sortOrder: m.sortOrder,
+          })),
         })),
-        pantry: pantry.map((p) => ({ foodId: p.foodId, name: p.name, quantity: p.quantity, unit: p.unit, category: p.category })),
+        pantry: pantry.map((p) => ({
+          id: p.id,
+          foodId: p.foodId,
+          name: p.name,
+          quantity: p.quantity,
+          unit: p.unit,
+          category: p.category,
+          storageLocation: p.storageLocation,
+          expiryDate: p.expiryDate,
+          lowStockThreshold: p.lowStockThreshold,
+          createdAt: p.createdAt.toISOString(),
+        })),
+        pantryTransactions: pantryTransactions.map((t) => ({
+          pantryItemId: t.pantryItemId,
+          type: t.type,
+          quantity: t.quantity,
+          unit: t.unit,
+          sourceType: t.sourceType,
+          sourceId: t.sourceId,
+          createdAt: t.createdAt.toISOString(),
+        })),
+        savedMeals: savedMeals.map((m) => ({
+          id: m.id,
+          name: m.name,
+          mealCategory: m.mealCategory as (typeof MEAL_CATEGORIES)[number] | null,
+          isFavorite: m.isFavorite,
+          useCount: m.useCount,
+          createdAt: m.createdAt.toISOString(),
+          items: m.items.map((i) => ({
+            foodId: i.foodId,
+            recipeId: i.recipeId,
+            customName: i.customName,
+            quantity: i.quantity,
+            servingUnit: i.servingUnit,
+            calories: i.calories,
+            protein: i.protein,
+            carbs: i.carbs,
+            fat: i.fat,
+            fiber: i.fiber,
+            totalSugars: i.totalSugars,
+            addedSugars: i.addedSugars,
+            saturatedFat: i.saturatedFat,
+            transFat: i.transFat,
+            sodium: i.sodium,
+            sortOrder: i.sortOrder,
+          })),
+        })),
+        dayTemplates: dayTemplates.map((d) => ({
+          name: d.name,
+          description: d.description,
+          isFavorite: d.isFavorite,
+          useCount: d.useCount,
+          createdAt: d.createdAt.toISOString(),
+          items: d.items.map((i) => ({
+            mealCategory: i.mealCategory as (typeof MEAL_CATEGORIES)[number],
+            foodId: i.foodId,
+            recipeId: i.recipeId,
+            savedMealId: i.savedMealId,
+            customName: i.customName,
+            servings: i.servings,
+            servingUnit: i.servingUnit,
+            calories: i.calories,
+            protein: i.protein,
+            carbs: i.carbs,
+            fat: i.fat,
+            fiber: i.fiber,
+            totalSugars: i.totalSugars,
+            addedSugars: i.addedSugars,
+            saturatedFat: i.saturatedFat,
+            transFat: i.transFat,
+            sodium: i.sodium,
+            sortOrder: i.sortOrder,
+          })),
+        })),
+        prepSessions: prepSessions.map((p) => ({
+          weekStart: p.weekStart,
+          createdAt: p.createdAt.toISOString(),
+          tasks: p.tasks.map((t) => ({ label: t.label, completed: t.completed, sortOrder: t.sortOrder, createdAt: t.createdAt.toISOString() })),
+        })),
+        nutritionRecommendations: recommendations.map((r) => ({
+          dataStartDate: r.dataStartDate,
+          dataEndDate: r.dataEndDate,
+          previousCalories: r.previousCalories,
+          recommendedCalories: r.recommendedCalories,
+          calorieChange: r.calorieChange,
+          observedWeeklyRate: r.observedWeeklyRate,
+          targetWeeklyRate: r.targetWeeklyRate,
+          confidence: r.confidence as "low" | "medium" | "high",
+          reason: r.reason,
+          status: r.status as "pending" | "accepted" | "dismissed",
+          createdAt: r.createdAt.toISOString(),
+        })),
         shoppingList: shopping.map((i) => ({
+          id: i.id,
           foodId: i.foodId,
           name: i.name,
           quantity: i.quantity,
@@ -469,7 +766,12 @@ export function backupCounts(d: BackupData) {
     mealPlans: d.mealPlans.length,
     meals: d.mealPlans.reduce((s, p) => s + p.meals.length, 0),
     pantry: d.pantry.length,
+    pantryTransactions: d.pantryTransactions.length,
     shoppingList: d.shoppingList.length,
+    savedMeals: d.savedMeals.length,
+    dayTemplates: d.dayTemplates.length,
+    prepSessions: d.prepSessions.length,
+    nutritionRecommendations: d.nutritionRecommendations.length,
   };
 }
 
@@ -526,6 +828,8 @@ export function referencedFoodIds(d: BackupData): string[] {
   d.mealTemplates.forEach((t) => t.items.forEach((i) => add(i.foodId)));
   d.pantry.forEach((p) => add(p.foodId));
   d.shoppingList.forEach((s) => add(s.foodId));
+  d.savedMeals.forEach((m) => m.items.forEach((i) => add(i.foodId)));
+  d.dayTemplates.forEach((t) => t.items.forEach((i) => add(i.foodId)));
   const own = new Set(d.foods.map((f) => f.id));
   return [...ids].filter((id) => !own.has(id));
 }
@@ -543,9 +847,33 @@ export function planRestore(userId: string, d: BackupData, opts: PlanOptions) {
   uniqueOrThrow(d.recipes, (r) => r.id, "recipe id");
   uniqueOrThrow(d.mealPlans, (p) => p.weekStartDate, "meal plan week");
   uniqueOrThrow(d.goalRevisions, (r) => r.effectiveDate, "goal revision date");
+  uniqueOrThrow(d.savedMeals, (m) => m.id, "saved meal id");
+  uniqueOrThrow(d.prepSessions, (p) => p.weekStart, "prep session week");
+  const withId = <T extends { id?: string }>(rows: T[]) => rows.filter((r): r is T & { id: string } => Boolean(r.id));
+  uniqueOrThrow(withId(d.foodLog), (e) => e.id, "food log entry id");
+  uniqueOrThrow(withId(d.pantry), (p) => p.id, "pantry item id");
+  uniqueOrThrow(withId(d.shoppingList), (i) => i.id, "shopping list item id");
+  uniqueOrThrow(withId(d.mealPlans.flatMap((p) => p.meals)), (m) => m.id, "planned meal id");
+  // One food log entry can back at most one planned meal (unique in the database).
+  uniqueOrThrow(
+    d.mealPlans.flatMap((p) => p.meals).filter((m) => m.foodLogEntryId),
+    (m) => m.foodLogEntryId!,
+    "planned-meal log link"
+  );
 
   const foodMap = new Map(d.foods.map((f) => [f.id, newId()]));
   const recipeMap = new Map(d.recipes.map((r) => [r.id, newId()]));
+  const savedMealMap = new Map(d.savedMeals.map((m) => [m.id, newId()]));
+  const foodLogMap = new Map(withId(d.foodLog).map((e) => [e.id, newId()]));
+  const mealMap = new Map(withId(d.mealPlans.flatMap((p) => p.meals)).map((m) => [m.id, newId()]));
+  const pantryMap = new Map(withId(d.pantry).map((p) => [p.id, newId()]));
+  const shoppingMap = new Map(withId(d.shoppingList).map((i) => [i.id, newId()]));
+  const savedMeal = (id: string | null, where: string): string | null => {
+    if (!id) return null;
+    const mapped = savedMealMap.get(id);
+    if (!mapped) throw new HttpError(422, `Backup ${where} refers to a saved meal that isn't in the backup (${id}).`, "invalid_reference");
+    return mapped;
+  };
   let unlinkedFoodRefs = 0;
   const food = (id: string | null | undefined): string | null => {
     if (!id) return null;
@@ -593,7 +921,7 @@ export function planRestore(userId: string, d: BackupData, opts: PlanOptions) {
 
   const foodLog: Prisma.FoodLogEntryCreateManyInput[] = d.foodLog.map((e) => ({
     ...e,
-    id: newId(),
+    id: (e.id && foodLogMap.get(e.id)) || newId(),
     userId,
     foodId: food(e.foodId),
     recipeId: recipe(e.recipeId, "food log entry"),
@@ -606,7 +934,57 @@ export function planRestore(userId: string, d: BackupData, opts: PlanOptions) {
   for (const { meals: planMeals, createdAt, ...p } of d.mealPlans) {
     const pid = newId();
     mealPlans.push({ ...p, id: pid, userId, createdAt: date(createdAt) });
-    planMeals.forEach((m) => meals.push({ ...m, id: newId(), mealPlanId: pid, recipeId: recipe(m.recipeId, "meal plan") }));
+    planMeals.forEach((m) =>
+      meals.push({
+        ...m,
+        id: (m.id && mealMap.get(m.id)) || newId(),
+        mealPlanId: pid,
+        recipeId: recipe(m.recipeId, "meal plan"),
+        // The log link is historical bookkeeping: if the entry isn't in the file, the meal keeps its status without the link.
+        foodLogEntryId: m.foodLogEntryId ? (foodLogMap.get(m.foodLogEntryId) ?? null) : null,
+        loggedAt: nullDate(m.loggedAt),
+      })
+    );
+  }
+
+  const savedMeals: Prisma.SavedMealCreateManyInput[] = [];
+  const savedMealItems: Prisma.SavedMealItemCreateManyInput[] = [];
+  for (const { id, items, createdAt, ...m } of d.savedMeals) {
+    const sid = savedMealMap.get(id)!;
+    savedMeals.push({ ...m, id: sid, userId, createdAt: date(createdAt) });
+    items.forEach((i) => savedMealItems.push({ ...i, id: newId(), savedMealId: sid, foodId: food(i.foodId), recipeId: recipe(i.recipeId, "saved meal") }));
+  }
+
+  const dayTemplates: Prisma.DayTemplateCreateManyInput[] = [];
+  const dayTemplateItems: Prisma.DayTemplateItemCreateManyInput[] = [];
+  for (const { items, createdAt, ...t } of d.dayTemplates) {
+    const tid = newId();
+    dayTemplates.push({ ...t, id: tid, userId, createdAt: date(createdAt) });
+    items.forEach((i) =>
+      dayTemplateItems.push({
+        ...i,
+        id: newId(),
+        dayTemplateId: tid,
+        foodId: food(i.foodId),
+        recipeId: recipe(i.recipeId, "day template"),
+        savedMealId: savedMeal(i.savedMealId, "day template"),
+      })
+    );
+  }
+
+  const pantryTransactions: Prisma.PantryTransactionCreateManyInput[] = d.pantryTransactions.map((t) => {
+    const pantryItemId = pantryMap.get(t.pantryItemId);
+    if (!pantryItemId) throw new HttpError(422, `Backup pantry history refers to a pantry item that isn't in the backup (${t.pantryItemId}).`, "invalid_reference");
+    const sourceId = t.sourceId ? (t.sourceType === "meal" ? mealMap.get(t.sourceId) : t.sourceType === "shopping" ? shoppingMap.get(t.sourceId) : undefined) : undefined;
+    return { ...t, id: newId(), userId, pantryItemId, sourceId: sourceId ?? null, createdAt: date(t.createdAt) };
+  });
+
+  const prepSessions: Prisma.PrepSessionCreateManyInput[] = [];
+  const prepTasks: Prisma.PrepTaskCreateManyInput[] = [];
+  for (const { tasks, createdAt, ...p } of d.prepSessions) {
+    const pid = newId();
+    prepSessions.push({ ...p, id: pid, userId, createdAt: date(createdAt) });
+    tasks.forEach((t) => prepTasks.push({ ...t, id: newId(), prepSessionId: pid, createdAt: date(t.createdAt) }));
   }
 
   return {
@@ -630,8 +1008,22 @@ export function planRestore(userId: string, d: BackupData, opts: PlanOptions) {
       createdAt: date(t.createdAt),
       items: t.items.map((i) => ({ ...i, foodId: food(i.foodId), recipeId: recipe(i.recipeId, "meal template") })) as Prisma.InputJsonValue,
     })),
-    pantry: d.pantry.map((p) => ({ ...p, id: newId(), userId, foodId: food(p.foodId) })),
-    shoppingList: d.shoppingList.map((s) => ({ ...s, id: newId(), userId, foodId: food(s.foodId), createdAt: date(s.createdAt) })),
+    pantry: d.pantry.map(({ createdAt, ...p }) => ({
+      ...p,
+      id: (p.id && pantryMap.get(p.id)) || newId(),
+      userId,
+      foodId: food(p.foodId),
+      ...(createdAt ? { createdAt: date(createdAt) } : {}),
+    })),
+    pantryTransactions,
+    shoppingList: d.shoppingList.map((s) => ({ ...s, id: (s.id && shoppingMap.get(s.id)) || newId(), userId, foodId: food(s.foodId), createdAt: date(s.createdAt) })),
+    savedMeals,
+    savedMealItems,
+    dayTemplates,
+    dayTemplateItems,
+    prepSessions,
+    prepTasks,
+    nutritionRecommendations: d.nutritionRecommendations.map((r) => ({ ...r, id: newId(), userId, createdAt: date(r.createdAt) })),
     goalRevisions: d.goalRevisions.map((r) => ({ ...r, id: newId(), userId, createdAt: date(r.createdAt) })),
     unlinkedFoodRefs,
   };
@@ -677,6 +1069,14 @@ async function deleteDomainData(userId: string, tx: Db) {
   await tx.recipeTag.deleteMany({ where: ownRecipe });
   await tx.recipeStep.deleteMany({ where: ownRecipe });
   await tx.recipeIngredient.deleteMany({ where: ownRecipe });
+  await tx.dayTemplateItem.deleteMany({ where: { dayTemplate: { userId } } });
+  await tx.dayTemplate.deleteMany({ where: { userId } });
+  await tx.savedMealItem.deleteMany({ where: { savedMeal: { userId } } });
+  await tx.savedMeal.deleteMany({ where: { userId } });
+  await tx.prepTask.deleteMany({ where: { prepSession: { userId } } });
+  await tx.prepSession.deleteMany({ where: { userId } });
+  await tx.nutritionRecommendation.deleteMany({ where: { userId } });
+  await tx.pantryTransaction.deleteMany({ where: { userId } });
   await tx.meal.deleteMany({ where: { mealPlan: { userId } } });
   await tx.mealPlan.deleteMany({ where: { userId } });
   await tx.foodLogEntry.deleteMany({ where: { userId } });
@@ -722,6 +1122,10 @@ export async function restoreBackup(userId: string, file: BackupFile) {
         const tags = new Map((await tx.tag.findMany({ where: { name: { in: tagNames } } })).map((t) => [t.name, t.id]));
         await insertMany(plan.recipeTagNames, (c) => tx.recipeTag.createMany({ data: c.map((t) => ({ recipeId: t.recipeId, tagId: tags.get(t.name)! })) }));
       }
+      await insertMany(plan.savedMeals, (c) => tx.savedMeal.createMany({ data: c }));
+      await insertMany(plan.savedMealItems, (c) => tx.savedMealItem.createMany({ data: c }));
+      await insertMany(plan.dayTemplates, (c) => tx.dayTemplate.createMany({ data: c }));
+      await insertMany(plan.dayTemplateItems, (c) => tx.dayTemplateItem.createMany({ data: c }));
       await insertMany(plan.foodLog, (c) => tx.foodLogEntry.createMany({ data: c }));
       await insertMany(plan.water, (c) => tx.waterLogEntry.createMany({ data: c }));
       await insertMany(plan.weight, (c) => tx.weightEntry.createMany({ data: c }));
@@ -731,6 +1135,10 @@ export async function restoreBackup(userId: string, file: BackupFile) {
       await insertMany(plan.meals, (c) => tx.meal.createMany({ data: c }));
       await insertMany(plan.pantry, (c) => tx.pantryItem.createMany({ data: c }));
       await insertMany(plan.shoppingList, (c) => tx.shoppingListItem.createMany({ data: c }));
+      await insertMany(plan.pantryTransactions, (c) => tx.pantryTransaction.createMany({ data: c }));
+      await insertMany(plan.prepSessions, (c) => tx.prepSession.createMany({ data: c }));
+      await insertMany(plan.prepTasks, (c) => tx.prepTask.createMany({ data: c }));
+      await insertMany(plan.nutritionRecommendations, (c) => tx.nutritionRecommendation.createMany({ data: c }));
       await insertMany(plan.goalRevisions, (c) => tx.goalRevision.createMany({ data: c }));
 
       // Derived state comes from the restored records, never from the file.

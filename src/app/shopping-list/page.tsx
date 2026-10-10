@@ -223,7 +223,7 @@ export default function ShoppingListPage() {
             type="button"
             onClick={() => setSubtractPantry(!subtractPantry)}
             className={cn(
-              "px-4 py-2 min-h-[44px] rounded-full text-xs font-semibold transition cursor-pointer flex items-center gap-2",
+              "tap-target px-4 py-2 min-h-[44px] rounded-full text-xs font-semibold transition cursor-pointer flex items-center gap-2",
               subtractPantry
                 ? "bg-[var(--surface)] text-[var(--text-primary)]"
                 : "bg-[var(--surface)] text-[var(--text-muted)] opacity-70"
@@ -239,7 +239,7 @@ export default function ShoppingListPage() {
                 type="button"
                 onClick={handleAddCheckedToPantry}
                 disabled={isAddingAllToPantry}
-                className="px-4 py-2 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                className="tap-target px-4 py-2 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Archive className="w-3.5 h-3.5" />
                 <span>{isAddingAllToPantry ? "Adding..." : `Add to pantry (${completedItems})`}</span>
@@ -247,7 +247,7 @@ export default function ShoppingListPage() {
               <button
                 type="button"
                 onClick={clearCompleted}
-                className="px-4 py-2 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--ui-error)] text-xs font-semibold transition cursor-pointer"
+                className="tap-target px-4 py-2 min-h-[44px] rounded-full bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--ui-error)] text-xs font-semibold transition cursor-pointer"
               >
                 Clear checked
               </button>
@@ -288,14 +288,14 @@ export default function ShoppingListPage() {
         {/* One-Line Add-Item Form (name, qty, unit, category, Add) */}
         <form
           onSubmit={handleAddItem}
-          className="lg:col-span-8 rounded-3xl bg-[var(--surface)] p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shadow-none"
+          className="lg:col-span-8 rounded-3xl bg-[var(--surface)] p-3 sm:p-4 grid grid-cols-3 gap-2 sm:flex sm:flex-row sm:items-center shadow-none"
         >
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Add grocery item..."
-            className="input-field flex-2"
+            className="input-field col-span-3 flex-2"
             required
           />
 
@@ -305,6 +305,7 @@ export default function ShoppingListPage() {
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             placeholder="Qty"
+            inputMode="decimal"
             className="input-field w-full sm:w-20"
           />
 
@@ -335,7 +336,7 @@ export default function ShoppingListPage() {
           <button
             type="submit"
             disabled={isAdding || !name.trim()}
-            className="px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-1 shrink-0 disabled:opacity-50"
+            className="col-span-3 px-5 py-2.5 min-h-[44px] rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-1 shrink-0 disabled:opacity-50"
           >
             <Plus className="w-4 h-4" />
             <span>Add</span>
@@ -383,31 +384,35 @@ export default function ShoppingListPage() {
 
                   {/* Checkbox Rows divided by 1px var(--border) */}
                   <div className="divide-y divide-[var(--border)]">
-                    {catItems.map((item) => (
+                    {/* Unchecked first: what's still to buy stays on top while shopping. */}
+                    {[...catItems].sort((a, b) => Number(a.isChecked) - Number(b.isChecked)).map((item) => (
                       <div
                         key={item.id}
-                        className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3 group"
+                        className="py-1 first:pt-0 last:pb-0 flex items-center justify-between gap-2 group"
                       >
-                        <div
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={item.isChecked}
                           onClick={() => toggleCheck(item)}
-                          className="flex items-center space-x-3 min-w-0 flex-1 cursor-pointer"
+                          className="flex min-h-[48px] min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
                         >
                           {/* Round pill checkbox */}
                           <div
                             className={cn(
-                              "w-5 h-5 rounded-full flex items-center justify-center transition-colors shrink-0",
+                              "w-6 h-6 rounded-full border border-[var(--border)] flex items-center justify-center transition-colors shrink-0",
                               item.isChecked
                                 ? "bg-[var(--accent)] text-[var(--on-accent)]"
                                 : "bg-[var(--background)] hover:border-[var(--text-primary)]"
                             )}
                           >
-                            {item.isChecked && <Check className="w-3 h-3" />}
+                            {item.isChecked && <Check className="w-3.5 h-3.5" />}
                           </div>
 
-                          <div className="min-w-0 flex-1 flex items-center gap-2">
+                          <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-2">
                             <span
                               className={cn(
-                                "text-xs truncate transition-all",
+                                "block truncate text-sm transition-all sm:text-xs",
                                 item.isChecked
                                   ? "line-through text-[var(--text-muted)]"
                                   : "text-[var(--text-primary)] font-medium"
@@ -426,13 +431,16 @@ export default function ShoppingListPage() {
                             >
                               {item.isCustom ? "Manual" : "Meal Plan"}
                             </span>
+                            <span className="block font-tabular text-xs text-[var(--text-muted)] sm:hidden">
+                              {item.quantity} {item.unit}
+                            </span>
                           </div>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center space-x-2 shrink-0">
+                        <div className="flex items-center gap-1 shrink-0 sm:gap-2">
                           <span
                             className={cn(
-                              "text-xs font-tabular",
+                              "hidden text-xs font-tabular sm:inline",
                               item.isChecked
                                 ? "text-[var(--text-muted)]"
                                 : "text-[var(--text-secondary)] font-semibold"
@@ -445,17 +453,18 @@ export default function ShoppingListPage() {
                             type="button"
                             onClick={() => handleAddToPantry(item)}
                             disabled={addingToPantryId === item.id}
-                            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-[var(--background)] hover:bg-[var(--surface-active)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer flex items-center gap-1 opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-[var(--background)] hover:bg-[var(--surface-active)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer flex items-center gap-1 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-50 tap-target justify-center"
                             title="Add to Pantry"
+                            aria-label={`Add ${item.name} to pantry`}
                           >
                             <Archive className="w-3 h-3 text-[var(--accent)]" />
-                            <span>{addingToPantryId === item.id ? "Adding..." : "Pantry"}</span>
+                            <span className="hidden sm:inline">{addingToPantryId === item.id ? "Adding..." : "Pantry"}</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => deleteItem(item.id)}
-                            className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--ui-error)] opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                            className="tap-target flex items-center justify-center p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--ui-error)] [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition cursor-pointer"
                             aria-label={`Delete ${item.name}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />

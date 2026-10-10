@@ -198,7 +198,7 @@ export default function WeeklyReviewPage() {
           <button
             type="button"
             onClick={handlePrevWeek}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-fg-2 hover:bg-surface hover:text-fg"
+            className="tap-target flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-fg-2 hover:bg-surface hover:text-fg"
             aria-label="Previous week"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -208,7 +208,7 @@ export default function WeeklyReviewPage() {
             type="button"
             onClick={handleThisWeek}
             className={cn(
-              "flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors",
+              "tap-target flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors",
               isCurrentWeek
                 ? "border-accent bg-accent/10 text-accent font-semibold"
                 : "border-line bg-surface-2 text-fg-2 hover:bg-surface hover:text-fg"
@@ -221,7 +221,7 @@ export default function WeeklyReviewPage() {
           <button
             type="button"
             onClick={handleNextWeek}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-fg-2 hover:bg-surface hover:text-fg"
+            className="tap-target flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-fg-2 hover:bg-surface hover:text-fg"
             aria-label="Next week"
           >
             <ChevronRight className="h-4 w-4" />
@@ -401,7 +401,7 @@ export default function WeeklyReviewPage() {
           )}
 
           {/* Primary Metrics Grid (This Week) */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* 1. Nutrition Card */}
             <div className="rounded-xl border border-line bg-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">

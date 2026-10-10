@@ -186,42 +186,42 @@ export function DynamicPortionAdjuster({
           <button
             type="button"
             onClick={() => applyMultiplier(0.5)}
-            className="px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition cursor-pointer"
+            className="tap-target px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition cursor-pointer"
           >
             0.5x
           </button>
           <button
             type="button"
             onClick={() => applyMultiplier(1)}
-            className="px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition cursor-pointer"
+            className="tap-target px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition cursor-pointer"
           >
             1x
           </button>
           <button
             type="button"
             onClick={() => applyMultiplier(1.5)}
-            className="px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition cursor-pointer"
+            className="tap-target px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition cursor-pointer"
           >
             1.5x
           </button>
           <button
             type="button"
             onClick={() => applyMultiplier(2)}
-            className="px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition cursor-pointer"
+            className="tap-target px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition cursor-pointer"
           >
             2x
           </button>
           <button
             type="button"
             onClick={() => addGrams(50)}
-            className="px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition cursor-pointer"
+            className="tap-target px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition cursor-pointer"
           >
             +50g
           </button>
           <button
             type="button"
             onClick={() => addGrams(100)}
-            className="px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition cursor-pointer"
+            className="tap-target px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-medium text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition cursor-pointer"
           >
             +100g
           </button>

@@ -188,7 +188,7 @@ export function BodyFatTrendChart({
             type="button"
             onClick={() => setActiveMetric("bodyFat")}
             className={cn(
-              "px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center space-x-1.5 min-h-[32px]",
+              "tap-target px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center space-x-1.5 min-h-[32px]",
               activeMetric === "bodyFat"
                 ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-xs"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -202,7 +202,7 @@ export function BodyFatTrendChart({
             type="button"
             onClick={() => setActiveMetric("smm")}
             className={cn(
-              "px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center space-x-1.5 min-h-[32px]",
+              "tap-target px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center space-x-1.5 min-h-[32px]",
               activeMetric === "smm"
                 ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-xs"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -216,7 +216,7 @@ export function BodyFatTrendChart({
             type="button"
             onClick={() => setActiveMetric("bmi")}
             className={cn(
-              "px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center space-x-1.5 min-h-[32px]",
+              "tap-target px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center space-x-1.5 min-h-[32px]",
               activeMetric === "bmi"
                 ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-xs"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -235,7 +235,7 @@ export function BodyFatTrendChart({
               type="button"
               onClick={() => setTimeRange(r)}
               className={cn(
-                "px-2.5 py-1 rounded-lg font-medium transition cursor-pointer uppercase text-[11px]",
+                "tap-target px-2.5 py-1 rounded-lg font-medium transition cursor-pointer uppercase text-[11px]",
                 timeRange === r
                   ? "bg-[var(--surface)] text-[var(--text-primary)] font-semibold shadow-xs border border-[var(--border)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

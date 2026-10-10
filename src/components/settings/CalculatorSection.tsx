@@ -211,7 +211,7 @@ export function CalculatorSection({
               </div>
             </Row>
             <Row label="Thermic effect of food" htmlFor="calc-tef" hint="Adds about 8% for digestion.">
-              <input id="calc-tef" type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={tef} onChange={(e) => setTef(e.target.checked)} />
+              <input id="calc-tef" type="checkbox" className="h-5 w-5 accent-[var(--accent)]" checked={tef} onChange={(e) => setTef(e.target.checked)} />
             </Row>
           </>
         )}

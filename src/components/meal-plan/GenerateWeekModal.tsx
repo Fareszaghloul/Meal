@@ -55,6 +55,7 @@ export function GenerateWeekModal({
   // Execution state
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedWeekPlan | null>(null);
+  const [previewDay, setPreviewDay] = useState(0); // phones preview one day at a time
   const [applyMode, setApplyMode] = useState<"replace" | "fill_empty">("replace");
   const [isApplying, setIsApplying] = useState(false);
   const [regeneratingDayIdx, setRegeneratingDayIdx] = useState<number | null>(null);
@@ -184,15 +185,15 @@ export function GenerateWeekModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-2xl"
+        className="modal-panel w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-[var(--border)]">
+        <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] p-4 sm:p-6">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)]">
               <Sparkles className="w-5 h-5" />
@@ -210,14 +211,15 @@ export function GenerateWeekModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
+            aria-label="Close"
+            className="tap-target flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--background)] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {!generatedPlan ? (
             /* ─── Configuration Form ─── */
             <div className="space-y-6">
@@ -231,6 +233,7 @@ export function GenerateWeekModal({
                     <label className="block text-[11px] text-[var(--text-muted)] mb-1">Calories</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={calories}
                       onChange={(e) => setCalories(Number(e.target.value))}
                       className="input-field text-xs font-semibold font-tabular"
@@ -240,6 +243,7 @@ export function GenerateWeekModal({
                     <label className="block text-[11px] text-[var(--macro-protein)] mb-1">Protein (g)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={protein}
                       onChange={(e) => setProtein(Number(e.target.value))}
                       className="input-field text-xs font-semibold font-tabular"
@@ -249,6 +253,7 @@ export function GenerateWeekModal({
                     <label className="block text-[11px] text-[var(--macro-carbs)] mb-1">Carbs (g)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={carbs}
                       onChange={(e) => setCarbs(Number(e.target.value))}
                       className="input-field text-xs font-semibold font-tabular"
@@ -258,6 +263,7 @@ export function GenerateWeekModal({
                     <label className="block text-[11px] text-[var(--macro-fat)] mb-1">Fat (g)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={fat}
                       onChange={(e) => setFat(Number(e.target.value))}
                       className="input-field text-xs font-semibold font-tabular"
@@ -280,7 +286,7 @@ export function GenerateWeekModal({
                         type="button"
                         onClick={() => toggleSlot(slot)}
                         className={cn(
-                          "px-4 py-2.5 rounded-2xl text-xs font-semibold capitalize border transition flex items-center justify-between cursor-pointer",
+                          "min-h-[44px] px-4 py-2.5 rounded-2xl text-xs font-semibold capitalize border transition flex items-center justify-between cursor-pointer",
                           isSelected
                             ? "border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)]"
                             : "border-[var(--border)] bg-[var(--background)] text-[var(--text-muted)]"
@@ -329,7 +335,7 @@ export function GenerateWeekModal({
 
               {/* Checkbox Options */}
               <div className="pt-2 border-t border-[var(--border)] grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="flex items-center gap-2.5 text-xs text-[var(--text-primary)] cursor-pointer">
+                <label className="flex min-h-[44px] items-center gap-2.5 text-xs text-[var(--text-primary)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={useSavedMeals}
@@ -339,7 +345,7 @@ export function GenerateWeekModal({
                   <span>Include Saved Meals in pool</span>
                 </label>
 
-                <label className="flex items-center gap-2.5 text-xs text-[var(--text-primary)] cursor-pointer">
+                <label className="flex min-h-[44px] items-center gap-2.5 text-xs text-[var(--text-primary)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={useRecipes}
@@ -349,7 +355,7 @@ export function GenerateWeekModal({
                   <span>Include Recipes in pool</span>
                 </label>
 
-                <label className="flex items-center gap-2.5 text-xs text-[var(--text-primary)] cursor-pointer">
+                <label className="flex min-h-[44px] items-center gap-2.5 text-xs text-[var(--text-primary)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={prioritizeFavorites}
@@ -359,7 +365,7 @@ export function GenerateWeekModal({
                   <span>Prioritize Favorite items</span>
                 </label>
 
-                <label className="flex items-center gap-2.5 text-xs text-[var(--text-primary)] cursor-pointer">
+                <label className="flex min-h-[44px] items-center gap-2.5 text-xs text-[var(--text-primary)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={prioritizeFrequent}
@@ -401,6 +407,25 @@ export function GenerateWeekModal({
                 </div>
               </div>
 
+              {/* Phones: one previewed day at a time. From sm up every day is listed. */}
+              <div role="tablist" aria-label="Preview day" className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-none sm:hidden">
+                {generatedPlan.days.map((day, idx) => (
+                  <button
+                    key={day.dayOfWeek}
+                    type="button"
+                    role="tab"
+                    aria-selected={previewDay === idx}
+                    onClick={() => setPreviewDay(idx)}
+                    className={cn(
+                      "min-h-[44px] shrink-0 rounded-xl px-3 text-xs font-semibold capitalize",
+                      previewDay === idx ? "bg-[var(--accent)] text-[var(--on-accent)]" : "bg-[var(--background)] text-[var(--text-secondary)]"
+                    )}
+                  >
+                    {day.dayOfWeek.slice(0, 3)}
+                  </button>
+                ))}
+              </div>
+
               {/* 7 Days Preview List */}
               <div className="space-y-3">
                 {generatedPlan.days.map((day, idx) => {
@@ -411,7 +436,7 @@ export function GenerateWeekModal({
                   return (
                     <div
                       key={day.dayOfWeek}
-                      className="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3"
+                      className={cn("p-3 sm:p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3", idx !== previewDay && "hidden sm:block")}
                     >
                       <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-[var(--border)]">
                         <div className="flex items-center gap-2">
@@ -423,7 +448,7 @@ export function GenerateWeekModal({
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex w-full items-center gap-2 sm:w-auto">
                           <span className="text-xs font-tabular font-semibold text-[var(--text-primary)]">
                             {day.totals.calories} kcal ({calDiff >= 0 ? `+${calDiff}` : calDiff})
                           </span>
@@ -435,7 +460,7 @@ export function GenerateWeekModal({
                             type="button"
                             disabled={isRegenThis}
                             onClick={() => handleRegenerateDay(idx)}
-                            className="ml-2 px-2.5 py-1 rounded-lg bg-[var(--surface)] text-[10px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                            className="tap-target ml-auto px-2.5 py-1 rounded-lg bg-[var(--surface)] text-[10px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50 sm:ml-2"
                           >
                             <RotateCw className={cn("w-3 h-3", isRegenThis && "animate-spin")} />
                             <span>Regenerate</span>
@@ -473,8 +498,8 @@ export function GenerateWeekModal({
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] block">
                   How should this plan be applied?
                 </span>
-                <div className="flex items-center gap-4 text-xs">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:gap-4">
+                  <label className="flex min-h-[44px] items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name="applyMode"
@@ -484,7 +509,7 @@ export function GenerateWeekModal({
                     />
                     <span>Replace existing planned meals</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label className="flex min-h-[44px] items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name="applyMode"
@@ -501,7 +526,7 @@ export function GenerateWeekModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 sm:p-5 border-t border-[var(--border)] flex items-center justify-between gap-3 bg-[var(--surface)]">
+        <div className="shrink-0 p-3 sm:p-5 border-t border-[var(--border)] flex items-center justify-between gap-3 bg-[var(--surface)]">
           {!generatedPlan ? (
             <div className="flex items-center justify-between w-full">
               <button
@@ -532,22 +557,22 @@ export function GenerateWeekModal({
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-between w-full">
+            <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
                 onClick={() => setGeneratedPlan(null)}
-                className="px-4 py-2 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer flex items-center gap-1.5"
+                className="min-h-[44px] px-4 py-2 rounded-full text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Back to Settings</span>
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                 <button
                   type="button"
                   onClick={handleGenerate}
                   disabled={isGenerating || isApplying}
-                  className="px-4 py-2 rounded-full bg-[var(--background)] text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  className="min-h-[44px] px-4 py-2 rounded-full bg-[var(--background)] text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] transition cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   <RotateCw className="w-3.5 h-3.5" />
                   <span>Regenerate Week</span>
@@ -557,7 +582,7 @@ export function GenerateWeekModal({
                   type="button"
                   disabled={isApplying}
                   onClick={handleApply}
-                  className="px-6 py-2.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                  className="min-h-[44px] px-6 py-2.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isApplying ? (
                     <>
