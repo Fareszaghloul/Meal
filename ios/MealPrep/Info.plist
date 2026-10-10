@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>MealPrep</string>
+
+    <!-- Origin the app wraps. The only configurable value; must be https (App Transport Security stays on). -->
+    <key>MealServerURL</key>
+    <string>https://meal.1234567.website</string>
+
+    <!-- Barcode scanner (html5-qrcode / getUserMedia) and nutrition-label photos. -->
+    <key>NSCameraUsageDescription</key>
+    <string>MealPrep uses the camera to scan food barcodes and nutrition labels.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>MealPrep reads a photo you choose to scan a nutrition label or body-composition report.</string>
+
+    <!-- Match the web app's dark/light themes, which already follow the system setting. -->
+    <key>UIUserInterfaceStyle</key>
+    <string>Automatic</string>
+
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+</dict>
+</plist>

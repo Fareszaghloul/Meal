@@ -11,3 +11,6 @@ scratch
 .DS_Store
 *.md
 .env*
+
+# iOS wrapper is built with xtool, not part of the web image
+ios
